@@ -84,9 +84,9 @@ beautifulsoup4>=4.12.0
 curl_cffi>=0.7.0
 
 # ─────────────────────────────────────────────────────────────
-# AI image generation tool / AI 图片生成工具 (skills/ppt-master/scripts/image_gen.py)
+# AI image generation — extracted to ai-image plugin in Milestone D
 # ─────────────────────────────────────────────────────────────
-# Gemini backend / Gemini 后端 (IMAGE_BACKEND=gemini)
-google-genai>=1.0.0
-# OpenAI-compatible backend / OpenAI 兼容后端 (IMAGE_BACKEND=openai)
-openai>=1.0.0
+# AI 图片生成工具已整体迁到 ai-image plugin（../ai-image/）。
+# SDK 依赖（google-genai、openai、Pillow、requests 等）统一在 ../ai-image/requirements.txt 维护。
+# 若你使用 ppt-master 做 PPT 生成且需要 AI 配图，额外执行：
+#     pip install -r ../ai-image/requirements.txt

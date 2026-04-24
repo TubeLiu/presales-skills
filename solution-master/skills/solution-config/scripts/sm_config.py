@@ -329,10 +329,23 @@ def validate() -> List[str]:
 # ── 模型注册表 ──────────────────────────────────────
 
 def _find_models_yaml() -> Optional[Path]:
-    """定位 ai_image_models.yaml 文件"""
+    """定位 ai_image_models.yaml 文件。
+
+    Milestone D 起，注册表由独立的 ai-image plugin 维护。solution-master
+    不再自带 ai_image_models.yaml。候选路径按优先级：
+
+    1. 跨 plugin sibling：<marketplace_root>/ai-image/prompts/ai_image_models.yaml
+       （_SKILLS_ROOT.parent.parent 在 plugin 安装模式下 = plugin 所在的
+       marketplace cache 目录，ai-image 作为兄弟 plugin 并排）
+    2. 用户级 home 覆盖：~/.config/presales-skills/ai_image_models.yaml
+       （/ai-image-config add-model 写入的用户自定义注册表）
+    3. 全局 skill 目录 fallback：~/.claude/skills/ai-image/prompts/ai_image_models.yaml
+       （如果用户手动把 ai-image 装到 home）
+    """
     candidates = [
-        _SKILLS_ROOT / "solution-writing" / "prompts" / "ai_image_models.yaml",
-        _SKILLS_ROOT / "image-generation" / "prompts" / "ai_image_models.yaml",
+        _SKILLS_ROOT.parent.parent / "ai-image" / "prompts" / "ai_image_models.yaml",
+        Path.home() / ".config" / "presales-skills" / "ai_image_models.yaml",
+        Path.home() / ".claude" / "skills" / "ai-image" / "prompts" / "ai_image_models.yaml",
     ]
     for p in candidates:
         if p.exists():

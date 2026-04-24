@@ -1,0 +1,39 @@
+# ai-image plugin dependencies (extracted from ppt-master in Milestone D)
+# Install: pip install -r requirements.txt
+# (Only SDKs actually imported by backend_*.py are listed — verified by grep.)
+
+# ── Core runtime (all backends need these) ────────────────
+requests>=2.31.0
+Pillow>=9.0.0
+
+# ── Provider SDKs (confirmed via grep of backend_*.py imports) ──
+# Google Gemini / Imagen (backend_gemini.py)
+google-genai>=1.0.0
+# OpenAI + OpenAI-compatible endpoints (backend_openai.py)
+# Note: openrouter/siliconflow use `requests` directly, not openai SDK
+openai>=1.0.0
+
+# ── Providers using plain HTTP (requests, above) — no extra SDK ──
+# backend_bfl.py, backend_fal.py, backend_ideogram.py, backend_minimax.py,
+# backend_openrouter.py, backend_qwen.py, backend_replicate.py,
+# backend_siliconflow.py, backend_stability.py, backend_volcengine.py,
+# backend_zhipu.py — these all use `requests` and HTTP endpoints directly.
+# Specific API keys needed per provider (set via /ai-image-config-set api_keys.<provider>):
+#   BFL_API_KEY         (bfl)
+#   FAL_KEY             (fal.ai)
+#   IDEOGRAM_API_KEY    (ideogram)
+#   MINIMAX_API_KEY     (minimax)
+#   OPENROUTER_API_KEY  (openrouter)
+#   DASHSCOPE_API_KEY   (qwen → DashScope)
+#   REPLICATE_API_TOKEN (replicate)
+#   SILICONFLOW_API_KEY (siliconflow)
+#   STABILITY_API_KEY   (stability)
+#   ARK_API_KEY         (volcengine → 火山方舟)
+#   ZHIPU_API_KEY       (zhipu)
+
+# ── Optional SDK alternatives (users who prefer official SDK over raw HTTP can uncomment) ──
+# replicate>=0.25.0          # If you prefer replicate-python SDK (currently not used)
+# fal-client>=0.4.0          # If you prefer fal-client SDK (currently not used)
+# zhipuai>=2.0.0             # If you prefer zhipuai SDK (currently not used)
+# dashscope>=1.0.0           # If you prefer dashscope SDK (currently not used; qwen backend uses HTTP)
+# volcengine-python-sdk      # If you prefer official Volcengine SDK (currently not used)

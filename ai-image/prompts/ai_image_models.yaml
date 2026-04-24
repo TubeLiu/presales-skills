@@ -1,0 +1,289 @@
+# AI 图片生成模型统一注册表（ai-image plugin）
+# v1.1.0 | solution-master + tender-workflow + ppt-master 三方图生源合并而来
+# 此文件为静态数据源，/ai-image-config models 命令读取此文件渲染固定格式输出
+# 新增模型只需在对应 provider.models 列表中添加条目
+#
+# Provider naming:
+#   - ark (aliased as volcengine): 火山方舟 Seedream — ppt-master 的 image_gen.py 用 IMAGE_BACKEND=volcengine
+#   - dashscope (aliased as qwen): 阿里云 DashScope (通义万相) — image_gen.py 用 IMAGE_BACKEND=qwen
+#   - gemini, openai, zhipu, siliconflow, minimax, stability, bfl, ideogram, fal, replicate, openrouter: 各自独立
+#
+# 命令示例：
+#   /ai-image-config models                列出所有
+#   /ai-image-config models ark            只看 ark
+#   /ai-image-config set ai_image.default_provider ark
+#   /ai-image-config set ai_image.models.ark doubao-seedream-5-0-260128
+
+version: "1.1.0"
+last_updated: "2026-04-24"
+
+providers:
+  # ── 从 solution-master + tender-workflow 继承的 3 个主力 provider ──
+  ark:
+    name: "火山方舟 (Volcengine Ark)"
+    aliases: [volcengine]          # ppt-master image_gen.py 用的 backend 名
+    sdk_package: volcengine-python-sdk
+    env_key: ARK_API_KEY
+    env_key_alt: VOLCENGINE_API_KEY   # 兼容 ppt-master
+    config_key: api_keys.ark
+    models:
+      - id: doubao-seedream-5-0-260128
+        name: Seedream 5.0 Lite
+        max_resolution: "原生2K, AI增强4K"
+        price: "~¥0.25/张"
+        features: "联网搜索、多步推理、模糊意图编辑"
+        status: current
+      - id: doubao-seedream-4-5-251128
+        name: Seedream 4.5
+        max_resolution: "4K (4096×4096)"
+        price: "¥0.30/张"
+        features: "极致写实、精准文字渲染、商用优化"
+        status: available
+      - id: doubao-seedream-4-0-250828
+        name: Seedream 4.0
+        max_resolution: "4K (4096×4096)"
+        price: "¥0.20/张"
+        features: "多图融合(最多15张)、性价比最优"
+        status: available
+      - id: doubao-seedream-3-0-t2i-250415
+        name: Seedream 3.0
+        max_resolution: "2K (2048×2048)"
+        price: "¥0.26/张"
+        features: "中英双语、文字生成准确"
+        status: deprecated
+
+  dashscope:
+    name: "阿里云 (DashScope / 通义万相)"
+    aliases: [qwen]                # ppt-master image_gen.py 用的 backend 名
+    sdk_package: null              # HTTP REST API，无需额外 SDK
+    env_key: DASHSCOPE_API_KEY
+    env_key_alt: QWEN_API_KEY      # 兼容 ppt-master
+    config_key: api_keys.dashscope
+    models:
+      - id: qwen-image-2.0-pro
+        name: Qwen Image 2.0 Pro
+        max_resolution: "2K (2048×2048)"
+        price: "~$0.075/张"
+        features: "中文文字渲染最强、图表/PPT生成"
+        status: current
+      - id: qwen-image-2.0
+        name: Qwen Image 2.0
+        max_resolution: "2K (2048×2048)"
+        price: "~$0.035/张"
+        features: "加速版，效果与速度平衡"
+        status: available
+      - id: wan2.7-image-pro
+        name: 万相 2.7 Pro
+        max_resolution: "4K (4096×4096)"
+        price: "待公布"
+        features: "Thinking推理、组图1-12张、12语言文字渲染"
+        status: available
+      - id: wan2.6-t2i
+        name: 万相 2.6
+        max_resolution: "~1.4K"
+        price: "~¥0.20/张"
+        features: "基础写实"
+        status: available
+      - id: z-image-turbo
+        name: Z-Image Turbo
+        max_resolution: "2K (2048×2048)"
+        price: "$0.015/张"
+        features: "最便宜、高速、高逼真人像"
+        status: available
+
+  gemini:
+    name: "Google Gemini"
+    sdk_package: google-genai
+    env_key: GEMINI_API_KEY
+    config_key: api_keys.gemini
+    models:
+      # --- Gemini 多模态生图（generateContent API）---
+      - id: gemini-3.1-flash-image-preview
+        name: Gemini 3.1 Flash Image Preview
+        api: generateContent
+        max_resolution: "4K (4096×4096)"
+        price: "~$0.045/张"
+        features: "快速生成、文字渲染优化、支持14张参考图风格一致性"
+        status: current
+      - id: gemini-2.5-flash-image
+        name: Gemini 2.5 Flash Image
+        api: generateContent
+        max_resolution: "4K (4096×4096)"
+        price: "~$0.039/张"
+        features: "原生生图、图片编辑、角色一致性、对话式优化、支持2K/4K"
+        status: available
+      - id: gemini-3-pro-image-preview
+        name: Gemini 3 Pro Image Preview
+        api: generateContent
+        max_resolution: "4K (4096×4096)"
+        price: "~$0.134/张"
+        features: "专业级画质、深度推理(Thinking)、工作室级4K"
+        status: available
+      - id: gemini-2.0-flash-exp
+        name: Gemini 2.0 Flash Exp
+        api: generateContent
+        max_resolution: "1K (1024×1024)"
+        price: "按量计费"
+        features: "实验性、对话式编辑"
+        status: deprecated
+      # --- Imagen 系列（generate_images API）---
+      - id: imagen-4.0-fast-generate-001
+        name: Imagen 4.0 Fast
+        api: generate_images
+        max_resolution: "1K (1024×1024)"
+        price: "按量计费"
+        features: "极速(~4秒)、英文提示词优先"
+        status: available
+      - id: imagen-4.0-generate-001
+        name: Imagen 4.0
+        api: generate_images
+        max_resolution: "1K (1024×1024)"
+        price: "按量计费"
+        features: "高质量、速度较慢"
+        status: available
+
+  # ── 从 ppt-master image_gen.py 继承的 10 个 backend（初始各 1 个默认模型，用户可按需扩充）──
+  openai:
+    name: "OpenAI / OpenAI-compatible"
+    sdk_package: openai
+    env_key: OPENAI_API_KEY
+    config_key: api_keys.openai
+    models:
+      - id: gpt-image-1
+        name: GPT-Image-1
+        max_resolution: "1K-2K"
+        price: "按量计费"
+        features: "OpenAI 原生生图、多风格"
+        status: current
+
+  zhipu:
+    name: "智谱 (Zhipu GLM-Image / BigModel)"
+    sdk_package: zhipuai
+    env_key: ZHIPU_API_KEY
+    env_key_alt: BIGMODEL_API_KEY
+    config_key: api_keys.zhipu
+    models:
+      - id: glm-image
+        name: GLM-Image
+        max_resolution: "1K-2K"
+        price: "按量计费"
+        features: "国产、中文优化"
+        status: current
+
+  siliconflow:
+    name: "SiliconFlow"
+    sdk_package: null                # HTTP REST API
+    env_key: SILICONFLOW_API_KEY
+    config_key: api_keys.siliconflow
+    models:
+      - id: Qwen/Qwen-Image
+        name: Qwen-Image (via SiliconFlow)
+        max_resolution: "2K"
+        price: "按量计费"
+        features: "通过 SiliconFlow 聚合平台访问 Qwen-Image"
+        status: current
+
+  minimax:
+    name: "MiniMax Image"
+    sdk_package: null
+    env_key: MINIMAX_API_KEY
+    config_key: api_keys.minimax
+    models:
+      - id: image-01
+        name: MiniMax Image 01
+        max_resolution: "1K-2K"
+        price: "按量计费"
+        features: "国产、中文优化"
+        status: current
+
+  stability:
+    name: "Stability AI"
+    sdk_package: null
+    env_key: STABILITY_API_KEY
+    config_key: api_keys.stability
+    models:
+      - id: stable-image-core
+        name: Stable Image Core
+        max_resolution: "1K-2K"
+        price: "按量计费"
+        features: "Stable Diffusion 系列、艺术风格"
+        status: current
+
+  bfl:
+    name: "Black Forest Labs (FLUX)"
+    sdk_package: null
+    env_key: BFL_API_KEY
+    config_key: api_keys.bfl
+    models:
+      - id: flux-pro-1.1-ultra
+        name: FLUX Pro 1.1 Ultra
+        max_resolution: "高分辨率"
+        price: "按量计费"
+        features: "FLUX 系列、专业画质、照片级写实"
+        status: current
+
+  ideogram:
+    name: "Ideogram"
+    sdk_package: null
+    env_key: IDEOGRAM_API_KEY
+    config_key: api_keys.ideogram
+    models:
+      - id: ideogram-v3
+        name: Ideogram v3
+        max_resolution: "高分辨率"
+        price: "按量计费"
+        features: "文字渲染最强、海报/标语类"
+        status: current
+
+  fal:
+    name: "fal.ai (聚合平台)"
+    sdk_package: fal-client
+    env_key: FAL_KEY
+    env_key_alt: FAL_API_KEY
+    config_key: api_keys.fal
+    models:
+      - id: fal-ai/imagen3/fast
+        name: "Imagen 3 Fast (via fal.ai)"
+        max_resolution: "1K-2K"
+        price: "按量计费"
+        features: "聚合平台、模型丰富"
+        status: current
+
+  replicate:
+    name: "Replicate (聚合平台)"
+    sdk_package: replicate
+    env_key: REPLICATE_API_TOKEN
+    env_key_alt: REPLICATE_API_KEY
+    config_key: api_keys.replicate
+    models:
+      - id: black-forest-labs/flux-1.1-pro
+        name: "FLUX 1.1 Pro (via Replicate)"
+        max_resolution: "高分辨率"
+        price: "按量计费"
+        features: "聚合平台、FLUX 模型"
+        status: current
+
+  openrouter:
+    name: "OpenRouter (聚合平台)"
+    sdk_package: null                # OpenAI-compatible
+    env_key: OPENROUTER_API_KEY
+    config_key: api_keys.openrouter
+    models:
+      - id: google/gemini-3.1-flash-image-preview
+        name: "Gemini 3.1 Flash Image Preview (via OpenRouter)"
+        max_resolution: "4K"
+        price: "按量计费"
+        features: "OpenAI-compatible 接口访问 Gemini"
+        status: current
+
+# /ai-image-config models 输出模板（确保弱模型也能固定格式输出）
+display:
+  header: "## AI 图片生成模型列表\n"
+  table_header: "| 提供商 | 模型 ID | 名称 | 最大分辨率 | 价格 | 特点 | 状态 |"
+  table_separator: "|--------|---------|------|-----------|------|------|------|"
+  status_map:
+    current: "★ 推荐"
+    available: "○ 可用"
+    deprecated: "✗ 已弃用"
+  user_default_marker: "● 当前默认"
+  footer: "\n> 状态说明：● 当前默认（用户配置）  ★ 推荐  ○ 可选  ✗ 已弃用\n> 更改默认模型：`/ai-image-config set ai_image.models.<provider> <model_id>`\n> 更改默认供应商：`/ai-image-config set ai_image.default_provider <provider>`\n> 提供商列表：ark / dashscope / gemini / openai / zhipu / siliconflow / minimax / stability / bfl / ideogram / fal / replicate / openrouter"

@@ -42,7 +42,17 @@ import sys
 import argparse
 from pathlib import Path
 
-ENV_PATH = Path(__file__).resolve().parents[3] / ".env"
+# ENV_PATH resolution:
+# - Plugin mode (ai-image installed as Claude Code plugin): rely on unified config
+#   at ~/.config/presales-skills/config.yaml + process env vars; don't look for .env
+#   (parents[3] here would escape the plugin directory).
+# - Source mode (repo clone, run directly from ai-image/scripts/): fall back to
+#   ../.env relative to the script — that's `ai-image/.env` at the plugin root,
+#   which developers may keep locally for testing.
+if os.environ.get("CLAUDECODE") == "1" or os.environ.get("CLAUDE_CODE_ENTRYPOINT"):
+    ENV_PATH = None
+else:
+    ENV_PATH = Path(__file__).resolve().parent.parent / ".env"
 IMAGE_ENV_PREFIXES = (
     "IMAGE_",
     "GEMINI_",
@@ -203,8 +213,10 @@ def _load_image_env_file() -> None:
     Load image generation config from the project-root `.env` as a fallback layer.
 
     Existing process environment variables win over `.env`.
+    Plugin mode skips this (ENV_PATH is None); unified ~/.config/presales-skills/config.yaml
+    is the canonical config source there.
     """
-    if not ENV_PATH.exists():
+    if ENV_PATH is None or not ENV_PATH.exists():
         return
 
     with ENV_PATH.open("r", encoding="utf-8") as fh:
@@ -316,7 +328,11 @@ def _print_backend_list() -> None:
             )
         print()
     print("Recommendation: prefer CORE backends for everyday PPT generation.")
-    print(f"Config fallback file: {ENV_PATH}")
+    if ENV_PATH:
+        print(f"Config fallback file: {ENV_PATH}")
+    else:
+        print("Plugin mode: set API keys via ~/.config/presales-skills/config.yaml")
+        print("  or environment variables (run /ai-image-config setup for guided setup)")
 
 
 def _resolve_backend() -> tuple[object, str]:
@@ -336,12 +352,13 @@ def _resolve_backend() -> tuple[object, str]:
         return _load_backend(canonical)
 
     supported = ", ".join(SUPPORTED_BACKENDS)
+    fallback_line = f"  2. {ENV_PATH}\n" if ENV_PATH else "  2. ~/.config/presales-skills/config.yaml (plugin mode)\n"
     print(
         "Error: No image backend configured.\n"
         "\n"
         "Set IMAGE_BACKEND explicitly in one of these places:\n"
         f"  1. Current process environment\n"
-        f"  2. {ENV_PATH}\n"
+        f"{fallback_line}"
         "\n"
         f"Supported backends: {supported}\n"
         "\n"

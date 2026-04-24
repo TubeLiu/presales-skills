@@ -1,0 +1,79 @@
+---
+name: ai-image
+description: AI 图片生成统一入口。当用户说"生成图片"、"AI 画图"、"generate image"、"做配图"、"生成一张插图"或明确指定某个 provider（ark/gemini/openai/...）时触发。支持 13 个后端（volcengine/ark、qwen/dashscope、gemini、openai、minimax、stability、bfl、ideogram、zhipu、siliconflow、fal、replicate、openrouter），统一读取 ~/.config/presales-skills/config.yaml 获取 API key。配置管理使用 /ai-image-config 子命令系列。
+---
+
+# ai-image Skill — 统一 AI 图片生成
+
+ai-image 是 presales-skills marketplace 的共享 plugin，为 solution-master / ppt-master / tender-workflow 三个主 plugin 提供统一的图片生成能力。
+
+## 如何调用
+
+### 直接调用（需已 `/ai-image-config-setup` 配好 API key）
+
+```bash
+# YAML 注册表风格（solution-master / tender-workflow 惯用）
+python3 ${CLAUDE_SKILL_DIR}/../../scripts/image_gen.py "用户提示词" --aspect_ratio 16:9 --image_size 1K -o /path/to/output/
+
+# env-var 风格（ppt-master 惯用，image_gen.py 原生支持）
+IMAGE_BACKEND=ark python3 ${CLAUDE_SKILL_DIR}/../../scripts/image_gen.py "用户提示词" -o /path/to/output/
+```
+
+**推荐**：通过 unified config 指定 `IMAGE_BACKEND`，或用 `--backend <name>` 显式指定。
+
+### Provider 选择策略
+
+| 用户场景 | 推荐 provider |
+|---|---|
+| 中文场景、文字渲染（图表/海报）| `dashscope` (qwen-image-2.0-pro) |
+| 真实感照片、高分辨率 | `ark` (Seedream 4.5 / 5.0) |
+| 通用画质、英文场景 | `gemini` (2.5 Flash Image) |
+| 聚合平台、多模型切换 | `openrouter` / `fal` / `replicate` |
+
+详细列表：`/ai-image-config-models`
+
+## 工作流
+
+1. **读取用户意图**：图片主题、风格、尺寸、数量
+2. **选 provider**：按场景 + 用户默认偏好（来自 `~/.config/presales-skills/config.yaml` 的 `ai_image.default_provider`）
+3. **准备 prompt**：如果用户只给了简要主题，扩展为详细描述
+4. **执行生成**：调 `image_gen.py`，确保：
+   - 设定 `IMAGE_BACKEND` 为选定 provider 的 canonical 名（ark→volcengine，dashscope→qwen，其他同名）
+   - 通过 `-o` 指定输出目录
+   - 根据 `ai_image.default_size` 或用户显式指定的 aspect ratio / size
+5. **验证输出**：文件存在且 > 10KB，否则降级或报错
+6. **返回给用户**：图片路径 + 简要描述
+
+## 配置管理
+
+所有配置通过 /ai-image-config-* 子命令系列管理（每个 subcommand 是独立 slash command）：
+
+| 子命令 | 作用 |
+|---|---|
+| `/ai-image-config-setup` | 交互式首次配置 |
+| `/ai-image-config-show` | 展示当前配置（API keys 自动 mask）|
+| `/ai-image-config-set` | 按 dotted path 设值 |
+| `/ai-image-config-models` | 展示统一注册表（13 provider）|
+| `/ai-image-config-add-model` | 追加用户自定义模型 |
+| `/ai-image-config-validate` | 健康检查（API key 是否已配置）|
+| `/ai-image-config-migrate` | 合并旧的 solution-master / tender-workflow config |
+
+## 跨 plugin 调用说明
+
+solution-master / ppt-master / tender-workflow 在各自 SKILL.md 里通过如下路径调用本 plugin：
+
+```bash
+# 生成图片
+python3 ${CLAUDE_PLUGIN_ROOT}/../ai-image/scripts/image_gen.py "<prompt>" ...
+
+# 或通过 adapter（推荐，接受 YAML-style --provider 参数并自动映射）
+python3 ${CLAUDE_PLUGIN_ROOT}/../ai-image/scripts/ai_image_config.py models
+```
+
+因为 `${CLAUDE_PLUGIN_ROOT}` 是文本替换，展开后 `.../tender-workflow/../ai-image/...` 被 bash/Python 的 path resolver 正确解析为 `.../ai-image/...`（sibling plugin）。
+
+## 故障排查
+
+- **"No image backend configured"**：运行 `/ai-image-config-setup`
+- **"drawio plugin 未安装"等跨 plugin 引用失败**：检查 umbrella marketplace 是否装齐所有依赖 plugin
+- **API key 错误**：`/ai-image-config-validate <provider>` 逐个核查

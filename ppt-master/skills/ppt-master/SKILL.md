@@ -52,7 +52,7 @@ description: >
 | `${CLAUDE_SKILL_DIR}/scripts/source_to_md/web_to_md.cjs` | Node.js fallback for WeChat / TLS-blocked sites (use only if `curl_cffi` is unavailable; `web_to_md.py` now handles WeChat when `curl_cffi` is installed) |
 | `${CLAUDE_SKILL_DIR}/scripts/project_manager.py` | Project init / validate / manage |
 | `${CLAUDE_SKILL_DIR}/scripts/analyze_images.py` | Image analysis |
-| `${CLAUDE_SKILL_DIR}/scripts/image_gen.py` | AI image generation (multi-provider) |
+| `${CLAUDE_PLUGIN_ROOT}/../ai-image/scripts/image_gen.py` | AI image generation (multi-provider) |
 | `${CLAUDE_SKILL_DIR}/scripts/svg_quality_checker.py` | SVG quality check |
 | `${CLAUDE_SKILL_DIR}/scripts/total_md_split.py` | Speaker notes splitting |
 | `${CLAUDE_SKILL_DIR}/scripts/finalize_svg.py` | SVG post-processing (unified entry) |
@@ -216,7 +216,7 @@ Read `references/image-generator.md`
 2. Generate prompt document → `<project_path>/images/image_prompts.md`
 3. Generate images (CLI tool recommended):
    ```bash
-   python3 ${CLAUDE_SKILL_DIR}/scripts/image_gen.py "prompt" --aspect_ratio 16:9 --image_size 1K -o <project_path>/images
+   python3 ${CLAUDE_PLUGIN_ROOT}/../ai-image/scripts/image_gen.py "prompt" --aspect_ratio 16:9 --image_size 1K -o <project_path>/images
    ```
 
 **✅ Checkpoint — Confirm all images are ready, proceed to Step 6**:

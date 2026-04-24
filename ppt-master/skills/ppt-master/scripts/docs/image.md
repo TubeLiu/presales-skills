@@ -1,105 +1,51 @@
-# Image Tools
+# image_gen.py — moved to ai-image plugin
 
-Image tools cover prompt-based generation, image inspection, and Gemini watermark removal.
+From Milestone D of the presales-skills refactor, `image_gen.py` and all 13
+backend modules (`image_backends/`) have been extracted into the independent
+**ai-image** plugin, a shared dependency for solution-master / ppt-master /
+tender-workflow.
 
-## `image_gen.py`
+## New location
 
-Unified image generation entry point.
+```
+<marketplace>/ai-image/scripts/image_gen.py
+<marketplace>/ai-image/scripts/image_backends/
+```
+
+## Invocation in plugin mode
+
+ppt-master's SKILL.md now calls:
 
 ```bash
-python3 scripts/image_gen.py "A modern futuristic workspace"
-python3 scripts/image_gen.py "Abstract tech background" --aspect_ratio 16:9 --image_size 4K
-python3 scripts/image_gen.py "Concept car" -o projects/demo/images
-python3 scripts/image_gen.py "Beautiful landscape" -n "low quality, blurry, watermark"
-python3 scripts/image_gen.py --list-backends
+python3 ${CLAUDE_PLUGIN_ROOT}/../ai-image/scripts/image_gen.py "<prompt>" ...
 ```
 
-Backends are grouped into Core / Extended / Experimental tiers. Run `python3 scripts/image_gen.py --list-backends` for the current list.
+Configuration is unified under `~/.config/presales-skills/config.yaml`.
+Manage via `/ai-image-config-*` slash commands:
 
-Backend selection:
+- `/ai-image-config-setup` — first-time setup wizard
+- `/ai-image-config-models` — show model registry (13 providers)
+- `/ai-image-config-set api_keys.<provider> <key>` — set API key
+- `/ai-image-config-validate` — health check
+
+## Source-mode invocation
+
+Developers running ppt-master directly from source (no plugin install):
 
 ```bash
-python3 scripts/image_gen.py "A cat" --backend openai
-python3 scripts/image_gen.py "A cinematic portrait" --backend minimax
-python3 scripts/image_gen.py "A product launch hero image" --backend qwen
-python3 scripts/image_gen.py "科技感背景图" --backend zhipu
-python3 scripts/image_gen.py "A product KV in cinematic style" --backend volcengine
+python3 ../ai-image/scripts/image_gen.py "<prompt>" --list-backends
 ```
 
-Configuration sources:
+(Relative to ppt-master repo root, assuming the umbrella presales-skills
+monorepo layout where ai-image is a sibling directory.)
 
-1. Current process environment variables
-2. Repo-root `.env` as a fallback
+## Supported backends
 
-The active backend must always be selected explicitly via `IMAGE_BACKEND`.
+Run `python3 <path-to-image_gen.py> --list-backends` for the current list.
 
-Example `.env`:
+Tiered:
+- **Core**: gemini, openai, qwen (= dashscope), volcengine (= ark), zhipu
+- **Extended**: bfl, ideogram, stability
+- **Experimental**: fal, minimax, openrouter, replicate, siliconflow
 
-```env
-IMAGE_BACKEND=gemini
-GEMINI_API_KEY=your-api-key
-GEMINI_BASE_URL=https://your-proxy-url.com/v1beta
-GEMINI_MODEL=gemini-3.1-flash-image-preview
-```
-
-Example process environment:
-
-```bash
-export IMAGE_BACKEND=gemini
-export GEMINI_API_KEY=your-api-key
-export GEMINI_MODEL=gemini-3.1-flash-image-preview
-```
-
-Current process environment wins over `.env`.
-
-Use provider-specific keys only (e.g. `GEMINI_API_KEY`, `OPENAI_API_KEY`). See `.env.example` for the full list per backend.
-
-`IMAGE_API_KEY`, `IMAGE_MODEL`, and `IMAGE_BASE_URL` are intentionally unsupported.
-
-If you keep multiple providers in one `.env` or environment, `IMAGE_BACKEND` must explicitly select the active provider.
-
-Recommendation:
-- Default to the Core tier for routine PPT work
-- Use Extended only when you need a specific model style
-- Treat Experimental backends as opt-in
-
-Example `.env` for MiniMax image backend:
-
-```env
-IMAGE_BACKEND=minimax
-MINIMAX_API_KEY=your-api-key
-# Optional: override base URL (defaults to https://api.minimaxi.com, domestic China endpoint)
-# Use https://api.minimax.io for overseas access
-# MINIMAX_BASE_URL=https://api.minimax.io
-# MINIMAX_MODEL=image-01
-```
-
-## `analyze_images.py`
-
-Analyze images in a project directory before writing the design spec or composing slide layouts.
-
-```bash
-python3 scripts/analyze_images.py <project_path>/images
-```
-
-Use this instead of opening image files directly when following the project workflow.
-
-## `gemini_watermark_remover.py`
-
-Remove Gemini watermark assets after manual download.
-
-```bash
-python3 scripts/gemini_watermark_remover.py <image_path>
-python3 scripts/gemini_watermark_remover.py <image_path> -o output_path.png
-python3 scripts/gemini_watermark_remover.py <image_path> -q
-```
-
-Notes:
-- Requires `scripts/assets/bg_48.png` and `scripts/assets/bg_96.png`
-- Best used after downloading “full size” Gemini images
-
-Dependencies:
-
-```bash
-pip install Pillow numpy
-```
+See `ai-image/README.md` and `/ai-image-config-models` for details.
