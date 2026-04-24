@@ -77,7 +77,7 @@ digraph retrieval {
 
 ## 第四层：CDP 浏览器检索（登录态站点）
 
-通过 web-access skill 的 CDP 浏览器自动化能力，检索需要登录才能访问的站点（如企业 Confluence、内部知识库、付费技术平台等）。复用用户日常 Chrome 的登录态，无需单独认证。
+通过 web-access plugin 的 CDP 浏览器自动化能力，检索需要登录才能访问的站点（如企业 Confluence、内部知识库、付费技术平台等）。复用用户日常 Chrome 的登录态，无需单独认证。
 
 ### 触发条件
 
@@ -88,13 +88,13 @@ digraph retrieval {
 ### 执行流程
 
 1. **读取站点配置：** `python3 "${CLAUDE_SKILL_DIR}/../solution-config/scripts/sm_config.py" get cdp_sites`，获取站点列表
-2. **启动 CDP Proxy：** 必须先加载 web-access skill 并执行前置检查：
+2. **启动 CDP Proxy：** 调用 web-access plugin 暴露的前置检查命令：
    ```bash
-   node "${CLAUDE_SKILL_DIR}/../web-access/scripts/check-deps.mjs"
+   web-access-check
    ```
-   未通过时引导用户完成 Chrome 远程调试设置（参照 web-access skill 指引）
+   该命令完成环境自检、启动 CDP Proxy，并在 stdout 输出可用站点清单。若命令未找到（`command not found`）说明 web-access plugin 未安装——`/plugin install web-access@presales-skills` 再重试；未通过时引导用户完成 Chrome 远程调试设置（参照 web-access plugin 指引）
 3. **对每个站点执行检索（可通过子 Agent 并行）：**
-   a. **加载站点经验：** 检查 `${CLAUDE_SKILL_DIR}/../web-access/references/site-patterns/{domain}.md` 是否存在，有则读取
+   a. **加载站点经验：** 通过 `web-access-match-site '<domain>'` 读取该站点的经验内容——stdout 直接返回匹配的站点经验正文；stdout 为空表示没有对应经验文件，继续走通用检索流程
    b. **构造搜索 URL：** 将站点配置的 `search_url` 中的 `{query}` 替换为 URL 编码后的检索关键词（如"服务网格"编码为 `%E6%9C%8D%E5%8A%A1%E7%BD%91%E6%A0%BC`）
    c. **打开搜索页：** `curl -s "http://localhost:3456/new?url={搜索URL}"`
    d. **检测登录状态（结果驱动）：** 用 `/eval` 探测页面 DOM
@@ -124,7 +124,7 @@ digraph retrieval {
 
 - CDP Proxy 不可用（Chrome 未开启远程调试）→ 跳过第四层，不阻塞其他层
 - 某站点登录失败/超时 → 该站点返回空结果，记录到知识空白，不阻塞其他站点
-- web-access skill 未安装 → 跳过第四层
+- web-access plugin 未安装 → 跳过第四层
 
 ## 智能融合层（核心改进）
 

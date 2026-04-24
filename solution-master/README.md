@@ -23,7 +23,7 @@
 
 ## 核心特性
 
-### 技能系统（solution-master 自带 12 个技能 + 2 个共享 plugin）
+### 技能系统（solution-master 自带 11 个技能 + 3 个共享 plugin）
 
 | 技能 | 说明 |
 |------|------|
@@ -38,13 +38,15 @@
 | `docx-formatting` | DOCX 格式输出 |
 | `solution-config` | 配置管理（`/solution-config`） |
 | `writing-skills` | 元技能：创建新技能 |
-| `web-access` | 联网、浏览器自动化、CDP 登录态操作 |
 
-**共享依赖**（需同时安装）：
-| plugin | 作用 |
-|------|------|
-| `drawio` | 架构图/流程图/拓扑图绘制（原 solution-master skill，Milestone C 抽出）|
-| `ai-image` | 统一 AI 图片生成（原 image-generation skill，Milestone D 抽出；13 provider）|
+**共享依赖**（按需同时安装）：
+| plugin | 作用 | 何时必需 |
+|------|------|------|
+| `drawio` | 架构图/流程图/拓扑图绘制（原 solution-master skill，Milestone C 抽出）| 始终 |
+| `ai-image` | 统一 AI 图片生成（原 image-generation skill，Milestone D 抽出；13 provider）| 始终 |
+| `web-access` | 联网 + CDP 浏览器自动化（原 solution-master skill，本次抽出；vendored from eze-is/web-access）| 仅 `cdp_sites.enabled=true`（登录态站点检索）时必需 |
+
+> **从 solution-master ≤ 0.1.5 升级的用户注意**：如果你之前启用了 `cdp_sites`，升级到 0.1.6 后需要额外运行 `/plugin install web-access@presales-skills` 把新抽出的 plugin 装上；不使用 CDP 登录态检索则无需安装。
 
 ### 防脱轨机制
 

@@ -42,9 +42,9 @@ solution-master/
 │   ├── image-generation/
 │   ├── docx-formatting/
 │   ├── solution-config/
-│   ├── writing-skills/
-│   └── web-access/
+│   └── writing-skills/
 │   # (drawio 已抽为独立 plugin `drawio`，位于 presales-skills marketplace 的 ../drawio/)
+│   # (web-access 已抽为独立 plugin `web-access`，位于 presales-skills marketplace 的 ../web-access/；通过 `web-access-check` / `web-access-match-site` 两个 bin 命令跨 plugin 调用)
 ├── agents/                           # 子智能体角色定义
 │   ├── writer.md
 │   ├── spec-reviewer.md
@@ -129,7 +129,7 @@ Solution Master 的防脱轨依赖两层相互加强的机制：
 | drawio | 由独立 plugin `drawio` 提供（需配套安装），需要绘制架构图/流程图/拓扑图等时触发 |
 | solution-config | 配置管理需求，`/solution-config` 手动调用 |
 | writing-skills | 需要创建或编辑 Solution Master 技能 |
-| web-access | 联网、浏览器自动化、CDP 登录态操作 |
+| web-access | 由独立 plugin `web-access` 提供（需配套安装；本次从 solution-master 抽出），联网、浏览器自动化、CDP 登录态操作 |
 
 <EXTREMELY-IMPORTANT>
 如果你认为某个技能有哪怕 1% 的可能适用于当前任务，你必须调用该技能。这不是可选的。你不能通过合理化来逃避。

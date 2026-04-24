@@ -7,7 +7,7 @@ description:
   触发场景：用户要求搜索信息、查看网页内容、访问需要登录的网站、操作网页界面、抓取社交媒体内容（小红书、微博、推特等）、读取动态渲染页面、以及任何需要真实浏览器环境的网络任务。
 metadata:
   author: 一泽Eze
-  version: "2.4.3"
+  version: "2.5.0"
 ---
 
 # web-access Skill
@@ -67,6 +67,16 @@ node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs"
 - **读**：用 `/eval` 提取文字内容，判断图片/视频是否承载核心信息——是则提取媒体 URL 定向读取或 `/screenshot` 视觉识别
 
 浏览网页时，**先了解页面结构，再决定下一步动作**。不需要提前规划所有步骤。
+
+### 补充：本地 Chrome 资源
+
+用户指向**本人访问过的页面**（"我之前看的那个讲 X 的文章"、"上次打开过的 XX 面板"）或**组织内部系统**（"我们的 XX 平台"、"公司那个 YY 系统"等公网搜不到的目标）时，检索本地 Chrome 书签/历史：
+
+```bash
+node "${CLAUDE_SKILL_DIR}/scripts/find-url.mjs" [关键词...] [--only bookmarks|history] [--limit N] [--since 1d|7h|YYYY-MM-DD] [--sort recent|visits]
+```
+
+关键词空格分词、多词 AND，匹配 title + url（可省略）；`--since` / `--sort` 仅作用于历史；默认按最近访问倒序，`--sort visits` 按访问次数排序（适合"高频访问的网站"这类场景）。
 
 ### 程序化操作与 GUI 交互
 

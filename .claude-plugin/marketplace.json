@@ -2,8 +2,8 @@
   "name": "presales-skills",
   "owner": { "name": "LiuZiJiao", "email": "tubeliu1@gmail.com" },
   "metadata": {
-    "description": "Presales skills monorepo — solution-master / ppt-master / tender-workflow + shared plugins (drawio, ai-image, anythingllm-mcp).",
-    "version": "0.1.12"
+    "description": "Presales skills monorepo — solution-master / ppt-master / tender-workflow + shared plugins (drawio, ai-image, anythingllm-mcp, web-access).",
+    "version": "0.1.13"
   },
   "plugins": [
     {
@@ -34,10 +34,19 @@
       "tags": ["mcp", "anythingllm", "knowledge-base", "shared"]
     },
     {
+      "name": "web-access",
+      "source": "./web-access",
+      "description": "联网操作 + CDP 浏览器自动化 skill（vendored from eze-is/web-access v2.5.0）。独立 plugin，solution-master 可选依赖（cdp_sites.enabled=true 时必需）；暴露 web-access-check / web-access-match-site 两个 bin 入口供跨 plugin 调用。",
+      "version": "0.1.0",
+      "author": { "name": "LiuZiJiao" },
+      "category": "productivity",
+      "tags": ["web", "cdp", "browser-automation", "claude-code"]
+    },
+    {
       "name": "solution-master",
       "source": "./solution-master",
-      "description": "AI 辅助通用解决方案撰写框架。依赖 drawio、ai-image、anythingllm-mcp plugin。",
-      "version": "0.1.5",
+      "description": "AI 辅助通用解决方案撰写框架。依赖 drawio、ai-image plugin；anythingllm-mcp、web-access 可选。",
+      "version": "0.1.6",
       "author": { "name": "LiuZiJiao" },
       "category": "writing",
       "tags": ["solution", "docx", "中文"]

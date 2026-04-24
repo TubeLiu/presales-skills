@@ -1,0 +1,17 @@
+{
+  "name": "web-access",
+  "description": "联网操作 + CDP 浏览器自动化 skill（vendored from eze-is/web-access v2.5.0）。独立 plugin，solution-master 可选依赖（cdp_sites.enabled=true 时必需）。",
+  "version": "0.1.0",
+  "author": {
+    "name": "LiuZiJiao"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/eze-is/web-access",
+  "repository": "https://github.com/eze-is/web-access",
+  "keywords": [
+    "web",
+    "cdp",
+    "browser-automation",
+    "claude-code"
+  ]
+}

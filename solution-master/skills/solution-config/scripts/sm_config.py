@@ -292,15 +292,21 @@ def validate() -> List[str]:
                     issues.append(f"cdp_sites.sites[{i}] 缺少 search_url 字段")
                 elif "{query}" not in site.get("search_url", ""):
                     issues.append(f"cdp_sites.sites[{i}].search_url 中缺少 {{query}} 占位符")
-        # 检查 web-access skill 是否可用
-        # 优先 sibling-skill 查找（_SKILLS_ROOT 在所有安装模式下都正确），
-        # 再回退到用户全局目录以兼容 "插件安装 + 用户额外自定义全局 skill" 场景
+        # 检查 web-access plugin 是否已随 umbrella marketplace 安装
+        # web-access 自本次起已抽为独立 plugin；solution-master/skills/web-access/ 不再存在
+        # 候选路径覆盖本地 marketplace + 远程 marketplace（后者 cache 带版本号层级）:
         wa_candidates = [
-            _SKILLS_ROOT / "web-access" / "SKILL.md",
+            # 1. 本地 marketplace sibling（_SKILLS_ROOT.parent.parent = monorepo 根）
+            _SKILLS_ROOT.parent.parent / "web-access" / "skills" / "web-access" / "SKILL.md",
+            # 2. 用户 home 全局安装
             Path.home() / ".claude" / "skills" / "web-access" / "SKILL.md",
         ]
+        # 3. 远程 marketplace cache（版本号在路径里，glob 匹配）
+        cache_dir = Path.home() / ".claude" / "plugins" / "cache"
+        if cache_dir.exists():
+            wa_candidates.extend(cache_dir.glob("*/web-access/*/skills/web-access/SKILL.md"))
         if not any(p.exists() for p in wa_candidates):
-            issues.append("web-access skill 未安装（CDP 站点检索依赖此 skill）")
+            issues.append("web-access plugin 未安装（CDP 站点检索依赖此 plugin）。请执行 /plugin install web-access@presales-skills")
 
     # 检查 drawio plugin 是否已随 umbrella marketplace 安装
     # drawio 自 Milestone C 起已抽为独立 plugin；solution-master/skills/drawio/ 不再存在

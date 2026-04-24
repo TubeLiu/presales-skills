@@ -637,7 +637,7 @@ def test_u20_sm_config_validate_no_false_missing(base: Path) -> TestResult:
         id="U20",
         name="sm_config.py validate 不误报 web-access/drawio 缺失",
         command="python3 skills/solution-config/scripts/sm_config.py validate",
-        expected="输出不包含 'web-access skill 未安装' 或 'draw.io skill 未安装'",
+        expected="输出不包含 'web-access plugin 未安装'（或旧版 'skill 未安装'）或 'draw.io skill 未安装'",
     )
     try:
         sm_config = REPO_ROOT / "skills" / "solution-config" / "scripts" / "sm_config.py"
@@ -655,7 +655,10 @@ def test_u20_sm_config_validate_no_false_missing(base: Path) -> TestResult:
         )
         out = cp.stdout + cp.stderr
         bad = []
-        if "web-access skill 未安装" in out:
+        # Accept both the old "skill 未安装" wording and the new "plugin 未安装"
+        # wording (web-access was promoted from a solution-master skill to an
+        # independent plugin in 0.1.6, which shifted the error message).
+        if "web-access plugin 未安装" in out or "web-access skill 未安装" in out:
             bad.append("falsely reported web-access as missing")
         if "draw.io skill 未安装" in out or "drawio skill 未安装" in out:
             bad.append("falsely reported drawio as missing")
@@ -663,6 +666,90 @@ def test_u20_sm_config_validate_no_false_missing(base: Path) -> TestResult:
             r.fail(out[:500], "; ".join(bad))
         else:
             r.ok(f"validate output clean (len={len(out)})")
+    except Exception as exc:
+        r.fail(error=str(exc))
+    return r
+
+
+def test_u24_sm_config_validate_web_access_probe(base: Path) -> TestResult:
+    """Exercise the `cdp_sites.enabled=true` branch that U20 does not touch.
+
+    U20 runs with an empty fake HOME, so `cdp_sites.enabled` defaults to
+    False and sm_config.py's web-access probe is never entered. This test
+    seeds a realistic config fixture with `cdp_sites.enabled: true` + one
+    site, forces the probe to fire, and asserts it locates web-access at
+    the monorepo sibling candidate (<monorepo>/web-access/skills/web-access/SKILL.md)
+    without emitting a 'web-access plugin 未安装' false-miss.
+    """
+    r = TestResult(
+        id="U24",
+        name="sm_config.py validate 的 web-access probe 能命中本地 marketplace sibling",
+        command="python3 skills/solution-config/scripts/sm_config.py validate (cdp_sites.enabled=true)",
+        expected="probe 触发且不误报 'web-access plugin 未安装'",
+    )
+    try:
+        sm_config = REPO_ROOT / "skills" / "solution-config" / "scripts" / "sm_config.py"
+        fake_home = base / "u24-home"
+        config_dir = fake_home / ".config" / "solution-master"
+        config_dir.mkdir(parents=True, exist_ok=True)
+        config_path = config_dir / "config.yaml"
+        config_path.write_text(
+            "cdp_sites:\n"
+            "  enabled: true\n"
+            "  sites:\n"
+            "    - name: Test Site\n"
+            "      search_url: https://example.com/search?q={query}\n",
+            encoding="utf-8",
+        )
+
+        cp = subprocess.run(
+            ["python3", str(sm_config), "validate"],
+            capture_output=True,
+            text=True,
+            timeout=15,
+            cwd=str(REPO_ROOT),
+            env={**os.environ, "HOME": str(fake_home)},
+        )
+        out = cp.stdout + cp.stderr
+
+        # Positive signal that the probe branch actually executed. sm_config.py
+        # always runs the drawio probe further down (lines ~311-327), and its
+        # output mentions "drawio" somewhere (either as an issue listing
+        # drawio.cli_path or as cleanly resolved). Absence of any "drawio"
+        # token would indicate sm_config died before validate finished — e.g.
+        # pyyaml import failure or subprocess crash — in which case our
+        # web-access substring checks would be tautological.
+        if cp.returncode != 0 and "drawio" not in out.lower():
+            r.fail(out[:500], f"sm_config.py validate crashed before probe ran (rc={cp.returncode})")
+            return r
+
+        # Also confirm our config made it to sm_config (enabled + site present).
+        # If sm_config silently fell back to defaults (cdp_sites.enabled=False),
+        # the web-access branch would never fire and this test would be a
+        # tautology. The "cdp_sites 已启用但未配置任何站点" issue only appears
+        # when enabled=true AND sites is empty, so its ABSENCE here is expected
+        # — what we need is evidence that enabled=true was observed. Reading
+        # back the written config directly sidesteps any sm_config quirks.
+        if "enabled: true" not in config_path.read_text(encoding="utf-8"):
+            r.fail(config_path.read_text(encoding="utf-8")[:200], "fixture config not written as expected")
+            return r
+
+        # Core assertion: probe found web-access (no false-miss). Accept
+        # both old 'skill' and new 'plugin' wording for forward-compat.
+        if "web-access plugin 未安装" in out or "web-access skill 未安装" in out:
+            r.fail(out[:500], "probe failed to locate web-access at monorepo sibling — candidate #1 broken?")
+            return r
+
+        # Belt-and-suspenders: the monorepo sibling candidate must exist on
+        # disk, otherwise a future refactor could make the above assertion
+        # vacuously true (e.g., a different candidate found it, or the issue
+        # string got renamed).
+        sibling = REPO_ROOT.parent / "web-access" / "skills" / "web-access" / "SKILL.md"
+        if not sibling.exists():
+            r.fail(str(sibling), "monorepo sibling web-access/SKILL.md missing — test env assumption broken")
+            return r
+
+        r.ok(f"probe fired, web-access located at sibling (validate output len={len(out)})")
     except Exception as exc:
         r.fail(error=str(exc))
     return r
@@ -802,6 +889,7 @@ ALL_TESTS: list[tuple[str, Callable]] = [
     ("u21", test_u21_backup_timestamp_millisecond_uniqueness),
     ("u22", test_u22_escape_for_json_control_chars),
     ("u23", test_u23_uninstall_uses_dynamic_skill_list),
+    ("u24", test_u24_sm_config_validate_web_access_probe),
 ]
 
 

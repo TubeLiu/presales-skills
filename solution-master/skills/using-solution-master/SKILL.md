@@ -101,7 +101,7 @@ digraph skill_flow {
 | 章节需要配图 | **image-generation** |
 | 需要输出 DOCX 格式文件 | **docx-formatting** |
 | 执行多章节撰写任务并想要子智能体隔离、双阶段审查的工作流 | **subagent-driven-writing** |
-| 需要浏览器/搜索等联网操作 | **web-access** |
+| 需要浏览器/搜索等联网操作 | **web-access**（独立 plugin） |
 | 需要创建或编辑 Solution Master 技能 | **writing-skills** |
 | 配置管理需求、`/solution-config` 手动调用 | **solution-config** |
 
