@@ -7,6 +7,7 @@ draw.io 图表生成器
 """
 
 import os
+import platform
 import subprocess
 import logging
 import tempfile
@@ -43,18 +44,10 @@ def _find_drawio_cli() -> Optional[str]:
         r"C:\Program Files\draw.io\draw.io.exe",
     ]
 
-    # 检查 PATH 中的 drawio
-    try:
-        result = subprocess.run(
-            ["which", "drawio"],
-            capture_output=True,
-            text=True,
-            timeout=5
-        )
-        if result.returncode == 0 and result.stdout.strip():
-            return result.stdout.strip()
-    except Exception:
-        pass
+    # 检查 PATH 中的 drawio（跨平台：Linux/macOS 查 which 语义，Windows 查 where 语义）
+    drawio_on_path = shutil.which("drawio")
+    if drawio_on_path:
+        return drawio_on_path
 
     # 检查常见安装路径
     for path in possible_paths:
@@ -62,7 +55,7 @@ def _find_drawio_cli() -> Optional[str]:
             return path
 
     # macOS Spotlight 搜索
-    if os.uname().sysname == "Darwin":
+    if platform.system() == "Darwin":
         try:
             result = subprocess.run(
                 ["mdfind", "-name", "draw.io"],
