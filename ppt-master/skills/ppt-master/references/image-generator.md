@@ -14,7 +14,7 @@ See:
 ## Invocation from ppt-master (plugin mode)
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/../ai-image/scripts/image_gen.py "<prompt>" \
+image-gen "<prompt>" \
   --aspect_ratio 16:9 --image_size 1K -o <project_path>/images
 ```
 

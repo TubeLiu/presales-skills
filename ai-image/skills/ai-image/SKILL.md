@@ -58,19 +58,26 @@ IMAGE_BACKEND=ark python3 ${CLAUDE_SKILL_DIR}/../../scripts/image_gen.py "用户
 | `/ai-image-config-validate` | 健康检查（API key 是否已配置）|
 | `/ai-image-config-migrate` | 合并旧的 solution-master / tender-workflow config |
 
-## 跨 plugin 调用说明
+## 跨 plugin 调用说明（PATH + bin/ 机制）
 
-solution-master / ppt-master / tender-workflow 在各自 SKILL.md 里通过如下路径调用本 plugin：
+solution-master / ppt-master / tender-workflow 在各自 SKILL.md 里通过 **bin/ 注入的 PATH 命令** 调用本 plugin——不是路径引用：
 
 ```bash
-# 生成图片
-python3 ${CLAUDE_PLUGIN_ROOT}/../ai-image/scripts/image_gen.py "<prompt>" ...
+# 生成图片（调 bin/image-gen，wrapper 自定位 scripts/image_gen.py）
+image-gen "<prompt>" --aspect_ratio 16:9 --image_size 1K -o /path/to/output/
 
-# 或通过 adapter（推荐，接受 YAML-style --provider 参数并自动映射）
-python3 ${CLAUDE_PLUGIN_ROOT}/../ai-image/scripts/ai_image_config.py models
+# 配置管理（调 bin/ai-image-config，wrapper 自定位 scripts/ai_image_config.py）
+ai-image-config models
+ai-image-config set api_keys.ark <key>
 ```
 
-因为 `${CLAUDE_PLUGIN_ROOT}` 是文本替换，展开后 `.../tender-workflow/../ai-image/...` 被 bash/Python 的 path resolver 正确解析为 `.../ai-image/...`（sibling plugin）。
+**为什么用 bin/ 而不是 `${CLAUDE_PLUGIN_ROOT}/../ai-image/scripts/...` 相对路径**：
+
+`${CLAUDE_PLUGIN_ROOT}` 在本地 marketplace 和远程（GitHub）marketplace 下结构不同：
+- 本地：`<monorepo>/<plugin>/` → `..` 到 monorepo 根，`../ai-image/scripts/` 正确
+- 远程：`~/.claude/plugins/cache/<mp>/<plugin>/<version>/` → `..` 只到版本父目录，`../ai-image/scripts/` 会落到 `<plugin>/ai-image/scripts/`（不存在）
+
+bin/ wrapper 通过 `BASH_SOURCE` 自定位脚本目录，跟缓存布局无关；且 Claude Code 自动把每个 plugin 的 `bin/` 加到 PATH，调用方**按命令名调用即可**。这是跨 plugin 架构最稳健的模式，Milestone E 完整验证过。
 
 ## 故障排查
 

@@ -17,7 +17,7 @@ tender-workflow.
 ppt-master's SKILL.md now calls:
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/../ai-image/scripts/image_gen.py "<prompt>" ...
+image-gen "<prompt>" ...
 ```
 
 Configuration is unified under `~/.config/presales-skills/config.yaml`.

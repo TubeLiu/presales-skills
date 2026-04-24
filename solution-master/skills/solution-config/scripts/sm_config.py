@@ -304,13 +304,17 @@ def validate() -> List[str]:
 
     # 检查 drawio plugin 是否已随 umbrella marketplace 安装
     # drawio 自 Milestone C 起已抽为独立 plugin；solution-master/skills/drawio/ 不再存在
-    # 候选位置：
-    #   1. Umbrella marketplace sibling：_SKILLS_ROOT.parent.parent / "drawio" / "skills" / "drawio" / "SKILL.md"
-    #   2. 用户 home 全局安装：~/.claude/skills/drawio/SKILL.md
+    # 候选路径覆盖本地 marketplace + 远程 marketplace（后者 cache 带版本号层级）:
     drawio_candidates = [
+        # 1. 本地 marketplace sibling（_SKILLS_ROOT.parent.parent = monorepo 根）
         _SKILLS_ROOT.parent.parent / "drawio" / "skills" / "drawio" / "SKILL.md",
+        # 2. 用户 home 全局安装
         Path.home() / ".claude" / "skills" / "drawio" / "SKILL.md",
     ]
+    # 3. 远程 marketplace cache（版本号在路径里，glob 匹配）
+    cache_dir = Path.home() / ".claude" / "plugins" / "cache"
+    if cache_dir.exists():
+        drawio_candidates.extend(cache_dir.glob("*/drawio/*/skills/drawio/SKILL.md"))
     drawio_skill_installed = any(p.exists() for p in drawio_candidates)
 
     if not drawio_skill_installed:
@@ -332,21 +336,31 @@ def _find_models_yaml() -> Optional[Path]:
     """定位 ai_image_models.yaml 文件。
 
     Milestone D 起，注册表由独立的 ai-image plugin 维护。solution-master
-    不再自带 ai_image_models.yaml。候选路径按优先级：
+    不再自带 ai_image_models.yaml。候选路径覆盖本地/远程 marketplace 两种
+    布局（Milestone E bin-mode fix）：
 
-    1. 跨 plugin sibling：<marketplace_root>/ai-image/prompts/ai_image_models.yaml
-       （_SKILLS_ROOT.parent.parent 在 plugin 安装模式下 = plugin 所在的
-       marketplace cache 目录，ai-image 作为兄弟 plugin 并排）
-    2. 用户级 home 覆盖：~/.config/presales-skills/ai_image_models.yaml
-       （/ai-image-config add-model 写入的用户自定义注册表）
-    3. 全局 skill 目录 fallback：~/.claude/skills/ai-image/prompts/ai_image_models.yaml
-       （如果用户手动把 ai-image 装到 home）
+      1. 本地 marketplace sibling（monorepo 布局）：
+         <monorepo>/ai-image/prompts/ai_image_models.yaml
+         （_SKILLS_ROOT.parent.parent 在此布局下指 monorepo 根）
+      2. 远程 marketplace cache（带版本号）：
+         ~/.claude/plugins/cache/*/ai-image/*/prompts/ai_image_models.yaml
+         （用 glob 匹配版本目录）
+      3. 用户级 home 覆盖（/ai-image-config add-model 写入）：
+         ~/.config/presales-skills/ai_image_models.yaml
+      4. 全局 skill 目录 fallback（用户手动安装）：
+         ~/.claude/skills/ai-image/prompts/ai_image_models.yaml
     """
     candidates = [
         _SKILLS_ROOT.parent.parent / "ai-image" / "prompts" / "ai_image_models.yaml",
+    ]
+    # 远程 marketplace cache：版本号在路径里
+    cache_dir = Path.home() / ".claude" / "plugins" / "cache"
+    if cache_dir.exists():
+        candidates.extend(cache_dir.glob("*/ai-image/*/prompts/ai_image_models.yaml"))
+    candidates.extend([
         Path.home() / ".config" / "presales-skills" / "ai_image_models.yaml",
         Path.home() / ".claude" / "skills" / "ai-image" / "prompts" / "ai_image_models.yaml",
-    ]
+    ])
     for p in candidates:
         if p.exists():
             return p

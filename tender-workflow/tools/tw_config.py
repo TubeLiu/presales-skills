@@ -555,24 +555,43 @@ def migrate() -> Dict[str, Any]:
 # ── 模型注册表 ──────────────────────────────────────
 
 def _find_models_yaml() -> Optional[Path]:
-    """定位 ai_image_models.yaml 文件"""
-    # 方式1：相对于本脚本 (tools/tw_config.py -> 项目根)
-    project_root = Path(__file__).resolve().parent.parent
+    """定位 ai_image_models.yaml 文件。
+
+    Milestone D 起，注册表由独立的 ai-image plugin 维护，tender-workflow 不再
+    自带 yaml。候选路径按优先级（覆盖 local / 远程 marketplace 两种布局）：
+
+      1. 本地 marketplace sibling：<monorepo>/ai-image/prompts/ai_image_models.yaml
+         （tw_config.py 在 tender-workflow/tools/，两层 parent 到 monorepo 根）
+      2. 远程 marketplace cache：~/.claude/plugins/cache/*/ai-image/*/prompts/ai_image_models.yaml
+         （版本号在路径里，用 glob 匹配）
+      3. 用户级覆盖：~/.config/presales-skills/ai_image_models.yaml
+      4. 全局 skill fallback：~/.claude/skills/ai-image/prompts/ai_image_models.yaml
+    """
+    # 方式1：本地 marketplace（tools/tw_config.py -> tender-workflow -> monorepo root）
+    monorepo_root = Path(__file__).resolve().parent.parent.parent
     candidates = [
-        project_root / ".claude" / "skills" / "taw" / "prompts" / "ai_image_models.yaml",
-        project_root / "skills" / "taw" / "prompts" / "ai_image_models.yaml",
+        monorepo_root / "ai-image" / "prompts" / "ai_image_models.yaml",
     ]
+    # 方式2：远程 marketplace cache（版本号在路径里，glob 匹配）
+    cache_glob = Path.home() / ".claude" / "plugins" / "cache"
+    if cache_glob.exists():
+        candidates.extend(cache_glob.glob("*/ai-image/*/prompts/ai_image_models.yaml"))
+    # 方式3：用户级覆盖
+    candidates.append(Path.home() / ".config" / "presales-skills" / "ai_image_models.yaml")
+    # 方式4：全局 skill fallback
+    candidates.append(Path.home() / ".claude" / "skills" / "ai-image" / "prompts" / "ai_image_models.yaml")
+
     for p in candidates:
         if p.exists():
             return p
-    # 方式2：通过 git
+    # 方式5：git 根兜底（开发者模式，在 tender-workflow 内直接跑时）
     try:
         import subprocess
         root = subprocess.check_output(
             ["git", "rev-parse", "--show-toplevel"],
             stderr=subprocess.DEVNULL, text=True
         ).strip()
-        p = Path(root) / ".claude" / "skills" / "taw" / "prompts" / "ai_image_models.yaml"
+        p = Path(root) / "ai-image" / "prompts" / "ai_image_models.yaml"
         if p.exists():
             return p
     except Exception:
