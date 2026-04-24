@@ -165,8 +165,9 @@ Every diagram must have this structure:
 
 ## XML reference
 
-For the complete draw.io XML reference including common styles, edge routing, containers, layers, tags, metadata, dark mode colors, and XML well-formedness rules, fetch and follow the instructions at:
-https://raw.githubusercontent.com/jgraph/drawio-mcp/main/shared/xml-reference.md
+For the complete draw.io XML reference — common styles, edge routing, containers, layers, tags, metadata, dark mode colors, and XML well-formedness rules — use your Read tool to open `xml-reference.md` in this skill's directory (sibling to this `SKILL.md`). Consult it before generating non-trivial diagrams.
+
+The file is bundled with the plugin, so no network fetch is required — this keeps the skill usable in enterprise environments that block `raw.githubusercontent.com`.
 
 ## Troubleshooting
 
