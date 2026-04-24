@@ -3,14 +3,14 @@
   "owner": { "name": "LiuZiJiao", "email": "tubeliu1@gmail.com" },
   "metadata": {
     "description": "Presales skills monorepo — solution-master / ppt-master / tender-workflow + shared plugins (drawio, ai-image).",
-    "version": "0.1.1"
+    "version": "0.1.2"
   },
   "plugins": [
     {
       "name": "drawio",
       "source": "./drawio",
       "description": "Draw.io 图表生成（.drawio XML + PNG/SVG/PDF 导出）。独立共享 plugin，solution-master 与 tender-workflow 均依赖。",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "author": { "name": "LiuZiJiao" },
       "category": "productivity",
       "tags": ["diagram", "drawio", "shared"]
@@ -19,7 +19,7 @@
       "name": "ai-image",
       "source": "./ai-image",
       "description": "统一 AI 图片生成：13 个后端（volcengine/ark、qwen/dashscope、gemini、openai、minimax、stability、bfl、ideogram、zhipu、siliconflow、fal、replicate、openrouter）+ 共享 YAML 模型注册表 + /ai-image-config-* 配置管理。独立共享 plugin，三个主 plugin 都依赖。",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "author": { "name": "LiuZiJiao" },
       "category": "productivity",
       "tags": ["ai-image", "image-generation", "gen-ai", "shared"]
@@ -28,7 +28,7 @@
       "name": "solution-master",
       "source": "./solution-master",
       "description": "AI 辅助通用解决方案撰写框架。依赖 drawio、ai-image plugin。",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "author": { "name": "LiuZiJiao" },
       "category": "writing",
       "tags": ["solution", "docx", "中文"]
@@ -37,7 +37,7 @@
       "name": "ppt-master",
       "source": "./ppt-master",
       "description": "PPT 生成 (PDF/DOCX/URL/MD → SVG → PPTX)。依赖 ai-image plugin。",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "author": { "name": "LiuZiJiao" },
       "category": "productivity",
       "tags": ["ppt", "svg", "中文"]
@@ -46,7 +46,7 @@
       "name": "tender-workflow",
       "source": "./tender-workflow",
       "description": "四角色招投标工作流（tpl/taa/taw/trv/twc）。依赖 drawio、ai-image plugin。",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "author": { "name": "LiuZiJiao" },
       "category": "writing",
       "tags": ["tender", "招投标", "中文"]

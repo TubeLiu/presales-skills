@@ -1,7 +1,7 @@
 {
   "name": "ai-image",
   "description": "Unified AI image generation — 13 backends (volcengine/ark, qwen/dashscope, gemini, openai, minimax, stability, bfl, ideogram, zhipu, siliconflow, fal, replicate, openrouter) + shared YAML registry + /ai-image-config for unified key mgmt. Dependency of ppt-master, solution-master, tender-workflow.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "author": { "name": "LiuZiJiao" },
   "license": "MIT",
   "keywords": ["ai-image", "image-generation", "gen-ai", "shared", "中文"]

@@ -1,7 +1,7 @@
 {
   "name": "tender-workflow",
   "description": "四角色招投标工作流 — tpl（策划）/ taa（分析）/ taw（撰稿）/ trv（审核）/ twc（配置）。Depends on drawio and ai-image plugins.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "author": { "name": "LiuZiJiao" },
   "license": "MIT",
   "keywords": ["tender", "bid", "招标", "投标", "中文"],
