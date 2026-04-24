@@ -84,6 +84,23 @@ pip install -r ~/.claude/plugins/cache/presales-skills/ppt-master/*/requirements
 pip install -r ~/.claude/plugins/cache/presales-skills/ai-image/*/requirements.txt
 ```
 
+### Step 6：Windows 支持
+
+**推荐方式（二选一）**：
+
+- **WSL 2**：零改动，原生 Linux 体验。IT 策略允许 WSL 的首选
+- **Windows 原生 + [Git for Windows](https://git-scm.com/downloads/win)**：Claude Code 官方要求宿主必装 Git Bash，Claude Code 自身"internally uses Git Bash to execute commands regardless of where you launched it"（参见 https://docs.claude.com/en/docs/claude-code/setup）。装完 Git for Windows 和 Python ≥ 3.10 即可
+
+**不支持**：纯 PowerShell / CMD + **不**装 Git for Windows。Claude Code 自身就依赖 Git Bash，这一层我方无法绕开。
+
+**依赖说明**：
+
+- `ppt-master` 需要系统级 pandoc + cairo：
+  - WSL 2：`apt install pandoc libcairo2-dev`（最简单）
+  - Windows 原生：`choco install pandoc` + [GTK runtime](https://github.com/tschoonj/GTK-for-Windows-Runtime-Environment-Installer) 提供 cairo
+- SKILL.md 示例中出现的 `python3` 命令在 Windows 原生 Git Bash 下若没有 `python3` 别名，请替换为 `python` 或 `py`
+- **不要用 MSYS2 Python 代替原生 Windows Python**：`platform.system()` 在 MSYS2 Python 下返回 `MSYS_NT-10.0`，会触发 `ppt-master/pptx_template_import.py` 的非 Windows 异常分支
+
 ### 更新
 
 远程订阅默认不自动更新：
