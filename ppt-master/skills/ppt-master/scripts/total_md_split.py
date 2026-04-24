@@ -23,6 +23,9 @@ Notes:
     - Split document names match the SVG filenames with .md extension
 """
 
+import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parent))
+from _ensure_deps import ensure_deps; ensure_deps()
+
 import sys
 import argparse
 import re

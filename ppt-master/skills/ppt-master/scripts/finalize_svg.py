@@ -26,6 +26,9 @@ Processing options:
     fix-rounded   - Convert <rect rx="..."/> to <path> (for PPT shape conversion)
 """
 
+import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parent))
+from _ensure_deps import ensure_deps; ensure_deps()
+
 import os
 import sys
 import shutil

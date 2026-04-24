@@ -21,6 +21,9 @@ Output:
     - Generates image_analysis.csv in the parent directory of the images folder
 """
 
+import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parent))
+from _ensure_deps import ensure_deps; ensure_deps()
+
 import argparse
 import os
 import sys

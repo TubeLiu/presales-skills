@@ -34,9 +34,15 @@ import sys
 from pathlib import Path
 from typing import Any, Optional
 
+# 首次运行时自动安装 requirements.txt（本脚本也调 yaml/Pillow 等，依赖 ai-image/requirements.txt）
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _ensure_deps import ensure_deps  # noqa: E402
+ensure_deps()
+
 try:
     import yaml
 except ImportError:
+    # 兜底：requirements.txt 没装全或 pip install 失败，至少保证 pyyaml 可用
     import subprocess
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "pyyaml", "-q"],

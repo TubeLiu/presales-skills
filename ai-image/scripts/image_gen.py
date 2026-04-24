@@ -42,6 +42,11 @@ import sys
 import argparse
 from pathlib import Path
 
+# 首次运行时自动安装 requirements.txt 声明的依赖（按 plugin 版本做 marker，升级自动重装）
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _ensure_deps import ensure_deps  # noqa: E402
+ensure_deps()
+
 # ENV_PATH resolution:
 # - Plugin mode (ai-image installed as Claude Code plugin): rely on unified config
 #   at ~/.config/presales-skills/config.yaml + process env vars; don't look for .env

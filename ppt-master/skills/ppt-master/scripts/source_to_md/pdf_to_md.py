@@ -5,6 +5,9 @@ Uses PyMuPDF to extract PDF text content and convert to Markdown format.
 Supports heading levels, bold, italic, and list detection.
 """
 
+import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+from _ensure_deps import ensure_deps; ensure_deps()
+
 import argparse
 import hashlib
 import os

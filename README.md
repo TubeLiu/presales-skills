@@ -64,19 +64,23 @@
 /ai-image-config-migrate
 ```
 
-### Step 5：依赖包（按需）
+### Step 5：依赖（全自动）
 
-只有 ppt-master 和 ai-image 的 Python SDK 需要手动装：
+**所有 Python 依赖由入口脚本首次调用时自动 `pip install`**，无需手动预装。
+
+- ppt-master / ai-image 的每个入口脚本开头都调用 `_ensure_deps.py`：检查 `<plugin>/.deps-installed` marker，不存在则 `pip install -r requirements.txt`，装完 touch marker 跳过后续调用
+- Plugin 升级（如 0.1.3 → 0.1.4）时 cache dir 带版本号，marker 不跨版本继承，自动触发新依赖的重装
+- tender-workflow 的 `/twc` 类似逻辑：首次运行自动安装 `pyyaml`
+- MCP server（AnythingLLM）纯 Node 内置模块实现，零 npm 依赖
+- drawio plugin：若需导出 PNG/SVG/PDF，额外装一次 `drawio-cli` 或 draw.io 桌面版（见下一节"使用"）
+
+**控制自动安装**：设 `PRESALES_SKILLS_SKIP_AUTO_INSTALL=1` 可禁用自动 pip（适合 CI、容器、用户自己管 venv 的场景）。这时所需依赖请手动装：
 
 ```bash
-# PPT 生成核心依赖（python-pptx、cairosvg、PyMuPDF 等）
+# 仅在 PRESALES_SKILLS_SKIP_AUTO_INSTALL=1 时需要手动跑
 pip install -r ~/.claude/plugins/cache/presales-skills/ppt-master/*/requirements.txt
-
-# AI 生图 SDK（google-genai、openai、Pillow、requests）
 pip install -r ~/.claude/plugins/cache/presales-skills/ai-image/*/requirements.txt
 ```
-
-tender-workflow 首次运行 `/twc` 会自动安装 `pyyaml`，无需预装。MCP server 纯 Node 内置模块实现，零 npm 依赖。
 
 ### 更新
 
