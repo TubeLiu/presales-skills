@@ -5,18 +5,15 @@ description: Always use when user asks to create, generate, draw, or design a di
 
 # Draw.io Diagram Skill
 
-Generate draw.io diagrams as native `.drawio` files. Optionally export to PNG, SVG, or PDF. Keep the source `.drawio` file for future editing.
-
-## Environment check (warn-only, don't abort)
-
-!`command -v drawio-cli >/dev/null 2>&1 || command -v draw.io >/dev/null 2>&1 || echo "WARN_NO_DRAWIO_CLI: can still generate .drawio XML source, but PNG/SVG/PDF export unavailable. Install: 'brew install --cask drawio' (macOS) or 'npm install -g @drawio/drawio-desktop-cli'"`
+Generate draw.io diagrams as native `.drawio` files. Optionally export to PNG, SVG, or PDF. Keep the source `.drawio` file alongside the exported file — it is the only way to edit the diagram later.
 
 ## How to create a diagram
 
 1. **Generate draw.io XML** in mxGraphModel format for the requested diagram
 2. **Write the XML** to a `.drawio` file in the current working directory using the Write tool
-3. **If the user requested an export format** (png, svg, pdf), locate the draw.io CLI (see below) and export the diagram. **Always keep the source `.drawio` file** alongside the exported file (the source file is the only way to edit the diagram later). If the CLI is not found, tell the user they can install the draw.io desktop app to enable export, or open the `.drawio` file directly
-4. **Open the result** — the exported file if exported, or the `.drawio` file otherwise. If the open command fails, print the file path so the user can open it manually
+3. **Post-process edge routing** (optional): If `npx @drawio/postprocess` is available, run it on the `.drawio` file to optimize edge routing (simplify waypoints, fix edge-vertex collisions, straighten approach angles). Skip silently if not available — do not install it or ask the user about it
+4. **If the user requested an export format** (png, svg, pdf), locate the draw.io CLI (see below) and export the diagram. **Always keep the source `.drawio` file** — do NOT delete it. Do NOT pass `-e` / `--embed-diagram` to the CLI (see warning below). If the CLI is not found, keep the `.drawio` file and tell the user they can install the draw.io desktop app to enable export, or open the `.drawio` file directly
+5. **Open the result** — the exported file if exported, or the `.drawio` file otherwise. If the open command fails, print the file path so the user can open it manually
 
 ## Choosing the output format
 
@@ -33,12 +30,12 @@ If no format is mentioned, just write the `.drawio` file and open it in draw.io.
 
 | Format | Notes |
 |--------|-------|
-| `png` | Viewable everywhere, compatible with DOCX embedding |
+| `png` | Viewable everywhere, compatible with DOCX embedding via python-docx / PIL |
 | `svg` | Scalable, web-friendly |
 | `pdf` | Printable |
 | `jpg` | Lossy compression |
 
-> **WARNING:** Do NOT use the `-e` / `--embed-diagram` flag. It produces truncated PNG files (missing IEND chunk) that PIL/Pillow cannot read, causing python-docx embedding to fail. This is a known draw.io CLI bug. Always keep the source `.drawio` file for future editing instead of relying on embedded XML.
+> **WARNING — do NOT use the `-e` / `--embed-diagram` flag.** It produces truncated PNG files (missing IEND chunk) that PIL/Pillow cannot read, causing python-docx embedding to fail. This is a known draw.io CLI bug. Keep the source `.drawio` file for future editing instead of relying on embedded XML.
 
 ## draw.io CLI
 
@@ -46,83 +43,70 @@ The draw.io desktop app includes a command-line interface for exporting.
 
 ### Locating the CLI
 
-**Always try PATH first** — it covers macOS/Linux installs done via a package manager, Windows installs that opted into PATH, and any user who set `drawio` up manually. Only fall back to platform-specific absolute paths if PATH lookup fails.
+First, detect the environment, then locate the CLI accordingly:
+
+#### WSL2 (Windows Subsystem for Linux)
+
+WSL2 is detected when `/proc/version` contains `microsoft` or `WSL`:
 
 ```bash
-command -v drawio >/dev/null 2>&1 && echo "DRAWIO_CMD=drawio"
+grep -qi microsoft /proc/version 2>/dev/null && echo "WSL2"
 ```
 
-If that fails, detect the environment and pick the right fallback.
-
-#### Environment detection
+On WSL2, use the Windows draw.io Desktop executable via `/mnt/c/...`:
 
 ```bash
-case "$(uname -s 2>/dev/null)" in
-  Darwin*) ENV=macos ;;
-  Linux*) grep -qi microsoft /proc/version 2>/dev/null && ENV=wsl2 || ENV=linux ;;
-  MINGW*|MSYS*|CYGWIN*) ENV=win_bash ;;
-esac
+DRAWIO_CMD=`/mnt/c/Program Files/draw.io/draw.io.exe`
 ```
 
-- `macos` → look under `/Applications/`
-- `linux` → the `drawio` binary was meant to be on PATH; if it's not, ask the user to install the snap/apt/flatpak package
-- `wsl2` → reach into the Windows host via `/mnt/c/...`
-- `win_bash` → **this is what Claude Code on Windows uses**. Git Bash (not WSL) sees the Windows filesystem via forward-slash drive paths (`C:/...`)
+The backtick quoting is required to handle the space in `Program Files` in bash.
 
-Keep in mind: **Git Bash on Windows ≠ WSL2**. Git Bash cannot read `/mnt/c/...` paths; WSL2 cannot read `C:/...` paths. Use the exact forms below.
+If draw.io is installed in a non-default location, check common alternatives:
 
-#### macOS fallback
+```bash
+# Default install path
+`/mnt/c/Program Files/draw.io/draw.io.exe`
+
+# Per-user install (if the above does not exist)
+`/mnt/c/Users/$WIN_USER/AppData/Local/Programs/draw.io/draw.io.exe`
+```
+
+#### macOS
 
 ```bash
 /Applications/draw.io.app/Contents/MacOS/draw.io
 ```
 
-#### WSL2 fallback (Linux distro running inside Windows)
+#### Linux (native)
 
 ```bash
-"/mnt/c/Program Files/draw.io/draw.io.exe"
-# Per-user install (if the above does not exist):
-"/mnt/c/Users/$USER/AppData/Local/Programs/draw.io/draw.io.exe"
+drawio   # typically on PATH via snap/apt/flatpak
 ```
 
-Double-quote the path — the embedded space in `Program Files` breaks on unquoted forms.
+#### Windows (native, non-WSL2)
 
-#### Windows Git Bash fallback (Claude Code default on Windows)
-
-Try each path in order until one exists:
-
-```bash
-"C:/Program Files/draw.io/draw.io.exe"
-"C:/Program Files (x86)/draw.io/draw.io.exe"
-"$LOCALAPPDATA/Programs/draw.io/draw.io.exe"
+```
+"C:\Program Files\draw.io\draw.io.exe"
 ```
 
-**Always use forward slashes in Windows paths** when calling from Git Bash — `"C:\Program Files\..."` with backslashes is interpreted as shell escapes and will fail. Forward-slash form is accepted by the Windows kernel and survives Git Bash as-is.
+Use `which drawio` (or `where drawio` on Windows) to check if it's on PATH before falling back to the platform-specific path.
 
 ### Export command
 
 ```bash
-"$DRAWIO_CMD" -x -f <format> -b 10 -o <output> <input.drawio>
+drawio -x -f <format> -b 10 -o <output> <input.drawio>
 ```
-
-Quote `$DRAWIO_CMD` so paths with spaces (`Program Files`) do not split into arguments.
 
 **WSL2 example:**
 
 ```bash
-"/mnt/c/Program Files/draw.io/draw.io.exe" -x -f png -b 10 -o diagram.drawio.png diagram.drawio
-```
-
-**Windows Git Bash example:**
-
-```bash
-"C:/Program Files/draw.io/draw.io.exe" -x -f png -b 10 -o diagram.drawio.png diagram.drawio
+`/mnt/c/Program Files/draw.io/draw.io.exe` -x -f png -b 10 -o diagram.drawio.png diagram.drawio
 ```
 
 Key flags:
 - `-x` / `--export`: export mode
 - `-f` / `--format`: output format (png, svg, pdf, jpg)
-- ~~`-e` / `--embed-diagram`~~: **DO NOT USE** — causes truncated PNG (missing IEND chunk), breaks PIL/python-docx
+- ~~`-e` / `--embed-diagram`~~: **DO NOT USE** — produces truncated PNG (missing IEND chunk), breaks PIL/python-docx. See "Supported export formats" warning.
 - `-o` / `--output`: output file path
 - `-b` / `--border`: border width around diagram (default: 0)
 - `-t` / `--transparent`: transparent background (PNG only)
@@ -138,22 +122,24 @@ Key flags:
 | macOS | `open <file>` |
 | Linux (native) | `xdg-open <file>` |
 | WSL2 | `cmd.exe /c start "" "$(wslpath -w <file>)"` |
-| Windows Git Bash | `explorer.exe <file>` |
+| Windows | `start <file>` |
 
 **WSL2 notes:**
 - `wslpath -w <file>` converts a WSL2 path (e.g. `/home/user/diagram.drawio`) to a Windows path (e.g. `C:\Users\...`). This is required because `cmd.exe` cannot resolve `/mnt/c/...` style paths.
 - The empty string `""` after `start` is required to prevent `start` from interpreting the filename as a window title.
 
-**Windows Git Bash notes:**
-- Use `explorer.exe <file>` rather than `cmd.exe /c start` — Git Bash mangles the `/c` flag via its MSYS path conversion, and `explorer.exe` does not require that workaround.
-- Relative paths work; `explorer.exe` resolves them against the current directory. If the open call fails silently (Windows has no standard non-zero exit on "no file association"), print the absolute path so the user can open it by hand.
+**WSL2 example:**
+
+```bash
+cmd.exe /c start "" "$(wslpath -w diagram.drawio)"
+```
 
 ## File naming
 
 - Use a descriptive filename based on the diagram content (e.g., `login-flow`, `database-schema`)
 - Use lowercase with hyphens for multi-word names
 - For export, use double extensions: `name.drawio.png`, `name.drawio.svg`, `name.drawio.pdf` — this signals the file was generated by draw.io
-- After a successful export, **keep the source `.drawio` file** alongside the exported file for future editing
+- After a successful export, **keep** the source `.drawio` file alongside the exported file — it is the only way to re-edit the diagram (we do NOT use `--embed-diagram` due to the PIL/python-docx bug)
 
 ## XML format
 
@@ -191,7 +177,7 @@ https://raw.githubusercontent.com/jgraph/drawio-mcp/main/shared/xml-reference.md
 | Diagram opens but looks blank | Missing root cells `id="0"` and `id="1"` | Ensure the basic mxGraphModel structure is complete |
 | Edges not rendering | Edge mxCell is self-closing (no child mxGeometry element) | Every edge must have `<mxGeometry relative="1" as="geometry" />` as a child element |
 | File won't open after export | Incorrect file path or missing file association | Print the absolute file path so the user can open it manually |
-| PNG cannot be embedded in DOCX / PIL UnidentifiedImageError | Used `-e` / `--embed-diagram` flag during export | Re-export without `-e` flag; the flag produces truncated PNG files missing the IEND chunk |
+| PNG cannot be embedded in DOCX / PIL UnidentifiedImageError | Used `-e` / `--embed-diagram` during export | Re-export without `-e`; the flag produces truncated PNG missing the IEND chunk |
 
 ## CRITICAL: XML well-formedness
 
