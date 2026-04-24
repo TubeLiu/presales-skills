@@ -1,7 +1,6 @@
 # PPT Master — AI 生成原生可编辑 PPTX，支持任意文档输入
 
 [![Version](https://img.shields.io/badge/version-v2.3.0-blue.svg)](https://github.com/hugohe3/ppt-master/releases)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub stars](https://img.shields.io/github/stars/hugohe3/ppt-master.svg)](https://github.com/hugohe3/ppt-master/stargazers)
 [![AtomGit stars](https://atomgit.com/hugohe3/ppt-master/star/badge.svg)](https://atomgit.com/hugohe3/ppt-master)
 
@@ -15,7 +14,7 @@
   <a href="mailto:heyug3@gmail.com"><strong>联系我</strong></a>
 </p>
 
-> **官方渠道 —** 本项目**仅**在 [GitHub](https://github.com/hugohe3/ppt-master)（主仓库）和 [AtomGit](https://atomgit.com/hugohe3/ppt-master)（自动同步镜像）发布。其他平台上的转发版本均为非官方版本，不由作者维护。遵循 MIT 协议——使用需保留署名。
+> **官方渠道 —** 本项目**仅**在 [GitHub](https://github.com/hugohe3/ppt-master)（主仓库）和 [AtomGit](https://atomgit.com/hugohe3/ppt-master)（自动同步镜像）发布。其他平台上的转发版本均为非官方版本，不由作者维护。
 
 ---
 
@@ -274,10 +273,6 @@ GEMINI_MODEL=gemini-3.1-flash-image-preview
 ## 贡献
 
 详见 [CONTRIBUTING.md](./CONTRIBUTING.md)。
-
-## 开源协议
-
-[MIT](LICENSE)
 
 ## 致谢
 
