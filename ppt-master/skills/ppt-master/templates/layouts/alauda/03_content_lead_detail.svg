@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+    <!-- Content Variant: Lead Statement + Detail Items - Alauda Style (Slide 8) -->
+    <!-- White background -->
+    <rect width="1280" height="720" fill="#FFFFFF"/>
+
+    <!-- Background decorations (approximated from master EMF) -->
+    <circle cx="1350" cy="600" r="280" fill="#3BAEE3" fill-opacity="0.04"/>
+    <circle cx="1400" cy="250" r="220" fill="#3BAEE3" fill-opacity="0.03"/>
+    <ellipse cx="1150" cy="780" rx="350" ry="130" fill="#3BAEE3" fill-opacity="0.02"/>
+
+    <!-- Left edge accent bar (PPTX: pos 0,29 size 22x45) -->
+    <rect x="0" y="29" width="22" height="45" fill="#3BAEE3"/>
+
+    <!-- Page title -->
+    <text x="46" y="55" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="37" font-weight="bold" fill="#334155">
+        {{PAGE_TITLE}}
+    </text>
+    <!-- Lead statement banner -->
+    <rect x="60" y="100" width="1160" height="60" fill="#D8EFF9" rx="6"/>
+    <rect x="60" y="100" width="6" height="60" fill="#3BAEE3" rx="3"/>
+    <text x="88" y="138" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="18" font-weight="bold" fill="#125B7D">
+        {{LEAD_STATEMENT}}
+    </text>
+
+    <!-- Left column: Image / screenshot placeholder -->
+    <rect x="60" y="184" width="520" height="466" fill="#F1F5F9" rx="8" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="320" y="420" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="16" fill="#94A3B8">
+        {{LEFT_CONTENT}}
+    </text>
+
+    <!-- Right column: Detail items -->
+    <!-- Item 1 -->
+    <rect x="610" y="184" width="610" height="100" fill="#F8FAFC" rx="6" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="610" y="184" width="4" height="100" fill="#3BAEE3" rx="2"/>
+    <text x="634" y="220" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="16" font-weight="bold" fill="#334155">
+        {{ITEM_1_TITLE}}
+    </text>
+    <text x="634" y="250" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">
+        {{ITEM_1_DESC}}
+    </text>
+
+    <!-- Item 2 -->
+    <rect x="610" y="300" width="610" height="100" fill="#F8FAFC" rx="6" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="610" y="300" width="4" height="100" fill="#14B8A6" rx="2"/>
+    <text x="634" y="336" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="16" font-weight="bold" fill="#334155">
+        {{ITEM_2_TITLE}}
+    </text>
+    <text x="634" y="366" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">
+        {{ITEM_2_DESC}}
+    </text>
+
+    <!-- Item 3 -->
+    <rect x="610" y="416" width="610" height="100" fill="#F8FAFC" rx="6" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="610" y="416" width="4" height="100" fill="#25B273" rx="2"/>
+    <text x="634" y="452" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="16" font-weight="bold" fill="#334155">
+        {{ITEM_3_TITLE}}
+    </text>
+    <text x="634" y="482" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">
+        {{ITEM_3_DESC}}
+    </text>
+
+    <!-- Item 4 -->
+    <rect x="610" y="532" width="610" height="100" fill="#F8FAFC" rx="6" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="610" y="532" width="4" height="100" fill="#125B7D" rx="2"/>
+    <text x="634" y="568" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="16" font-weight="bold" fill="#334155">
+        {{ITEM_4_TITLE}}
+    </text>
+    <text x="634" y="598" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">
+        {{ITEM_4_DESC}}
+    </text>
+
+    <!-- Footer line -->
+    <line x1="0" y1="682" x2="1280" y2="682" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="60" y="706" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8" letter-spacing="1">Alauda</text>
+    <text x="1220" y="706" text-anchor="end" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8">{{PAGE_NUM}}</text>
+
+</svg>

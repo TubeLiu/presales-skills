@@ -1,0 +1,238 @@
+# 搜索事实提取规则
+# 用途：Phase 1.3 搜索结果格式适配 + 事实提取 + WEB_FACTS 管理；Phase 2 多结果选择与融合策略
+# 被引用于：taw/SKILL.md Phase 1.3 搜索与事实提取
+
+# ═══════════════════════════════════════════
+# 区域 A：搜索结果格式适配、降级、标注
+# ═══════════════════════════════════════════
+
+# ── 搜索结果格式适配 ──
+search_result_formats:
+  tavily:
+    description: "Tavily Search 返回格式"
+    schema:
+      results:
+        - title: "..."
+          content: "..."    # 完整内容
+          url: "..."
+          score: 0.95       # 相关性评分
+    extract_fields: ["content", "url", "score"]
+    confidence_mapping:
+      高: "score > 0.8"
+      中: "score 0.5-0.8"
+      低: "score < 0.5"
+
+  exa:
+    description: "Exa Search 返回格式"
+    schema:
+      results:
+        - title: "..."
+          text: "..."        # 完整文本
+          url: "..."
+          highlights: []     # 高亮片段
+          score: 0.92
+    extract_fields: ["text 或 highlights", "url", "score"]
+    confidence_mapping: "同 Tavily"
+
+  websearch:
+    description: "WebSearch 返回格式"
+    schema:
+      results:
+        - title: "..."
+          snippet: "..."    # 200-300字摘要
+          url: "..."
+    extract_fields: ["snippet", "url"]
+    confidence_mapping: "基于域名（官方文档 → 高，技术博客 → 中）"
+
+# ── 统一提取流程 ──
+unified_extraction_flow:
+  - "识别返回格式（MCP 工具 vs WebSearch）"
+  - "提取内容字段（content/text/snippet）"
+  - "应用事实提取规则（产品能力/技术参数/案例数据/架构描述）"
+  - "记录到 WEB_FACTS 表"
+
+# ── 降级处理 ──
+degradation_rules:
+  - trigger: "MCP 工具超时（>30秒）"
+    action: "降级到 WebSearch"
+  - trigger: "MCP 工具返回错误"
+    action: "降级到 WebSearch"
+  - trigger: "WebSearch 失败"
+    action: "使用知识库兜底"
+  - trigger: "所有工具失败"
+    action: "标注 [待补充]"
+
+# ── 优先来源（WebSearch 模式）──
+preferred_sources: "官方文档、InfoQ/CNCF/云厂商官网；过滤广告及泛泛问答"
+
+# ── 标注规则 ──
+annotation_rules:
+  labels:
+    - source: "Tavily Search"
+      label: "[Tavily来源，请核实]"
+      scope: "具体数字/指标"
+    - source: "Exa Search"
+      label: "[Exa来源，请核实]"
+      scope: "具体数字/指标"
+    - source: "WebSearch"
+      label: "[互联网来源，请核实]"
+      scope: "具体数字/指标"
+    - source: "知识库"
+      label: "[知识库来源]"
+      scope: "所有引用"
+  notes:
+    - "通用技术描述无需逐句标注"
+    - "不得照搬原文，结合 M2/M4/M7 针对本项目写作"
+
+# ═══════════════════════════════════════════
+# 区域 C：WEB_FACTS 表 + 事实提取规则
+# ═══════════════════════════════════════════
+
+# ── WEB_FACTS 表结构 ──
+web_facts_schema:
+  columns:
+    - fact_id       # F001, F002...
+    - type          # 产品能力 / 技术参数 / 案例数据 / 架构描述
+    - content       # 提取的结构化事实
+    - source        # 来源网站/文档
+    - search_tool   # websearch / mcp
+    - applicable_chapters  # 适用章节号
+    - confidence    # 高 / 中 / 低
+    - needs_verification   # true / false
+  example_rows:
+    - ["F001", "产品能力", "{VENDOR_NAME} 容器云平台支持多云管理，可统一纳管 AWS/Azure/阿里云", "{VENDOR_NAME}官网", "websearch", "1.3, 1.4", "高", "false"]
+    - ["F002", "技术参数", "Kubernetes 集群规模：最大支持 10000 节点", "kubernetes.io", "mcp", "1.3", "高", "false"]
+    - ["F003", "案例数据", "某银行项目：200+ 微服务容器化，2022年上线", "InfoQ", "websearch", "1.5", "中", "true"]
+    - ["F004", "架构描述", "微服务架构：API网关 → 服务网格 → 业务容器 → 数据层", "CNCF", "mcp", "1.4", "高", "false"]
+
+# ── 4 类事实提取规则 ──
+extraction_rules:
+  - type: 产品能力
+    triggers: ["支持", "提供", "具备", "实现", "可以", "能够"]
+    pattern: "{产品名} {动词} {能力描述} {技术参数}"
+    example:
+      original: "灵雀云 ACP 平台支持多云管理，可统一纳管 AWS、Azure、阿里云等公有云"
+      extracted: "{VENDOR_NAME} 容器云平台支持多云管理，可统一纳管 AWS/Azure/阿里云"
+      note: "示例以灵雀云为例，实际使用时替换为 {VENDOR_NAME}"
+    confidence:
+      高: "官方文档、产品白皮书"
+      中: "技术博客、第三方评测"
+      低: "新闻报道、用户评论"
+
+  - type: 技术参数
+    triggers: ["性能", "指标", "参数", "规格", "容量", "吞吐量", "延迟"]
+    pattern: "{指标名}：{数值} {单位}"
+    example:
+      original: "Kubernetes 集群最大可支持 10000 个节点，单集群 Pod 数量可达 150000"
+      extracted: "Kubernetes 集群规模：最大支持 10000 节点，150000 Pod"
+    confidence:
+      高: "官方文档、技术规格书"
+      中: "技术博客、实测数据"
+      低: "估算值、理论值"
+
+  - type: 案例数据
+    triggers: ["项目", "客户", "案例", "部署", "上线", "实施"]
+    pattern: "{客户类型} {项目规模} {实施时间}"
+    example:
+      original: "某大型银行采用灵雀云容器平台，完成 200+ 微服务容器化改造，2022年正式上线"
+      extracted: "某银行项目：200+ 微服务容器化，2022年上线"
+      note: "示例以灵雀云为例，实际使用时替换为 {VENDOR_NAME}"
+    desensitize: "客户名称 → '某{行业}企业'"
+    confidence:
+      高: "官方案例库、客户授权"
+      中: "技术分享、会议演讲"
+      低: "新闻报道、二手信息"
+    needs_verification: "除非官方案例库，否则设为 true"
+
+  - type: 架构描述
+    triggers: ["架构", "分层", "组件", "模块", "拓扑", "流程"]
+    pattern: "{架构类型}：{层次结构}"
+    example:
+      original: "微服务架构采用三层设计：API 网关层负责流量入口，服务网格层实现服务治理，业务容器层运行应用"
+      extracted: "微服务架构：API网关 → 服务网格 → 业务容器 → 数据层"
+    confidence:
+      高: "官方架构文档、设计白皮书"
+      中: "技术博客、架构分享"
+      低: "简化示意、概念图"
+
+# ── 提取执行流程 ──
+extraction_execution:
+  steps:
+    - step: 1
+      action: "搜索工具获取结果（每次搜索返回 3-5 条结果）"
+      primary: "MCP 工具（Tavily/Exa）— 如果 MCP_TOOLS_AVAILABLE 非空 且 SEARCH_TOOL_OVERRIDE 允许"
+      fallback: "WebSearch — 如果 MCP 不可用或 SEARCH_TOOL_OVERRIDE='websearch'"
+    - step: 2
+      action: "对白名单域名 URL，执行 WebFetch 获取完整页面（Markdown 格式）"
+      whitelist:
+        - "*.github.io"
+        - "docs.*.com"
+        - "www.infoq.cn"
+        - "www.cncf.io"
+        - "kubernetes.io"
+        - "*.aliyun.com"
+        - "*.tencent.com"
+        - "*.huawei.com"
+        - "www.gov.cn"
+        - "std.samr.gov.cn"
+        - "www.ccsa.org.cn"
+      non_whitelist: "仅使用 WebSearch snippet（200-300 字摘要）"
+    - step: 3
+      action: "逐句扫描，匹配触发词"
+    - step: 4
+      action: "应用提取模式，生成结构化事实"
+    - step: 5
+      action: "判断置信度和 needs_verification"
+    - step: 6
+      action: "记录到 WEB_FACTS 表"
+
+# ── WEB_FACTS 使用规则 ──
+usage_rules:
+  - "Phase 2 每节写作时，必须优先引用 WEB_FACTS 中的事实"
+  - "若 WEB_FACTS 中没有适用事实，可在 Phase 2 中针对本节再次搜索并补充 WEB_FACTS"
+  - "引用时保持原始表述，不得篡改数据"
+  - "needs_verification=true 的事实，标注 [互联网来源，请核实]"
+  - "confidence=低 的事实，谨慎使用，优先选择高置信度事实"
+  - "WEB_FACTS 表供 Phase 2 每节写作时优先引用，不得遗漏"
+
+# ── WEB_FACTS 多结果选择与互补规则 ──
+selection_rules:
+  per_h3_limit:
+    description: "每个 H3 子节引用的 WEB_FACTS 上限"
+    max_facts: 5
+    rationale: "避免事实堆砌，保持论述节奏"
+
+  deduplication:
+    description: "同章节同类型事实去重"
+    rules:
+      - "同类型（如都是'技术参数'）且内容语义重叠的多条事实，仅保留最详实的一条"
+      - "判断标准：包含更具体的数字/参数/来源的为'更详实'"
+      - "confidence 高的优先于低的；同 confidence 时保留内容更丰富的"
+
+  complementary:
+    description: "不同类型事实互补使用"
+    rules:
+      - "优先凑齐不同 type 的事实组合（产品能力 + 技术参数 + 案例数据 + 架构描述）"
+      - "同一 H3 不应只有单一类型的事实（如全是技术参数），应多维度论证"
+      - "架构描述类事实用于方案设计段，技术参数用于实现细节段，案例数据用于佐证段"
+
+  kb_web_overlap:
+    description: "WEB_FACTS 与 KB_MATERIALS 内容重叠时的处理"
+    rules:
+      - "同一论点 KB 和互联网都有素材时，优先使用 KB（公司自有内容更可信）"
+      - "互联网素材作为补充：提供 KB 中没有的最新数据、行业对比、第三方佐证"
+      - "禁止用互联网素材替换 KB 中已有的公司案例或产品描述"
+
+# ── 多节模式 ──
+multi_chapter_mode:
+  global_phase:
+    description: "Phase 1.3 执行全局搜索（≤ 2 次），填充 GLOBAL_KNOWLEDGE_POOL"
+    pool_content: ["产品信息", "行业趋势", "技术标准"]
+    initial_facts: "从全局搜索结果中提取初始 WEB_FACTS"
+  per_chapter:
+    description: "每节写作前（Phase 2 循环内），配额独立于 Phase 1.3 全局搜索"
+    steps:
+      - "优先从 GLOBAL_KNOWLEDGE_POOL 提取相关知识"
+      - "不足时针对该节主题再做 ≤ 2 次定向搜索（此配额独立于 Phase 1.3 的搜索次数）"
+      - "定向搜索结果立即提取事实并补充到 WEB_FACTS 和 GLOBAL_KNOWLEDGE_POOL"
+      - "融入该节内容，不跨节延迟"

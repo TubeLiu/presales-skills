@@ -1,0 +1,138 @@
+// Solution Master 完整工作流
+// 渲染命令：dot -Tsvg docs/workflow.dot -o docs/workflow.svg
+
+digraph solution_master {
+    rankdir=TB;
+    node [fontname="SimHei", fontsize=11];
+    edge [fontname="SimHei", fontsize=9];
+    graph [label="Solution Master 工作流", fontname="SimHei", fontsize=14, labelloc=t];
+
+    // 入口和出口
+    START [shape=ellipse, style=filled, fillcolor="#4A90D9", fontcolor=white, label="开始\n用户描述项目需求"];
+    END [shape=ellipse, style=filled, fillcolor="#27AE60", fontcolor=white, label="完成\n方案文档交付"];
+
+    // Phase 1: 头脑风暴
+    subgraph cluster_brainstorming {
+        label="Phase 1: 需求提取";
+        style=rounded;
+        color="#E8E8E8";
+
+        brainstorm [shape=box, style=filled, fillcolor="#FFF3CD", label="brainstorming\n苏格拉底式提问"];
+        explore_context [shape=box, label="探索项目上下文"];
+        ask_questions [shape=box, label="逐一提出澄清问题\n（每次一个，优先选择题）"];
+        propose_solutions [shape=box, label="提出 2-3 种方案\n附权衡分析和推荐"];
+        show_design [shape=box, label="分节展示设计"];
+        design_approved [shape=diamond, label="用户批准\n方案设计?"];
+        write_spec [shape=box, label="编写设计规格\ndocs/specs/"];
+        spec_selfcheck [shape=box, label="规格自检"];
+        user_review_spec [shape=diamond, label="用户审查\n规格?"];
+    }
+
+    // Phase 2: 规划
+    subgraph cluster_planning {
+        label="Phase 2: 任务分解";
+        style=rounded;
+        color="#E8E8E8";
+
+        planning [shape=box, style=filled, fillcolor="#D4EDDA", label="solution-planning\n任务分解 + 验收标准"];
+        define_chapters [shape=box, label="定义章节结构"];
+        create_tasks [shape=box, label="为每章创建任务\n（标题/字数/要点/KB关键词/配图）"];
+        show_plan [shape=box, label="展示完整计划"];
+        plan_approved [shape=diamond, label="用户批准\n撰写计划?"];
+    }
+
+    // Phase 3: 执行（每个任务）
+    subgraph cluster_execution {
+        label="Phase 3: 章节撰写（每个任务独立子智能体）";
+        style=dashed;
+        color="#007BFF";
+
+        task_start [shape=point, width=0.15];
+
+        kb_retrieval [shape=box, style=filled, fillcolor="#CCE5FF",
+            label="knowledge-retrieval\n三层并行检索\n(本地KB + AnythingLLM + Web)\n+ 智能融合评分"];
+
+        image_planning [shape=box, style=filled, fillcolor="#E2D9F3",
+            label="image-generation\n上下文感知选图\n(draw.io / AI / 本地 / Web / 占位符)"];
+
+        writing [shape=box, style=filled, fillcolor="#FFF3CD",
+            label="solution-writing\n分派 writer 子智能体\n撰写章节内容"];
+
+        spec_review [shape=box, style=filled, fillcolor="#F8D7DA",
+            label="spec-reviewing\n分派独立 spec-reviewer\n内容正确性审查"];
+
+        spec_pass [shape=diamond, label="内容\n通过?"];
+
+        fix_spec [shape=box, label="writer 子智能体\n修复内容问题"];
+
+        quality_review [shape=box, style=filled, fillcolor="#D1ECF1",
+            label="quality-reviewing\n分派独立 quality-reviewer\n写作质量审查"];
+
+        quality_pass [shape=diamond, label="质量\n通过?"];
+
+        fix_quality [shape=box, label="writer 子智能体\n修复质量问题"];
+
+        task_done [shape=box, style=filled, fillcolor="#D4EDDA", label="标记任务完成"];
+    }
+
+    more_tasks [shape=diamond, label="还有\n剩余任务?"];
+
+    // Phase 4: 组装输出
+    subgraph cluster_output {
+        label="Phase 4: 组装输出";
+        style=rounded;
+        color="#E8E8E8";
+
+        assemble [shape=box, label="最终组装\n合并所有章节"];
+        check_transitions [shape=box, label="检查章节间衔接"];
+        format_choice [shape=diamond, label="输出格式?"];
+        md_output [shape=box, style=filled, fillcolor="#D4EDDA", label="Markdown 输出\noutput/方案名.md"];
+        docx_output [shape=box, style=filled, fillcolor="#CCE5FF",
+            label="docx-formatting\nDOCX 渲染\n(tools/docx_writer.py)"];
+    }
+
+    // 连接线
+    START -> brainstorm;
+    brainstorm -> explore_context;
+    explore_context -> ask_questions;
+    ask_questions -> propose_solutions;
+    propose_solutions -> show_design;
+    show_design -> design_approved;
+    design_approved -> show_design [label="否，修改"];
+    design_approved -> write_spec [label="是"];
+    write_spec -> spec_selfcheck;
+    spec_selfcheck -> user_review_spec;
+    user_review_spec -> write_spec [label="要求修改"];
+    user_review_spec -> planning [label="批准"];
+
+    planning -> define_chapters;
+    define_chapters -> create_tasks;
+    create_tasks -> show_plan;
+    show_plan -> plan_approved;
+    plan_approved -> create_tasks [label="否，调整"];
+    plan_approved -> task_start [label="是"];
+
+    task_start -> kb_retrieval;
+    kb_retrieval -> image_planning;
+    image_planning -> writing;
+    writing -> spec_review;
+    spec_review -> spec_pass;
+    spec_pass -> fix_spec [label="否"];
+    fix_spec -> spec_review [label="重审"];
+    spec_pass -> quality_review [label="是"];
+    quality_review -> quality_pass;
+    quality_pass -> fix_quality [label="否"];
+    fix_quality -> quality_review [label="重审"];
+    quality_pass -> task_done [label="是"];
+
+    task_done -> more_tasks;
+    more_tasks -> task_start [label="是"];
+    more_tasks -> assemble [label="否"];
+
+    assemble -> check_transitions;
+    check_transitions -> format_choice;
+    format_choice -> md_output [label="Markdown"];
+    format_choice -> docx_output [label="DOCX"];
+    md_output -> END;
+    docx_output -> END;
+}

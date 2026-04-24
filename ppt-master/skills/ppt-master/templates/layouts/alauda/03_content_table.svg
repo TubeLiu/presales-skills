@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+    <!-- Content Variant: Standard Table - Alauda Style (Slide 26) -->
+    <!-- White background -->
+    <rect width="1280" height="720" fill="#FFFFFF"/>
+
+    <!-- Background decorations (approximated from master EMF) -->
+    <circle cx="1350" cy="600" r="280" fill="#3BAEE3" fill-opacity="0.04"/>
+    <circle cx="1400" cy="250" r="220" fill="#3BAEE3" fill-opacity="0.03"/>
+    <ellipse cx="1150" cy="780" rx="350" ry="130" fill="#3BAEE3" fill-opacity="0.02"/>
+
+    <!-- Left edge accent bar (PPTX: pos 0,29 size 22x45) -->
+    <rect x="0" y="29" width="22" height="45" fill="#3BAEE3"/>
+
+    <!-- Page title -->
+    <text x="46" y="55" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="37" font-weight="bold" fill="#334155">
+        {{PAGE_TITLE}}
+    </text>
+    <!-- Key message -->
+    <text x="32" y="95" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="21" fill="#334155">
+        {{KEY_MESSAGE}}
+    </text>
+
+    <!-- Table header row -->
+    <rect x="60" y="130" width="1160" height="48" fill="#125B7D" rx="6"/>
+    <rect x="60" y="158" width="1160" height="20" fill="#125B7D"/>
+
+    <text x="200" y="161" text-anchor="middle" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF">
+        {{COL_HEADER_1}}
+    </text>
+    <text x="470" y="161" text-anchor="middle" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF">
+        {{COL_HEADER_2}}
+    </text>
+    <text x="760" y="161" text-anchor="middle" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF">
+        {{COL_HEADER_3}}
+    </text>
+    <text x="1050" y="161" text-anchor="middle" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF">
+        {{COL_HEADER_4}}
+    </text>
+
+    <!-- Column separators in header -->
+    <line x1="340" y1="140" x2="340" y2="172" stroke="#FFFFFF" stroke-width="1" stroke-opacity="0.3"/>
+    <line x1="620" y1="140" x2="620" y2="172" stroke="#FFFFFF" stroke-width="1" stroke-opacity="0.3"/>
+    <line x1="900" y1="140" x2="900" y2="172" stroke="#FFFFFF" stroke-width="1" stroke-opacity="0.3"/>
+
+    <!-- Data rows -->
+    <!-- Row 1 -->
+    <rect x="60" y="178" width="1160" height="80" fill="#F8FAFC"/>
+    <line x1="60" y1="258" x2="1220" y2="258" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="200" y="224" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#334155">{{ROW_1_COL_1}}</text>
+    <text x="470" y="224" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">{{ROW_1_COL_2}}</text>
+    <text x="760" y="224" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">{{ROW_1_COL_3}}</text>
+    <text x="1050" y="224" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">{{ROW_1_COL_4}}</text>
+
+    <!-- Row 2 -->
+    <rect x="60" y="258" width="1160" height="80" fill="#FFFFFF"/>
+    <line x1="60" y1="338" x2="1220" y2="338" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="200" y="304" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#334155">{{ROW_2_COL_1}}</text>
+    <text x="470" y="304" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">{{ROW_2_COL_2}}</text>
+    <text x="760" y="304" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">{{ROW_2_COL_3}}</text>
+    <text x="1050" y="304" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">{{ROW_2_COL_4}}</text>
+
+    <!-- Row 3 -->
+    <rect x="60" y="338" width="1160" height="80" fill="#F8FAFC"/>
+    <line x1="60" y1="418" x2="1220" y2="418" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="200" y="384" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#334155">{{ROW_3_COL_1}}</text>
+    <text x="470" y="384" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">{{ROW_3_COL_2}}</text>
+    <text x="760" y="384" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">{{ROW_3_COL_3}}</text>
+    <text x="1050" y="384" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">{{ROW_3_COL_4}}</text>
+
+    <!-- Row 4 -->
+    <rect x="60" y="418" width="1160" height="80" fill="#FFFFFF"/>
+    <line x1="60" y1="498" x2="1220" y2="498" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="200" y="464" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#334155">{{ROW_4_COL_1}}</text>
+    <text x="470" y="464" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">{{ROW_4_COL_2}}</text>
+    <text x="760" y="464" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">{{ROW_4_COL_3}}</text>
+    <text x="1050" y="464" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">{{ROW_4_COL_4}}</text>
+
+    <!-- Row 5 -->
+    <rect x="60" y="498" width="1160" height="80" fill="#F8FAFC" rx="0"/>
+    <text x="200" y="544" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#334155">{{ROW_5_COL_1}}</text>
+    <text x="470" y="544" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">{{ROW_5_COL_2}}</text>
+    <text x="760" y="544" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">{{ROW_5_COL_3}}</text>
+    <text x="1050" y="544" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">{{ROW_5_COL_4}}</text>
+
+    <!-- Source line -->
+    <text x="60" y="620" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="12" fill="#94A3B8">{{SOURCE}}</text>
+
+    <!-- Footer line -->
+    <line x1="0" y1="682" x2="1280" y2="682" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="60" y="706" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8" letter-spacing="1">Alauda</text>
+    <text x="1220" y="706" text-anchor="end" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8">{{PAGE_NUM}}</text>
+
+</svg>

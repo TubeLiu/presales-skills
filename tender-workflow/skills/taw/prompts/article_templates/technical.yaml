@@ -1,0 +1,251 @@
+# 技术部分章节模板
+# v2.0.0 | 语义驱动，无硬编码章节号
+
+chapter_type: technical
+display_name: "技术部分"
+description: "需求分析、技术方案、产品功能、性能安全、实施计划"
+
+# ─────────────────────────────────────────────
+# 通用写作规则（适用于所有技术类章节）
+# ─────────────────────────────────────────────
+writing_rules: |
+  **技术部分写作总则**：
+  - 专业深入、方案导向，避免空洞描述
+  - M7 差异化亮点在对应章节显著位置融入
+  - M2【必须】条款须有明确的技术响应方案，不得遗漏
+  - 架构设计体现{VENDOR_NAME}核心产品能力
+  - 性能指标引用 M2 原文要求值，响应方案给出具体设计数值
+  - 高分值评分项（≥10分）重点展开 ≥ 1,500字
+  - 低分值评分项（<5分）简明响应，不过度展开
+  - 技术参数无实测数据支撑时标注 `[待技术确认]`
+
+# ─────────────────────────────────────────────
+# 章节类型细分（按语义，不按编号）
+# ─────────────────────────────────────────────
+section_types:
+  requirement_analysis:
+    semantic_keywords: [需求分析, 项目理解, 需求理解, 现状分析, 痛点分析, 业务需求]
+    word_count: 1500
+    image_quota: 1
+    required_images: 0
+    content_elements:
+      - 业务需求分析（基于 M2 业务背景）
+      - 技术需求分析（基于 M2 技术要求）
+      - 非功能性需求（性能、安全、可用性、可扩展性）
+      - 需求优先级排序（必选/可选/创新）
+      - 需求与评分标准的对应关系
+    kb_priority: [reusable]
+    image_types: [需求分析图, 业务现状图, 痛点分析图]
+
+  overall_solution:
+    semantic_keywords: [总体方案, 技术方案, 架构设计, 整体架构, 总体架构, 技术架构, 系统架构]
+    word_count: 4500
+    image_quota: 2
+    required_images: 1
+    content_elements:
+      - 技术架构设计（分层架构、微服务架构、云原生架构）
+      - 技术选型（容器、编排、存储、网络、中间件）
+      - 关键技术路线（容器化、服务网格、DevOps、AI）
+      - 技术创新点（与竞品差异化）
+      - 架构演进路径（现状→目标→实施步骤）
+    kb_priority: [reusable, history]
+    image_types: [系统架构图, 技术架构图, 平台架构图]
+    scoring_alignment: |
+      重点关注评分标准中的"技术方案"要求：
+      - 架构先进性（云原生、微服务、容器化）
+      - 技术成熟度（生产环境验证、社区活跃度）
+      - 扩展性（水平扩展、弹性伸缩）
+      - 兼容性（多云、混合云、信创）
+
+  product_features:
+    semantic_keywords: [产品功能, 功能特性, 产品能力, 核心功能, 功能模块, 产品介绍]
+    word_count: 4500
+    image_quota: 2
+    required_images: 1
+    content_elements:
+      - 核心功能模块（基于 M2 功能清单）
+      - 产品特性与优势（与竞品对比）
+      - 与招标要求的对应关系（逐条响应）
+      - 功能演示与截图（优先使用知识库图片）
+      - 创新功能（加分项）
+    kb_priority: [reusable]
+    image_types: [产品功能图, 产品截图, 功能架构图]
+    web_search: true
+    web_search_keywords: [产品名称, 功能特性, 技术参数]
+    scoring_alignment: |
+      重点关注评分标准中的"功能完整性"要求：
+      - 必选功能（100%覆盖）
+      - 可选功能（尽量覆盖）
+      - 创新功能（加分项）
+
+  performance_capacity:
+    semantic_keywords: [性能指标, 容量规划, 性能测试, 基准测试, 性能优化, 压力测试]
+    word_count: 4500
+    image_quota: 1
+    required_images: 0
+    content_elements:
+      - 性能指标（TPS、QPS、延迟、吞吐量）
+      - 容量规划（用户数、并发数、数据量、存储容量）
+      - 性能测试报告（基准测试、压力测试、稳定性测试）
+      - 性能优化措施（缓存、负载均衡、数据库优化）
+      - 容量扩展方案（水平扩展、垂直扩展）
+    kb_priority: [reusable, history]
+    image_types: [性能测试图, 基准测试图, 压力测试图]
+    web_search: true
+    web_search_keywords: [性能测试, 基准测试, TPC-C, SPEC]
+
+  security_solution:
+    semantic_keywords: [安全方案, 安全架构, 安全设计, 等保, 信息安全, 安全防护, 数据安全]
+    word_count: 4500
+    image_quota: 1
+    required_images: 1
+    content_elements:
+      - 安全架构设计（纵深防御、零信任）
+      - 身份认证与授权（RBAC、SSO、LDAP、OAuth2）
+      - 数据加密（传输加密、存储加密、密钥管理）
+      - 安全审计与日志（操作日志、审计日志、日志分析）
+      - 等保合规（等保三级、密评、分保）
+      - 安全加固（漏洞扫描、安全基线、安全补丁）
+    kb_priority: [reusable, fixed]
+    image_types: [安全架构图, 安全防护图, 等保架构图]
+    scoring_alignment: |
+      重点关注评分标准中的"安全性"要求：
+      - 等保三级（必选）
+      - 数据加密（传输+存储）
+      - 访问控制（RBAC、最小权限）
+      - 安全审计（日志、告警）
+
+  high_availability:
+    semantic_keywords: [高可用, 容灾, 双活, 灾备, 故障自愈, 容灾方案, 高可用方案]
+    word_count: 1500
+    image_quota: 1
+    required_images: 1
+    content_elements:
+      - 高可用架构（主备、集群、负载均衡）
+      - 容灾方案（同城双活、异地灾备、两地三中心）
+      - 故障自愈机制（健康检查、自动重启、自动切换）
+      - RTO/RPO 指标（恢复时间目标、恢复点目标）
+      - 容灾演练方案
+    kb_priority: [reusable]
+    image_types: [高可用架构图, 容灾架构图, 双活架构图]
+
+  operation_management:
+    semantic_keywords: [运维管理, 监控告警, 自动化运维, 配置管理, 运维方案, 监控方案]
+    word_count: 1500
+    image_quota: 1
+    required_images: 0
+    content_elements:
+      - 监控告警（指标监控、日志监控、链路追踪、APM）
+      - 自动化运维（CI/CD、自动化部署、自动化测试）
+      - 配置管理（配置中心、版本管理、灰度发布）
+      - 备份恢复（备份策略、恢复流程、备份验证）
+      - 运维工具链（Prometheus、Grafana、ELK、Jaeger）
+    kb_priority: [reusable]
+    image_types: [监控架构图, 运维架构图, APM架构图]
+
+  implementation_plan:
+    semantic_keywords: [实施方案, 实施计划, 项目实施, 里程碑, 时间表, 实施步骤, 项目计划]
+    word_count: 4500
+    image_quota: 2
+    required_images: 1
+    content_elements:
+      - 实施计划（里程碑、时间表、甘特图）
+      - 实施步骤（准备期、实施期、验收期）
+      - 实施组织（项目组织架构、角色职责）
+      - 风险控制（风险识别、风险评估、风险应对）
+      - 质量保障（质量标准、质量检查、质量验收）
+      - 变更管理（变更流程、变更审批、变更记录）
+    kb_priority: [reusable, history]
+    image_types: [实施计划图, 甘特图, 实施流程图]
+
+  training_plan:
+    semantic_keywords: [培训方案, 培训计划, 知识转移, 培训体系, 培训服务]
+    word_count: 1500
+    image_quota: 1
+    required_images: 1
+    content_elements:
+      - 培训对象（管理员、开发者、运维人员、最终用户）
+      - 培训内容（产品使用、运维管理、故障处理、最佳实践）
+      - 培训方式（现场培训、在线培训、实操演练、认证考试）
+      - 培训计划（培训时间、培训地点、培训讲师）
+      - 培训效果评估（考试、实操、问卷调查）
+    kb_priority: [fixed, reusable]
+    image_types: [培训路径图, 培训体系图]
+
+  technical_deviation:
+    semantic_keywords: [技术偏离, 技术响应, 偏离表, 技术条款]
+    word_count: 1500
+    image_quota: 0
+    required_images: 0
+    content_elements:
+      - 逐条对应 M2 技术要求矩阵中的所有技术要求
+      - 格式：序号 | 招标技术要求 | 偏离情况 | 说明 | 出处
+      - 偏离情况：无偏离 / 正偏离（优于招标要求，需具体说明优势点）
+      - 【必须】条款不得出现负偏离
+      - '{VENDOR_NAME}支持度为"⚠️需定制"的条款，偏离表中说明定制方案'
+    kb_priority: [reusable]
+    image_types: []
+
+# ─────────────────────────────────────────────
+# 图片推荐规则（按语义触发，不按章节号）
+# ─────────────────────────────────────────────
+image_recommendations:
+  - triggers: [技术架构, 系统架构, 总体架构, 架构设计]
+    type: 架构图
+    description: 系统总体技术架构图（分层架构/微服务架构）
+    placement: after_content
+    priority: high
+
+  - triggers: [产品功能, 功能模块, 功能架构]
+    type: 功能架构图
+    description: 产品功能架构图或功能模块图
+    placement: after_content
+    priority: high
+
+  - triggers: [产品界面, 产品截图, 功能演示]
+    type: 产品截图
+    description: 产品功能界面截图
+    placement: after_content
+    priority: high
+
+  - triggers: [性能测试, 基准测试, 压力测试]
+    type: 测试报告图
+    description: 性能测试结果图表（TPS/QPS/延迟曲线）
+    placement: after_content
+    priority: medium
+
+  - triggers: [安全架构, 安全设计, 安全防护]
+    type: 安全架构图
+    description: 安全架构设计图（纵深防御/零信任）
+    placement: after_content
+    priority: high
+
+  - triggers: [高可用, 容灾, 双活, 灾备]
+    type: 高可用架构图
+    description: 高可用与容灾架构图（主备/集群/两地三中心）
+    placement: after_content
+    priority: high
+
+  - triggers: [监控, 告警, 运维, APM]
+    type: 监控架构图
+    description: 监控告警架构图（Prometheus/Grafana/ELK）
+    placement: after_content
+    priority: medium
+
+  - triggers: [实施计划, 项目计划, 里程碑, 时间表]
+    type: 甘特图
+    description: 项目实施计划甘特图
+    placement: after_content
+    priority: high
+
+  - triggers: [实施流程, 实施步骤, 实施阶段]
+    type: 流程图
+    description: 项目实施流程图（准备期/实施期/验收期）
+    placement: after_content
+    priority: medium
+
+  - triggers: [培训计划, 培训体系, 培训路径]
+    type: 流程图
+    description: 培训路径与认证体系示意图（分角色/分阶段）
+    placement: after_content
+    priority: low

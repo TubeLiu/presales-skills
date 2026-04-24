@@ -1,0 +1,204 @@
+# 四级细致程度规则
+# 版本：v1.0.0
+# 用途：定义 detailed/standard/general/brief 四个级别的技术规格生成规则
+
+# ============================================================
+# 级别定义
+# ============================================================
+levels:
+
+  detailed:
+    display_name: 详细
+    description: 适用于大型项目（预算 >500 万），输出完整详尽的技术规格
+    target_pages: 15-20
+    requirement_items: 40-60
+    compression_ratio: "~1:1"  # 每个重要产品功能对应约 1 条要求
+
+    content_rules:
+      functional_requirements:
+        depth: "每个产品功能模块独立成节，逐项列出功能要求"
+        acceptance_criteria: "每条功能要求附带验收标准和验证方法"
+        priority_marking: true  # 标注实质性要求（★）/ 加分项
+
+      performance_requirements:
+        depth: "全面列出所有性能类别（并发、响应时间、吞吐量、资源利用率等）"
+        metric_count: "10+"
+        detail: "每项指标给出具体数值要求和测试方法"
+
+      interface_requirements:
+        depth: "按协议逐项描述（REST API、gRPC、WebSocket 等）"
+        detail: "每类接口给出协议规范、数据格式、安全要求"
+
+      security_requirements:
+        depth: "分域展开（物理安全、网络安全、数据安全、应用安全、管理安全）"
+        detail: "每个安全域独立成节，列出具体安全措施要求"
+
+      industry_specific:
+        depth: "完整展开行业专项章节"
+        detail: "如等保安全要求逐条展开、信创清单完整列出、金融监管合规逐项说明"
+
+      delivery_and_service:
+        depth: "详细列出交付物清单、实施方案要求、服务级别要求"
+        detail: "包含里程碑计划要求、验收流程、培训方案、运维服务等级"
+
+      acceptance_criteria:
+        depth: "逐条列出验收标准"
+        detail: "每条功能要求对应具体验收条件和测试方法"
+
+    scoring_dimensions: 6-8  # 评标办法中的技术评分维度数
+
+  standard:
+    display_name: 普通
+    description: 适用于中型项目（预算 100-500 万），平衡深度与简洁
+    target_pages: 8-12
+    requirement_items: 15-25
+    compression_ratio: "~3:1"  # 每 3 个产品功能压缩为约 1 条要求
+
+    content_rules:
+      functional_requirements:
+        depth: "核心模块详细描述，次要模块按类别归组"
+        acceptance_criteria: "按类别给出验收标准，非逐条"
+        priority_marking: "仅核心要求标注"
+
+      performance_requirements:
+        depth: "列出关键性能指标"
+        metric_count: "~5"
+        detail: "给出数值要求，测试方法可概述"
+
+      interface_requirements:
+        depth: "按分类描述（数据接口、管理接口、第三方集成接口）"
+        detail: "每类给出通用要求，不逐协议展开"
+
+      security_requirements:
+        depth: "合并为一个安全要求章节"
+        detail: "列出核心安全要求和合规要求"
+
+      industry_specific:
+        depth: "精简的行业专项内容"
+        detail: "核心行业要求保留，细节可精简"
+
+      delivery_and_service:
+        depth: "概述交付物和服务要求"
+        detail: "列出主要交付物和关键服务指标"
+
+      acceptance_criteria:
+        depth: "按类别概述验收标准"
+        detail: "核心功能给出验收条件，其余引用通用标准"
+
+    scoring_dimensions: 4-6
+
+  general:
+    display_name: 一般
+    description: 适用于小型项目（预算 50-100 万），简明扼要
+    target_pages: 4-6
+    requirement_items: 8-12
+    compression_ratio: "~8:1"  # 每 8 个产品功能压缩为约 1 条要求
+
+    content_rules:
+      functional_requirements:
+        depth: "按功能类别归组（4-6 个类别），每类概括性描述"
+        acceptance_criteria: "无逐条验收标准，引用通用标准"
+        priority_marking: false  # 不标注优先级，全部隐含为必须
+
+      performance_requirements:
+        depth: "仅核心指标"
+        metric_count: "~2"
+        detail: "并发能力和可用性 SLA"
+
+      interface_requirements:
+        depth: "概述集成要求"
+        detail: "一段话描述主要接口和协议要求"
+
+      security_requirements:
+        depth: "一段话概述"
+        detail: "列出合规标准（如等保级别），不展开细节"
+
+      industry_specific:
+        depth: "简短列表"
+        detail: "3-5 条核心行业要求"
+
+      delivery_and_service:
+        depth: "简要列出"
+        detail: "主要交付物和基本服务要求"
+
+      acceptance_criteria:
+        depth: "概述引用"
+        detail: "引用行业标准或通用验收规范"
+
+    scoring_dimensions: 3-4
+
+  brief:
+    display_name: 简略
+    description: 适用于小型项目（<50 万）或作为内部参考/初稿
+    target_pages: 2-3
+    requirement_items: 5-8
+    compression_ratio: "~15:1"  # 每 15 个产品功能压缩为约 1 条要求
+
+    content_rules:
+      functional_requirements:
+        depth: "扁平编号列表，列出核心功能要求（5-8 条）"
+        acceptance_criteria: "无"
+        priority_marking: false
+
+      performance_requirements:
+        depth: "仅最关键指标"
+        metric_count: "~1"
+        detail: "仅可用性 SLA"
+
+      interface_requirements:
+        depth: "无独立章节"
+        detail: "如有集成要求，融入功能要求列表"
+
+      security_requirements:
+        depth: "一句话"
+        detail: "如：'应满足等保X级要求'"
+
+      industry_specific:
+        depth: "隐含在通用要求中"
+        detail: "不单独列出"
+
+      delivery_and_service:
+        depth: "简要提及"
+        detail: "1-2 条基本要求"
+
+      acceptance_criteria:
+        depth: "无"
+        detail: "无独立验收章节"
+
+    scoring_dimensions: 2-3
+
+# ============================================================
+# 通用规则（适用于所有级别）
+# ============================================================
+common_rules:
+
+  # 控标点条目不受压缩比限制
+  control_point_override: |
+    标记为"控标点"的功能条目，无论当前级别的压缩比如何，
+    都必须作为独立条目纳入最终要求，不得与其他条目合并或省略。
+
+  # 写作风格
+  writing_style: |
+    - 采用实际招标文件的自然语言风格，不使用"应/宜/可"国标分级标记
+    - 强制要求用"须满足"/"必须具备"/★标记，一般要求直接陈述功能，加分区分交给评分细则
+    - 要求的轻重通过评分表分值权重体现，而非正文措辞分级
+    - 所有功能描述须可验证、可测试，避免"高性能""易用"等模糊表述
+    - 使用主动语态，以系统/平台为主语（"系统须支持..."/"系统支持..."而非"需要支持..."）
+    - 中文排版：中英文之间加空格，数字与中文之间加空格
+
+  # 章节编号规则
+  numbering: |
+    技术规格章节统一使用阿拉伯数字多级编号：
+    1 项目总体说明
+    1.1 xxx
+    1.2 xxx
+    2 功能需求规格
+    2.1 xxx
+    ...
+
+  # KB 索引按需加载策略（配合 --kb 参数）
+  kb_loading_by_level:
+    detailed: "加载所有相关分类的 L2 完整详情"
+    standard: "加载 Top 3 分类的 L2，其余使用 L1 摘要"
+    general: "仅使用 L1 分类摘要"
+    brief: "仅使用 L0 分类概述"

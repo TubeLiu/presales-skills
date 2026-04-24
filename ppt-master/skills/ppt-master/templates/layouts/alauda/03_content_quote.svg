@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+    <!-- Content Variant: Quote / Testimonial - Alauda Style -->
+
+    <defs>
+        <linearGradient id="quoteBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#125B7D"/>
+            <stop offset="100%" style="stop-color:#0D3F56"/>
+        </linearGradient>
+    </defs>
+
+    <!-- White background -->
+    <rect width="1280" height="720" fill="#FFFFFF"/>
+
+    <!-- Background decorations (approximated from master EMF) -->
+    <circle cx="1350" cy="600" r="280" fill="#3BAEE3" fill-opacity="0.04"/>
+    <circle cx="1400" cy="250" r="220" fill="#3BAEE3" fill-opacity="0.03"/>
+    <ellipse cx="1150" cy="780" rx="350" ry="130" fill="#3BAEE3" fill-opacity="0.02"/>
+
+    <!-- Left edge accent bar (PPTX: pos 0,29 size 22x45) -->
+    <rect x="0" y="29" width="22" height="45" fill="#3BAEE3"/>
+
+    <!-- Dark quote area -->
+    <rect x="60" y="80" width="1160" height="520" fill="url(#quoteBgGrad)" rx="12"/>
+
+    <!-- Large quotation mark -->
+    <text x="140" y="210" font-family="Georgia, serif" font-size="120" fill="#3BAEE3" fill-opacity="0.3">
+        &#x201C;
+    </text>
+
+    <!-- Quote text -->
+    <text x="180" y="280" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="26" fill="#FFFFFF" font-weight="500">
+        {{QUOTE_TEXT}}
+    </text>
+
+    <!-- Divider line -->
+    <line x1="180" y1="430" x2="340" y2="430" stroke="#3BAEE3" stroke-width="2"/>
+
+    <!-- Speaker name -->
+    <text x="180" y="470" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">
+        {{SPEAKER_NAME}}
+    </text>
+
+    <!-- Speaker title -->
+    <text x="180" y="500" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#FFFFFF" fill-opacity="0.6">
+        {{SPEAKER_TITLE}}
+    </text>
+
+    <!-- Closing quotation mark -->
+    <text x="1100" y="510" font-family="Georgia, serif" font-size="120" fill="#3BAEE3" fill-opacity="0.3">
+        &#x201D;
+    </text>
+
+    <!-- Footer line -->
+    <line x1="0" y1="682" x2="1280" y2="682" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="60" y="706" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8" letter-spacing="1">Alauda</text>
+    <text x="1220" y="706" text-anchor="end" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8">{{PAGE_NUM}}</text>
+
+</svg>

@@ -1,0 +1,38 @@
+// Solution Master Graphviz 约定
+//
+// 节点形状按语义：
+//   diamond  = 决策/问题（以 ? 结尾）
+//   box      = 动作（以动词开头）
+//   ellipse  = 状态/当前情况
+//   octagon  = 停止警告（红色填充）
+//   doublecircle = 入口/出口点
+//
+// 边标签：
+//   "是" / "否" — 决策分支
+//   "条件描述" — 转移条件
+//   "重审" — 返回审查循环
+//
+// 颜色：
+//   lightblue  = 起点
+//   lightgreen = 终点
+//   #ffcccc    = 警告/红灯
+//   #ccffcc    = 通过/绿灯
+//
+// 字体：
+//   fontname="SimHei" — 全中文标签
+
+digraph example {
+    rankdir=TB;
+    node [fontname="SimHei"];
+
+    START [shape=ellipse, style=filled, fillcolor=lightblue, label="开始"];
+    action [shape=box, label="执行动作"];
+    decision [shape=diamond, label="条件满足?"];
+    warning [shape=octagon, style=filled, fillcolor="#ffcccc", label="停止"];
+    END [shape=ellipse, style=filled, fillcolor=lightgreen, label="完成"];
+
+    START -> action;
+    action -> decision;
+    decision -> END [label="是"];
+    decision -> warning [label="否"];
+}

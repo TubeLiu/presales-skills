@@ -1,0 +1,184 @@
+# 并行写作子智能体提示模板（Parallel Writer Agent Template）
+# v1.0.0 | Phase 2B 为每个 H3 子节构建子智能体提示词
+
+name: parallel_writer_agent
+version: "1.0.0"
+description: |
+  并行写作模式下的子智能体任务模板。
+  每个子智能体只负责撰写一个 H3 子节，严格遵循写作蓝图。
+
+# ============================================================
+# 子智能体提示模板
+# ============================================================
+
+agent_prompt_template: |
+  你是投标文件撰写专家，负责撰写章节「{chapter_title}」中的子节「{h3_numbering} {h3_title}」。
+
+  ## 写作蓝图（全章共享上下文，必须严格遵守）
+
+  ### 论述主线
+  {argument_thread}
+
+  ### 术语规范（严格遵守，不得使用禁用变体）
+  {terminology_table}
+
+  ### 你在全章中的位置
+  - 你负责的是第 {h3_index}/{h3_total} 个子节
+  - 承接：{connect_from}
+  - 铺垫：{lead_to}
+
+  ## 你的写作任务
+
+  **子节编号**：{h3_numbering}
+  **子节标题**：{h3_title}
+  **核心论点**：{core_argument}
+  **目标字数**：{target_words} 字（不少于此数）
+
+  ## 必须覆盖的评分点（M4）
+
+  以下评分项必须在你的内容中有实质性响应，不可遗漏：
+
+  {scoring_points_detail}
+
+  ## 可引用的知识库素材
+
+  以下素材来自公司知识库，优先引用：
+
+  {kb_materials_content}
+
+  ## 可引用的互联网事实（WEB_FACTS）
+
+  以下事实来自互联网检索，引用时标注来源：
+
+  {web_facts_content}
+
+  ## 写作规则
+
+  {global_writing_rules}
+
+  ## 输出格式要求
+
+  1. 纯 Markdown 格式输出
+  2. 以 ### {h3_numbering} {h3_title} 作为子节标题开头
+  3. 若需要四级/五级子标题，使用 #### 和 #####
+  4. 合理使用表格、列表、粗体等 Markdown 元素增强可读性
+  5. 技术参数对比、功能列表等使用 Markdown 表格
+  6. 互联网来源的数据标注 [互联网来源，请核实]
+  7. 不确定的内容标注 [待确认]
+
+  ## 禁止事项
+
+  - 禁止输出其他子节的内容（只写你负责的 {h3_numbering}）
+  - 禁止生成图片、mermaid 图表或图片描述（图片由整合阶段统一处理）
+  - 禁止使用术语表中的禁用变体
+  - 禁止空泛套话，每个论点必须有具体支撑（数据、案例、技术细节）
+  - 禁止绝对化承诺（如"确保100%"、"绝对不会"）
+
+  ## 开始撰写
+
+  请直接输出「{h3_numbering} {h3_title}」的完整 Markdown 内容。
+
+# ============================================================
+# 上下文打包规则
+# ============================================================
+
+context_packaging:
+  # 必须传递给每个子智能体的上下文
+  required:
+    - name: writing_brief_core
+      description: "论述主线 + 术语表（从 Writing Brief 提取）"
+      max_tokens: 500
+      source: "Phase 2A Writing Brief"
+
+    - name: h3_task_definition
+      description: "当前 H3 的任务定义（核心论点、评分项、字数、衔接指令）"
+      max_tokens: 200
+      source: "Writing Brief h3_assignment_table 对应行"
+
+    - name: scoring_points_detail
+      description: "需覆盖的 M4 评分项完整描述"
+      max_tokens: 500
+      source: "M4 评分标准，按 h3_assignment_table.scoring_points 筛选"
+
+    - name: kb_materials_content
+      description: "该 H3 对应的知识库检索结果"
+      max_tokens: 1500
+      source: "Phase 1.3 KB 结果，按 h3_assignment_table.kb_materials 筛选"
+
+    - name: web_facts_content
+      description: "该 H3 适用的 WEB_FACTS 条目"
+      max_tokens: 500
+      source: "Phase 1.3 WEB_FACTS，按 h3_assignment_table.web_facts 筛选"
+
+    - name: global_writing_rules
+      description: "全局写作规则精简版"
+      max_tokens: 300
+      source: "article_core.yaml global_rules 精简提取"
+
+    - name: image_plan_info
+      description: "该 H3 的图片分配信息（是否有图、来源、caption）"
+      max_tokens: 100
+      source: "Writing Brief h3_assignment_table.image_plan 列"
+      note: "让子智能体知道是否有图片要插入，以便在正文中自然引用（如'如下图所示'）"
+
+  # 不传递给子智能体（节省 token）
+  excluded:
+    - "完整分析报告原文（M1-M7 全文）"
+    - "其他 H3 子节的 KB 检索结果"
+    - "Phase 0/1 的执行日志"
+    - "图片获取相关指令和配额信息"
+    - "DOCX 格式化代码模板"
+    - "完整的 h3_assignment_table（只传当前行）"
+
+  # 预估每个子智能体总上下文
+  estimated_total: "4-6KB / 1500-2500 tokens"
+
+# ============================================================
+# Phase 2B 执行与结果检查
+# ============================================================
+
+phase_2b_execution:
+  dispatch_rule: |
+    使用 Claude Code Agent tool 在单条消息中同时分发所有 H3 子智能体：
+    对 h3_assignment_table 中的每个 H3：
+      Agent(
+        description="撰写子节 {h3_numbering} {h3_title}",
+        prompt=按 agent_prompt_template 填充的完整提示词
+      )
+    ⚠️ 所有 Agent 调用必须在同一条消息中发出，确保并发执行。
+
+  result_checking:
+    - check: "子 agent 超时"
+      condition: "无返回结果"
+      action: "重试一次，同样参数"
+    - check: "字数不足"
+      condition: "输出 < 目标字数 × 50%"
+      action: "标记给 Phase 2C 补充扩展"
+    - check: "术语违规"
+      condition: "使用了禁用变体"
+      action: "标记给 Phase 2C 统一替换（无需重试）"
+    - check: "内容跑题"
+      condition: "未覆盖 core_argument"
+      action: "重试，提示中强调核心论点"
+    - check: "多数失败"
+      condition: ">50% 子 agent 失败"
+      action: "降级到顺序写作模式（回退执行 Step 3）"
+
+  degradation_message: "⚠️ 并行写作模式失败（{失败数}/{总数} 子节未完成），降级到顺序写作模式"
+
+# ============================================================
+# 全局写作规则精简版（从 article_core.yaml 提取）
+# ============================================================
+
+global_writing_rules_template: |
+  1. **评分导向**：高分值评分项（≥10分）重点展开，低分值项（<5分）简明响应
+  2. **数据支撑**：用量化数据支撑论述（性能指标、案例规模、认证数量）
+  3. **结构化表达**：每个功能/方案按"需求响应→方案设计→实现路径→预期效果"展开
+  4. **差异化突出**：在对应位置突出厂商差异化优势
+  5. **红线规避**：不得违反废标条款和风险红线
+  6. **篇幅要求**：
+     - 三级子节（X.X.X）不少于 {word_override_3} 字
+     - 四级子节（X.X.X.X）不少于 {word_override_4} 字
+     - 五级子节（X.X.X.X.X）不少于 {word_override_5} 字
+  7. **表格优先**：技术要求响应、功能对比、里程碑计划等用表格呈现
+  8. **中文排版**：中英文间加空格，数字与中文间加空格

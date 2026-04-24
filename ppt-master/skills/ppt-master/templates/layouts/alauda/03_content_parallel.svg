@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+    <!-- Content Variant: Dual Parallel Value - Alauda Style (Slide 28) -->
+    <!-- White background -->
+    <rect width="1280" height="720" fill="#FFFFFF"/>
+
+    <!-- Background decorations (approximated from master EMF) -->
+    <circle cx="1350" cy="600" r="280" fill="#3BAEE3" fill-opacity="0.04"/>
+    <circle cx="1400" cy="250" r="220" fill="#3BAEE3" fill-opacity="0.03"/>
+    <ellipse cx="1150" cy="780" rx="350" ry="130" fill="#3BAEE3" fill-opacity="0.02"/>
+
+    <!-- Left edge accent bar (PPTX: pos 0,29 size 22x45) -->
+    <rect x="0" y="29" width="22" height="45" fill="#3BAEE3"/>
+
+    <!-- Page title -->
+    <text x="46" y="55" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="37" font-weight="bold" fill="#334155">
+        {{PAGE_TITLE}}
+    </text>
+    <!-- Key message -->
+    <text x="32" y="95" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="21" fill="#334155">
+        {{KEY_MESSAGE}}
+    </text>
+
+    <!-- Left value panel -->
+    <rect x="60" y="130" width="565" height="520" fill="#F8FAFC" rx="8" stroke="#E2E8F0" stroke-width="1"/>
+
+    <!-- Left panel header -->
+    <rect x="60" y="130" width="565" height="60" fill="#125B7D" rx="8"/>
+    <rect x="60" y="168" width="565" height="22" fill="#125B7D"/>
+    <text x="340" y="168" text-anchor="middle" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">
+        {{LEFT_PANEL_TITLE}}
+    </text>
+
+    <!-- Left bullets area -->
+    <text x="90" y="230" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="15" fill="#475569">
+        {{LEFT_PANEL_CONTENT}}
+    </text>
+
+    <!-- Center divider with "VS" or connection symbol -->
+    <line x1="640" y1="150" x2="640" y2="630" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="620" y="370" width="40" height="28" fill="#FFFFFF" rx="4"/>
+    <text x="640" y="390" text-anchor="middle" font-family="Aptos, sans-serif" font-size="12" font-weight="bold" fill="#94A3B8">+</text>
+
+    <!-- Right value panel -->
+    <rect x="655" y="130" width="565" height="520" fill="#F8FAFC" rx="8" stroke="#E2E8F0" stroke-width="1"/>
+
+    <!-- Right panel header -->
+    <rect x="655" y="130" width="565" height="60" fill="#3BAEE3" rx="8"/>
+    <rect x="655" y="168" width="565" height="22" fill="#3BAEE3"/>
+    <text x="937" y="168" text-anchor="middle" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="18" font-weight="bold" fill="#FFFFFF">
+        {{RIGHT_PANEL_TITLE}}
+    </text>
+
+    <!-- Right bullets area -->
+    <text x="685" y="230" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="15" fill="#475569">
+        {{RIGHT_PANEL_CONTENT}}
+    </text>
+
+    <!-- Footer line -->
+    <line x1="0" y1="682" x2="1280" y2="682" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="60" y="706" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8" letter-spacing="1">Alauda</text>
+    <text x="1220" y="706" text-anchor="end" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8">{{PAGE_NUM}}</text>
+
+</svg>

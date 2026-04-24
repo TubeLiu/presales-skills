@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720">
+    <!-- Template: Ending Page (Light) - Alauda Style -->
+
+    <!-- Solid Alauda Blue background -->
+    <rect width="1280" height="720" fill="#3BAEE3"/>
+
+    <!-- Logo centered -->
+    <image x="540" y="140" width="200" height="62" href="alauda_logo.png" preserveAspectRatio="xMidYMid meet"/>
+
+    <!-- Thank you message -->
+    <text x="640" y="280" text-anchor="middle" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="44" font-weight="bold" fill="#FFFFFF">
+        THANK YOU!
+    </text>
+
+    <!-- Chinese thank you -->
+    <text x="640" y="340" text-anchor="middle" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="28" fill="#FFFFFF" fill-opacity="0.85">
+        {{THANK_YOU}}
+    </text>
+
+    <!-- Contact info -->
+    <text x="640" y="400" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="16" fill="#FFFFFF" fill-opacity="0.75">
+        {{CONTACT_INFO}}
+    </text>
+
+    <!-- Footer -->
+    <text x="60" y="706" font-family="Aptos, sans-serif" font-size="12" fill="#FFFFFF" fill-opacity="0.5" letter-spacing="1">
+        Alauda
+    </text>
+
+</svg>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+    <!-- Template: Content Page - Alauda Style -->
+    <!-- White background -->
+    <rect width="1280" height="720" fill="#FFFFFF"/>
+
+    <!-- Background decorations (approximated from master EMF) -->
+    <circle cx="1350" cy="600" r="280" fill="#3BAEE3" fill-opacity="0.04"/>
+    <circle cx="1400" cy="250" r="220" fill="#3BAEE3" fill-opacity="0.03"/>
+    <ellipse cx="1150" cy="780" rx="350" ry="130" fill="#3BAEE3" fill-opacity="0.02"/>
+
+    <!-- Left edge accent bar (PPTX: pos 0,29 size 22x45) -->
+    <rect x="0" y="29" width="22" height="45" fill="#3BAEE3"/>
+
+    <!-- Page title -->
+    <text x="46" y="55" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="37" font-weight="bold" fill="#334155">
+        {{PAGE_TITLE}}
+    </text>
+
+    <!-- Content area -->
+    <rect x="60" y="100" width="1160" height="560" fill="#FFFFFF" rx="0"/>
+    <text x="640" y="380" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="16" fill="#CBD5E1">
+        {{CONTENT_AREA}}
+    </text>
+
+    <!-- Footer line -->
+    <line x1="0" y1="682" x2="1280" y2="682" stroke="#E2E8F0" stroke-width="1"/>
+
+    <!-- Footer - left label -->
+    <text x="60" y="706" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8" letter-spacing="1">
+        Alauda
+    </text>
+
+    <!-- Footer - right page number -->
+    <text x="1220" y="706" text-anchor="end" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8">
+        {{PAGE_NUM}}
+    </text>
+
+</svg>

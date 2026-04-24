@@ -1,0 +1,20 @@
+{
+  "name": "mcp-anythingllm",
+  "version": "1.0.0",
+  "description": "AnythingLLM MCP Server for Solution Master",
+  "main": "index.js",
+  "bin": {
+    "mcp-anythingllm": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "mcp",
+    "anythingllm",
+    "claude"
+  ],
+  "author": "",
+  "license": "MIT"
+}

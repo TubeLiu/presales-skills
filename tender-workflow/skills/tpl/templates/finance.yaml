@@ -1,0 +1,148 @@
+# 金融行业招标文件模板（v2.0 - 聚焦技术规格与评标办法）
+
+template:
+  name: finance
+  display_name: 金融行业
+  description: 适用于银行、保险、证券等金融机构的云原生IT产品及服务采购
+  legacy_names: []
+  product_types:
+    - 云原生容器平台（Kubernetes、多集群管理）
+    - DevOps平台（CI/CD、流水线、代码质量）
+    - 微服务治理平台（服务网格、配置中心、分布式追踪）
+    - AI平台（模型训练、推理服务、GPU调度）
+    - 云原生数据库/中间件（分布式数据库、消息队列、缓存）
+    - 技术服务（咨询、实施、迁移、优化）
+    - 维保服务（运维、巡检、故障处理、升级）
+
+# 行业特征
+characteristics:
+  procurement_method: 邀请招标或竞争性谈判
+  evaluation_method: 综合评分法
+  price_weight: "25%"
+  technical_weight: "50%"
+  business_weight: "25%"
+  core_concerns:
+    - 金融级安全（银保监会、人民银行规范）
+    - 高可用性（99.99%及以上）
+    - 灾备要求（两地三中心）
+    - 监管合规（数据不出境、审计追溯）
+    - 性能要求（低延迟、高并发）
+  common_requirements:
+    - 金融行业信息系统安全等级保护（三级或以上）
+    - 银保监会/人民银行监管合规
+    - 两地三中心灾备架构
+    - 99.99%高可用性承诺
+    - 金融级数据加密与审计
+
+# 评标办法默认结构
+scoring_defaults:
+  price_weight: "25%"
+  business_weight: "25%"
+  technical_weight: "50%"
+  objective_score_ratio: "≥65%"
+
+  business_scoring:
+    - item: 企业资质等级
+      weight: "4-6分"
+      details: [CS等级, ISO27001, 软件企业认定]
+    - item: 财务状况
+      weight: "3-4分"
+      details: [资产负债率, 流动比率, 净资产]
+    - item: 金融行业业绩
+      weight: "8-10分"
+      details: [银行项目, 保险项目, 证券项目]
+    - item: 履约评价
+      weight: "3-4分"
+    - item: 认证体系
+      weight: "3-4分"
+      details: [ISO27001, ISO20000, CMMI, 金融行业认证]
+
+  technical_scoring:
+    - item: 需求理解
+      weight: "5-8分"
+    - item: 技术方案
+      weight: "18-22分"
+      sub_items:
+        - 金融级高可用架构
+        - 两地三中心灾备方案
+        - 金融级安全方案
+        - 容器云平台架构
+        - 微服务治理能力
+        - 性能优化方案
+    - item: 实施方案
+      weight: "10-12分"
+      sub_items:
+        - 实施计划与里程碑
+        - 风险管理
+        - 数据迁移方案
+        - 业务连续性保障
+    - item: 项目团队
+      weight: "5-8分"
+      details: [金融行业经验, 技术认证]
+    - item: 售后服务
+      weight: "6-8分"
+      sub_items:
+        - 7×24小时响应
+        - 驻场服务
+        - 应急预案
+
+# 技术规格默认框架
+tech_spec_defaults:
+  sections:
+    - name: 项目总体要求
+      content: [项目背景, 建设目标, 建设原则, 建设范围]
+    - name: 业务需求分析
+      content: [业务流程, 用户角色, 功能需求]
+    - name: 金融级高可用架构要求
+      content:
+        - 99.99%可用性承诺
+        - 两地三中心灾备架构
+        - 自动故障切换（RTO≤5分钟）
+        - 数据零丢失（RPO=0）
+    - name: 云原生技术架构要求
+      content:
+        - 容器编排平台（Kubernetes）
+        - 容器云平台核心能力
+        - 多集群管理能力
+        - 混合云/多云支持
+    - name: 功能需求规格
+      content: [功能模块清单, 各模块详细需求]
+    - name: 非功能性要求
+      content:
+        - 性能要求（TPS≥10000, 响应时间≤100ms）
+        - 安全要求（金融级加密、审计）
+        - 可靠性要求（99.99%可用性）
+        - 兼容性要求
+    - name: 金融级安全要求
+      content:
+        - 银保监会/人民银行监管合规
+        - 数据加密（传输加密、存储加密）
+        - 访问控制（多因素认证、权限管理）
+        - 安全审计（操作日志、审计追溯）
+        - 容器安全（镜像扫描、运行时防护）
+        - 数据不出境承诺
+    - name: 监管合规要求
+      content:
+        - 监管报备要求
+        - 数据本地化存储
+        - 审计日志保留（≥5年）
+        - 应急预案与演练
+    - name: 交付物要求
+      content: [软件交付物, 文档交付物, 培训要求, 应急预案]
+    - name: 验收标准
+      content: [功能验收, 性能验收, 安全验收, 灾备演练, 压力测试]
+
+# 反控标行业覆盖配置
+anti_control_overrides:
+  allowed_specific_terms:
+    - Kubernetes
+    - CNCF
+    - OCI
+    - CNI
+    - CSI
+  required_standard_references:
+    - 等保（GB/T 22239）
+    - 银保监会信息科技风险管理指引
+    - 人民银行金融行业信息系统安全等级保护规范
+    - 金融行业网络安全等级保护实施指引
+  metric_sensitivity: medium  # 金融行业指标要求本身就很高，调整幅度可稍小

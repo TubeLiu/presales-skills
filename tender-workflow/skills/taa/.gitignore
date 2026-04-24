@@ -1,0 +1,34 @@
+# ─── 白名单：只跟踪 skill 必要文件 ──────────────────────────────────────────
+# 默认忽略所有内容
+*
+
+# 明确排除 Claude Code 配置目录（已由 * 覆盖，此处为显式声明）
+.claude/
+
+# 允许 .gitignore 本身
+!.gitignore
+
+# 允许 skill 主文件
+!SKILL.md
+
+# 允许项目说明文件
+!README.md
+!CHANGELOG.md
+
+# 允许 prompts 目录及其 yaml 文件
+!prompts/
+prompts/*
+!prompts/*.yaml
+!prompts/*.md
+
+# 允许 templates 目录结构及 yaml 文件
+!templates/
+templates/*
+!templates/builtin/
+templates/builtin/*
+!templates/builtin/*.yaml
+
+# 允许 tools 目录及 py 文件
+!tools/
+tools/*
+!tools/*.py

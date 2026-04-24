@@ -1,0 +1,349 @@
+# 章节图片配额配置
+# v1.0.0 | 定义各章节类型的图片数量配额和类型要求
+
+# ─────────────────────────────────────────────
+# 配额定义
+# ─────────────────────────────────────────────
+# quota: 目标图片数量（建议生成）
+# required: 最少图片数量（必须满足，低于此数需在质量自检中警告）
+# image_types: 推荐的图片类型列表
+# fallback_strategy: 获取失败时的降级策略
+
+chapter_image_quota:
+  # ========== 技术章节 ==========
+  requirement_analysis:
+    # 需求分析类：项目理解、需求分析、现状分析
+    quota: 1
+    required: 0
+    image_types: [需求分析图, 业务现状图, 痛点分析图]
+    fallback_strategy: placeholder
+
+  overall_solution:
+    # 总体方案类：总体架构、技术方案
+    quota: 2
+    required: 1
+    image_types: [系统架构图, 技术架构图, 平台架构图, 逻辑架构图]
+    fallback_strategy: ai_generate
+
+  technical_core:
+    # 技术核心类：专项技术响应、详细技术实现
+    quota: 3
+    required: 2
+    image_types: [架构图, 流程图, 网络拓扑图, 部署架构图, 数据流图]
+    fallback_strategy: ai_generate
+
+  product_features:
+    # 产品功能类：功能介绍、产品特性
+    quota: 2
+    required: 1
+    image_types: [功能架构图, 产品截图, 模块关系图]
+    fallback_strategy: ai_generate
+
+  performance_capacity:
+    # 性能容量类：性能指标、容量规划
+    quota: 1
+    required: 0
+    image_types: [性能测试图, 基准测试图, 容量规划图]
+    fallback_strategy: placeholder
+
+  security_solution:
+    # 安全方案类：安全架构、等保
+    quota: 1
+    required: 1
+    image_types: [安全架构图, 安全防护图, 等保架构图]
+    fallback_strategy: ai_generate
+
+  high_availability:
+    # 高可用类：容灾、双活
+    quota: 1
+    required: 1
+    image_types: [高可用架构图, 容灾架构图, 双活架构图]
+    fallback_strategy: ai_generate
+
+  operation_management:
+    # 运维管理类：监控、告警
+    quota: 1
+    required: 0
+    image_types: [监控架构图, 运维架构图, APM架构图]
+    fallback_strategy: placeholder
+
+  implementation_plan:
+    # 实施计划类：实施方案、项目计划
+    quota: 2
+    required: 1
+    image_types: [实施流程图, 甘特图, 项目组织架构图]
+    fallback_strategy: ai_generate
+
+  training_plan:
+    # 培训方案类：培训计划、培训体系
+    quota: 1
+    required: 1
+    image_types: [培训体系图, 培训路径图, 课程架构图]
+    fallback_strategy: ai_generate
+
+  technical_deviation:
+    # 技术偏离表
+    quota: 0
+    required: 0
+    image_types: []
+    fallback_strategy: none
+
+  # ========== 服务章节 ==========
+  implementation_service:
+    # 实施服务类
+    quota: 2
+    required: 1
+    image_types: [实施流程图, 实施计划图, 甘特图]
+    fallback_strategy: ai_generate
+
+  training_service:
+    # 培训服务类：培训方案、培训计划
+    quota: 1
+    required: 1
+    image_types: [培训体系图, 培训路径图, 课程架构图]
+    fallback_strategy: ai_generate
+
+  after_sales_service:
+    # 售后服务类
+    quota: 2
+    required: 1
+    image_types: [服务流程图, 故障分级图, SLA响应图]
+    fallback_strategy: ai_generate
+
+  operation_support:
+    # 运维保障类
+    quota: 1
+    required: 0
+    image_types: [运维架构图, 巡检流程图, 应急预案图]
+    fallback_strategy: placeholder
+
+  # ========== 商务章节 ==========
+  company_profile:
+    # 公司简介类
+    quota: 1
+    required: 0
+    image_types: [组织架构图, 公司资质图]
+    fallback_strategy: placeholder
+
+  project_cases:
+    # 项目业绩类
+    quota: 1
+    required: 0
+    image_types: [案例架构图, 部署示意图]
+    fallback_strategy: placeholder
+
+  team_profile:
+    # 团队配置类
+    quota: 1
+    required: 0
+    image_types: [组织架构图, 团队结构图]
+    fallback_strategy: placeholder
+
+  financial_status:
+    # 财务状况类
+    quota: 0
+    required: 0
+    image_types: []
+    fallback_strategy: none
+
+  business_deviation:
+    # 商务偏离表
+    quota: 0
+    required: 0
+    image_types: []
+    fallback_strategy: none
+
+  other_business:
+    # 其他商务
+    quota: 0
+    required: 0
+    image_types: []
+    fallback_strategy: none
+
+  # ========== 承诺章节 ==========
+  delivery_commitment:
+    # 交付承诺类
+    quota: 0
+    required: 0
+    image_types: []
+    fallback_strategy: none
+
+  service_commitment:
+    # 服务承诺类
+    quota: 0
+    required: 0
+    image_types: []
+    fallback_strategy: none
+
+  quality_commitment:
+    # 质量承诺类
+    quota: 0
+    required: 0
+    image_types: []
+    fallback_strategy: none
+
+# ─────────────────────────────────────────────
+# 默认配额（当章节类型未匹配时）
+# ─────────────────────────────────────────────
+defaults:
+  technical:
+    quota: 1
+    required: 0
+    image_types: [架构图, 流程图]
+    fallback_strategy: placeholder
+
+  service:
+    quota: 1
+    required: 0
+    image_types: [流程图, 体系图]
+    fallback_strategy: placeholder
+
+  business:
+    quota: 0
+    required: 0
+    image_types: []
+    fallback_strategy: none
+
+  commitment:
+    quota: 0
+    required: 0
+    image_types: []
+    fallback_strategy: none
+
+# ─────────────────────────────────────────────
+# 图片来源优先级（按 IMAGE_SOURCE 参数）
+# ─────────────────────────────────────────────
+image_source_strategies:
+  auto:
+    # 自动模式：按三级章节（H3）粒度，根据每个子节的内容上下文独立选择图片来源
+    mode: context_based
+    granularity: h3  # 决策粒度为三级章节，同一 H2 下不同 H3 可选不同来源
+    decision_rules:
+      - condition: "子节涉及架构设计、流程描述、部署方案、网络拓扑"
+        prefer: drawio
+        reason: "draw.io 生成的架构图/流程图专业美观、可编辑"
+      - condition: "子节涉及公司产品截图、已有方案、历史案例、组织架构"
+        prefer: kb
+        reason: "Local-KnowledgeBase 中的真实图片更具说服力（图文共生模式）"
+      - condition: "子节需要示意图、概念图、通用技术图、安全架构图"
+        prefer: ai
+        reason: "AI 生成的示意图风格统一、质量稳定"
+      - condition: "子节需要行业数据图、第三方产品截图、市场趋势图"
+        prefer: web
+        reason: "互联网来源提供真实的行业数据和产品截图"
+      - condition: "无法判断或均不适合"
+        prefer: placeholder
+        reason: "使用占位符，后续人工补充"
+    fallback: placeholder
+    description: "按 H3 子节粒度动态选择（drawio/kb/ai/web/placeholder）"
+
+  drawio:
+    # 仅 draw.io
+    priority:
+      - drawio
+      - placeholder
+    description: "仅 draw.io 图表（失败使用占位符）"
+
+  ai:
+    # 仅 AI 生成
+    priority:
+      - ai
+      - placeholder
+    description: "仅 AI 生成（失败使用占位符）"
+
+  web:
+    # 仅互联网下载
+    priority:
+      - web
+      - placeholder
+    description: "仅互联网下载（失败使用占位符）"
+
+  placeholder:
+    # 仅占位符
+    priority:
+      - placeholder
+    description: "仅使用占位符"
+
+# ─────────────────────────────────────────────
+# 图片获取执行流程
+# ─────────────────────────────────────────────
+acquisition_workflow: |
+  ## 步骤1: 确定配额
+  配额确定顺序（优先级从高到低）：
+  1. 命令行 --l2-images / --l3-images 参数（最高优先，IMAGE_OVERRIDE）
+  2. chapter_image_quota[section_type].quota
+  3. defaults[chapter_type].quota
+
+  具体流程：
+  1. 从 Phase 1.1 获取章节类型 (section_type)
+  2. 查询 chapter_image_quota[section_type] 获取配额 N 和最少要求 M
+  3. 若未匹配到具体类型，使用 defaults[大类型] (technical/service/business/commitment)
+  4. 若 IMAGE_OVERRIDE[当前heading_level] 已设置 → 覆盖 quota 值
+
+  ## 步骤2: 图片需求分析
+  1. 分析章节内容纲要，提取关键主题
+  2. 从 M2 技术要求提取相关组件/功能
+  3. 匹配 image_types 确定需要的图片类型
+  4. 生成图片需求列表: [{type, description, priority}, ...]
+
+  ## 步骤3: 执行图片获取（按优先级链）
+  对于每个图片需求 (i from 1 to N):
+    按照 IMAGE_SOURCE 指定的优先级链尝试获取:
+
+    - kb:
+        1. 搜索 Local-KnowledgeBase 文档中的内嵌图片（通过 kb_catalog.yaml 索引）
+        2. 若找到匹配图片 → 记录到 SECTION_IMAGES
+
+    - drawio:
+        调用 drawio_generator.py
+        参数：--type {图片类型} --topic "{章节主题}" --details "{关键组件/流程/结构}"
+        若成功生成 → 记录到 SECTION_IMAGES
+
+    - ai:
+        调用 ai_image_generator.py
+        参数: --type {图片类型} --topic "{章节主题}" --components "{关键组件}"
+        若成功生成 → 记录到 SECTION_IMAGES
+
+    - web:
+        使用 WebSearch 搜索图片
+        下载并验证图片
+        若成功下载 → 记录到 SECTION_IMAGES
+
+    - placeholder:
+        生成占位符文本: "图 {章节号}-{序号}: {图片描述} [待插入]"
+        记录到 SECTION_IMAGES
+
+  ## 步骤4: 统一记录格式
+  SECTION_IMAGES[章节号] = [
+    {
+      index: 1,
+      path: "/path/to/image.png" | null,
+      caption: "图 X.X-1: 图片描述",
+      source: "AI生成|知识库|占位符|...",
+      type: "architecture|flowchart|...",
+      status: "success|placeholder|failed"
+    },
+    ...
+  ]
+
+# ─────────────────────────────────────────────
+# 质量自检检查项
+# ─────────────────────────────────────────────
+quality_check:
+  image_quota_check:
+    description: "检查图片配额达成情况"
+    criteria:
+      - "实际生成图片数 >= required（最少要求）"
+      - "实际生成图片数尽量接近 quota（目标配额）"
+    output_format: |
+      图片配额达成: X/M 张（实插 Y 张 / 占位符 Z 张）
+        - 配额要求: [章节类型] 需 [quota] 张（最少 [required] 张）
+        - 实际生成: [Y] 张实图 + [Z] 张占位符
+        - 状态: [满足 / 图片数量不足]
+
+# ─────────────────────────────────────────────
+# [DEPRECATED] 以下规则已在 v3.0 废弃
+# ─────────────────────────────────────────────
+# h3_allocation_rules 和 matching_priority 已被 AI 驱动的图文共生模式替代。
+# 新逻辑见 image_guidelines.yaml + SKILL.md Phase 2 Step 2b。
+# 历史版本参见 git log。

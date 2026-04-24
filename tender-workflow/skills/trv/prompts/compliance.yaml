@@ -1,0 +1,232 @@
+# 合规性审查要点
+
+system:
+  role: 招投标法规合规专家
+  task: 审查文档合规性，识别违规风险
+  output_format: 合规审查报告
+  language: 中文
+
+# 法规框架
+regulations:
+  - name: 招标投标法
+    reference: 中华人民共和国招标投标法（2017修正）
+    key_articles:
+      - article: 第十八条
+        content: 招标人不得以不合理的条件限制或者排斥潜在投标人
+      - article: 第十九条
+        content: 招标文件应当包括招标项目的技术要求、对投标人资格审查的标准、投标报价要求和评标标准等所有实质性要求和条件以及拟签订合同的主要条款
+      - article: 第二十七条
+        content: 投标人应当按照招标文件的要求编制投标文件
+
+  - name: 招标投标法实施条例
+    reference: 中华人民共和国招标投标法实施条例（2019修订）
+    key_articles:
+      - article: 第三十二条
+        content: 招标人不得以不合理的条件限制、排斥潜在投标人或者投标人
+        prohibited_conditions:
+          - 提供有差别的项目信息
+          - 设定的资格、技术、商务条件与招标项目的具体特点和实际需要不相适应或者与合同履行无关
+          - 以特定行政区域或者特定行业的业绩、奖项作为加分条件或者中标条件
+          - 对潜在投标人或者投标人采取不同的资格审查或者评标标准
+          - 限定或者指定特定的专利、商标、品牌、原产地或者供应商
+          - 非法限定潜在投标人或者投标人的所有制形式或者组织形式
+
+  - name: 政府采购法
+    reference: 中华人民共和国政府采购法（2014修正）
+    key_articles:
+      - article: 第二十二条
+        content: 供应商参加政府采购活动应当具备的条件
+      - article: 第二十三条
+        content: 采购人可以要求参加政府采购的供应商提供有关资质证明文件和业绩情况
+
+  - name: 政府采购法实施条例
+    reference: 中华人民共和国政府采购法实施条例（2015）
+    key_articles:
+      - article: 第二十条
+        content: 采购人或者采购代理机构有下列情形之一的，属于以不合理的条件对供应商实行差别待遇或者歧视待遇
+
+  - name: 评标委员会和评标方法暂行规定
+    reference: 七部委12号令（2013修订）
+    key_articles:
+      - article: 第二十九条
+        content: 评标方法包括经评审的最低投标价法、综合评估法或者法律、行政法规允许的其他评标方法
+
+# 合规审查要点（按审核类型）
+compliance_checks:
+
+  tender_doc:
+    name: 技术规格与评标办法合规性审查（tpl v2.0 输出）
+    categories:
+      - name: 技术要求合规性
+        checks:
+          - item: 品牌限定检查
+            regulation: 招标投标法实施条例第三十二条
+            check_point: 不得限定特定品牌（除特殊情况并标注"或同等"），技术规格中不得出现产品名、品牌名、公司名
+            risk: 品牌倾向性/控标
+
+          - item: 专利技术要求
+            regulation: 招标投标法实施条例第三十二条
+            check_point: 不得以特定专利或专有技术作为技术要求
+            risk: 技术壁垒/控标
+
+          - item: 技术参数可验证性
+            regulation: 招标投标法第十九条
+            check_point: 技术参数应明确、可验证，量化指标使用下限表达（"不低于"/"应不少于"）
+            risk: 评标争议/精确值指标疑似控标
+
+      - name: 评标办法合规性
+        checks:
+          - item: 价格权重设置
+            regulation: 政府采购货物和服务招标投标管理办法（87号令）第五十五条
+            check_point:
+              - 货物项目价格权重≥30%
+              - 服务项目价格权重≥10%
+            risk: 价格权重设置不合规
+
+          - item: 客观分占比
+            regulation: 政府采购货物和服务招标投标管理办法（87号令）第五十五条
+            check_point: 技术评分中客观分占比应不低于60%
+            risk: 主观评分过多，评标自由裁量空间过大
+
+          - item: 评分标准明确性
+            regulation: 招标投标法第十九条
+            check_point: 评分标准应明确、可操作，主观评分项应有四档评分标准（优/良/一般/较差）
+            risk: 评标标准模糊，引发争议
+
+          - item: 无效投标认定合法性
+            regulation: 评标委员会和评标方法暂行规定
+            check_point: 废标条款应明确、合法，不得设置超出法规范围的废标条件
+            risk: 违法废标/排斥投标人
+
+      - name: 反控标合规性
+        checks:
+          - item: 品牌残留检查
+            regulation: 招标投标法实施条例第三十二条
+            check_point: 全文扫描是否存在产品名、品牌名、公司名残留（包括缩写、别称）
+            risk: 控标痕迹，可能被质疑或投诉
+
+          - item: 精确值指标检查
+            regulation: 招标投标法实施条例第三十二条
+            check_point: 量化指标不得使用精确值（如"等于X"），应使用下限表达；精确值指标疑似为特定产品量身定制
+            risk: 精确值指标控标
+
+          - item: 排他性条款检查
+            regulation: 招标投标法实施条例第三十二条
+            check_point: 检查是否存在仅少数供应商能满足的排他性技术要求组合
+            risk: 排他性条款控标
+
+      - name: 技术评分与技术规格对应关系
+        checks:
+          - item: 评分维度覆盖技术规格主要章节
+            regulation: 招标投标法第十九条
+            check_point: 技术评分维度应与技术规格主要章节对应，不得出现无对应技术规格的评分维度
+            risk: 评分标准与技术要求脱节
+
+          - item: 必须项与无效投标认定对应
+            regulation: 评标委员会和评标方法暂行规定
+            check_point: 技术规格中标注"必须"的要求应在无效投标认定中有对应条款
+            risk: 必须项未设废标保障，形同虚设
+
+  analysis:
+    name: 分析报告合规性审查
+    categories:
+      - name: 信息提取准确性
+        checks:
+          - item: 关键信息提取
+            check_point: 预算、时间、资质要求等关键信息应准确提取
+            risk: 误导后续工作
+
+          - item: 评分标准理解
+            check_point: 评分标准理解应与招标文件一致
+            risk: 策略偏差
+
+  outline:
+    name: 投标大纲合规性审查
+    categories:
+      - name: 响应完整性
+        checks:
+          - item: 否决项响应
+            check_point: 大纲应覆盖所有否决项响应
+            risk: 废标风险
+
+          - item: 评分项覆盖
+            check_point: 章节设置应覆盖所有评分项
+            risk: 丢分风险
+
+  chapter:
+    name: 章节内容合规性审查
+    categories:
+      - name: 内容合规性
+        checks:
+          - item: 资质承诺合规
+            check_point: 不得承诺超出自身资质范围的内容
+            risk: 虚假承诺
+
+          - item: 技术响应合规
+            check_point: 技术参数响应应真实、可验证
+            risk: 技术偏差
+
+          - item: 工期承诺
+            check_point: 工期承诺应符合实际能力
+            risk: 履约风险
+
+  full_bid:
+    name: 技术标书合规性审查
+    categories:
+      - name: 技术内容合规性
+        checks:
+          - item: 否决项检查
+            check_point: 对照招标文件废标条款，技术标书不得存在否决项情形
+            risk: 废标
+            scope: chapter
+
+          - item: 一致性检查
+            check_point: 全文数据、承诺应一致，无自相矛盾
+            risk: 重大偏差
+            scope: global
+
+          - item: 技术参数响应完整性
+            check_point: 对照招标文件技术要求，所有【必须】条款均有明确响应
+            risk: 响应不完整
+            scope: chapter
+
+# 输出格式定义
+output:
+  format: 合规审查报告
+
+  structure:
+    summary:
+      - total_checks: 审查项总数
+      - compliant: 合规项数
+      - non_compliant: 不合规项数
+      - high_risk: 高风险项数
+      - compliance_rate: 合规率
+
+    details:
+      - category: 合规类别
+        checks:
+          - item: 审查项名称
+            status: [合规/不合规/需关注]
+            regulation: 相关法规条款
+            finding: 审查发现
+            risk: 风险描述
+            recommendation: 修改建议
+
+    high_risk_items:
+      description: 高风险不合规项，可能导致废标或法律后果
+      items:
+        - 违规条款描述
+        - 相关法规
+        - 修改建议
+
+    medium_risk_items:
+      description: 中等风险项，可能影响评分或产生争议
+      items:
+        - 违规条款描述
+        - 相关法规
+        - 修改建议
+
+    low_risk_items:
+      description: 低风险项，建议优化
+      items:
+        - 建议优化内容

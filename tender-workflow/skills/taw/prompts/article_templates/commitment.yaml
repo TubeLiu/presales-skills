@@ -1,0 +1,91 @@
+# 承诺部分章节模板
+# v2.0.0 | 语义驱动，无硬编码章节号
+
+chapter_type: commitment
+display_name: "承诺部分"
+description: "交付承诺、服务承诺、质量承诺"
+
+# ─────────────────────────────────────────────
+# 通用写作规则（适用于所有承诺类章节）
+# ─────────────────────────────────────────────
+writing_rules: |
+  **承诺部分写作总则**：
+  - 承诺须具体明确，避免模糊表述
+  - 承诺内容须与 M3 合同条款一致
+  - 不可过度承诺，标注 `[待商务确认]`
+  - 承诺须有保障措施和违约责任
+  - 以{VENDOR_NAME}名义作出承诺，体现企业责任感
+
+# ─────────────────────────────────────────────
+# 章节类型细分（按语义，不按编号）
+# ─────────────────────────────────────────────
+section_types:
+  delivery_commitment:
+    semantic_keywords: [交付承诺, 交付时间, 交付内容, 交付质量, 履约承诺]
+    word_count: 1500
+    image_quota: 0
+    required_images: 0
+    content_elements:
+      - 交付时间承诺（项目周期、里程碑节点、最终交付时间）
+      - 交付内容承诺（软件产品、硬件设备、技术文档、培训服务）
+      - 交付质量承诺（验收标准、质量标准、性能指标）
+      - 交付风险承诺（风险控制、延期赔偿、质量保证）
+    kb_priority: [fixed]
+    image_types: [交付计划图, 甘特图]
+    notes: |
+      - 交付时间需与 M3 合同条款一致
+      - 不可过度承诺，标注 `[待商务确认]`
+
+  service_commitment:
+    semantic_keywords: [服务承诺, 服务响应, 服务质量, 服务保障, 服务级别]
+    word_count: 1500
+    image_quota: 0
+    required_images: 0
+    content_elements:
+      - 服务响应承诺（7x24小时、响应时间、解决时间）
+      - 服务质量承诺（服务级别、服务标准、服务满意度）
+      - 服务保障承诺（服务团队、备件保障、应急预案）
+      - 服务违约承诺（违约责任、赔偿标准、补救措施）
+    kb_priority: [fixed]
+    image_types: [服务响应流程图, 故障分级图]
+    notes: |
+      - 服务承诺需与 M3 服务要求一致
+      - 响应时间、解决时间需明确具体
+
+  quality_commitment:
+    semantic_keywords: [质量承诺, 质量保障, 质量标准, 质保期, 质量管理]
+    word_count: 1500
+    image_quota: 0
+    required_images: 0
+    content_elements:
+      - 产品质量承诺（产品质量标准、产品质保期、产品缺陷处理）
+      - 服务质量承诺（服务质量标准、服务质保期、服务投诉处理）
+      - 质量保障措施（质量管理体系、质量检查、质量改进）
+      - 质量违约承诺（质量违约责任、质量赔偿标准、质量补救措施）
+    kb_priority: [fixed]
+    image_types: [质量保障体系图]
+    notes: |
+      - 质量承诺需与 M3 质量要求一致
+      - 质保期需明确具体（如"3年质保"）
+
+# ─────────────────────────────────────────────
+# 图片推荐规则（按语义触发，不按章节号）
+# ─────────────────────────────────────────────
+image_recommendations:
+  - triggers: [交付计划, 交付时间, 里程碑]
+    type: 甘特图
+    description: 项目交付计划甘特图
+    placement: after_content
+    priority: medium
+
+  - triggers: [服务承诺, 服务响应, 故障分级]
+    type: 流程图
+    description: 服务响应流程图（故障分级/响应时间/升级机制）
+    placement: after_content
+    priority: medium
+
+  - triggers: [质量保障, 质量管理, 质量体系]
+    type: 流程图
+    description: 质量保障体系图（质量管理/质量检查/质量改进）
+    placement: after_content
+    priority: low

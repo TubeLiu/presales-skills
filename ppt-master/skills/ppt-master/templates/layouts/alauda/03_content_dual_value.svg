@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+    <!-- Content Variant: Dual Product Value - Alauda Style (Slide 10) -->
+    <!-- White background -->
+    <rect width="1280" height="720" fill="#FFFFFF"/>
+
+    <!-- Background decorations (approximated from master EMF) -->
+    <circle cx="1350" cy="600" r="280" fill="#3BAEE3" fill-opacity="0.04"/>
+    <circle cx="1400" cy="250" r="220" fill="#3BAEE3" fill-opacity="0.03"/>
+    <ellipse cx="1150" cy="780" rx="350" ry="130" fill="#3BAEE3" fill-opacity="0.02"/>
+
+    <!-- Left edge accent bar (PPTX: pos 0,29 size 22x45) -->
+    <rect x="0" y="29" width="22" height="45" fill="#3BAEE3"/>
+
+    <!-- Page title -->
+    <text x="46" y="55" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="37" font-weight="bold" fill="#334155">
+        {{PAGE_TITLE}}
+    </text>
+    <!-- Key message -->
+    <text x="32" y="95" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="21" fill="#334155">
+        {{KEY_MESSAGE}}
+    </text>
+
+    <!-- Product A panel -->
+    <rect x="60" y="130" width="565" height="520" fill="#F8FAFC" rx="8" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="60" y="130" width="565" height="6" fill="#3BAEE3" rx="3"/>
+
+    <!-- Product A header -->
+    <rect x="80" y="155" width="120" height="32" fill="#D8EFF9" rx="4"/>
+    <text x="140" y="177" text-anchor="middle" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="13" font-weight="bold" fill="#125B7D">
+        {{PRODUCT_A_TAG}}
+    </text>
+    <text x="80" y="220" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="22" font-weight="bold" fill="#334155">
+        {{PRODUCT_A_TITLE}}
+    </text>
+    <text x="80" y="250" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">
+        {{PRODUCT_A_SUBTITLE}}
+    </text>
+
+    <!-- Product A content area -->
+    <text x="80" y="290" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">
+        {{PRODUCT_A_CONTENT}}
+    </text>
+
+    <!-- Center divider -->
+    <line x1="640" y1="150" x2="640" y2="630" stroke="#E2E8F0" stroke-width="1"/>
+
+    <!-- Product B panel -->
+    <rect x="655" y="130" width="565" height="520" fill="#F8FAFC" rx="8" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="655" y="130" width="565" height="6" fill="#14B8A6" rx="3"/>
+
+    <!-- Product B header -->
+    <rect x="675" y="155" width="120" height="32" fill="#CCFBF1" rx="4"/>
+    <text x="735" y="177" text-anchor="middle" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="13" font-weight="bold" fill="#0F766E">
+        {{PRODUCT_B_TAG}}
+    </text>
+    <text x="675" y="220" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="22" font-weight="bold" fill="#334155">
+        {{PRODUCT_B_TITLE}}
+    </text>
+    <text x="675" y="250" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">
+        {{PRODUCT_B_SUBTITLE}}
+    </text>
+
+    <!-- Product B content area -->
+    <text x="675" y="290" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">
+        {{PRODUCT_B_CONTENT}}
+    </text>
+
+    <!-- Footer line -->
+    <line x1="0" y1="682" x2="1280" y2="682" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="60" y="706" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8" letter-spacing="1">Alauda</text>
+    <text x="1220" y="706" text-anchor="end" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8">{{PAGE_NUM}}</text>
+
+</svg>

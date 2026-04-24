@@ -1,0 +1,37 @@
+{
+  "name": "solution-master",
+  "version": "0.1.0",
+  "description": "AI 辅助通用解决方案撰写框架 — Claude Code 插件，内置防脱轨 hook 机制",
+  "type": "module",
+  "bin": {
+    "solution-master": "bin/solution-master.js"
+  },
+  "files": [
+    "bin/",
+    "skills/",
+    "agents/",
+    "commands/",
+    "hooks/",
+    ".claude-plugin/",
+    "CLAUDE.md",
+    "README.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md"
+  ],
+  "keywords": [
+    "solution",
+    "writing",
+    "docx",
+    "markdown",
+    "subagent",
+    "workflow",
+    "chinese",
+    "中文",
+    "technical-writing",
+    "claude-code",
+    "plugin",
+    "skills"
+  ],
+  "author": "LiuZiJiao",
+  "license": "MIT"
+}

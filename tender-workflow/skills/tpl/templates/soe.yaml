@@ -1,0 +1,147 @@
+# 央国企行业招标文件模板（v2.0 - 聚焦技术规格与评标办法）
+
+template:
+  name: soe
+  display_name: 央国企行业
+  description: 适用于中央企业、国有企业的云原生IT产品及服务采购
+  legacy_names: []
+  product_types:
+    - 云原生容器平台（Kubernetes、多集群管理）
+    - DevOps平台（CI/CD、流水线、代码质量）
+    - 微服务治理平台（服务网格、配置中心、分布式追踪）
+    - AI平台（模型训练、推理服务、GPU调度）
+    - 云原生数据库/中间件（分布式数据库、消息队列、缓存）
+    - 技术服务（咨询、实施、迁移、优化）
+    - 维保服务（运维、巡检、故障处理、升级）
+
+# 行业特征
+characteristics:
+  procurement_method: 公开招标或邀请招标
+  evaluation_method: 综合评分法
+  price_weight: "30%"
+  technical_weight: "45%"
+  business_weight: "25%"
+  core_concerns:
+    - 自主可控（国资委要求）
+    - 稳定性优先于先进性
+    - 长期技术支持（≥5年）
+    - 国产化替代
+    - 央企合规要求
+  common_requirements:
+    - 自主可控技术路线
+    - 国产化适配能力
+    - 长期技术支持承诺（≥5年）
+    - 央企信息化建设规范
+    - 数据安全与隐私保护
+
+# 评标办法默认结构
+scoring_defaults:
+  price_weight: "30%"
+  business_weight: "25%"
+  technical_weight: "45%"
+  objective_score_ratio: "≥60%"
+
+  business_scoring:
+    - item: 企业资质等级
+      weight: "4-6分"
+      details: [CS等级, ISO9001, 软件企业认定, 高新技术企业]
+    - item: 财务状况
+      weight: "3-4分"
+    - item: 央国企项目业绩
+      weight: "8-10分"
+      details: [央企项目, 国企项目, 大型集团项目]
+    - item: 履约评价
+      weight: "3-4分"
+    - item: 认证体系
+      weight: "3-4分"
+      details: [ISO9001, ISO27001, CMMI, CNCF认证]
+
+  technical_scoring:
+    - item: 需求理解
+      weight: "5-8分"
+    - item: 技术方案
+      weight: "16-20分"
+      sub_items:
+        - 自主可控技术路线
+        - 云原生架构设计
+        - 国产化适配方案
+        - 稳定性保障措施
+        - 容灾备份方案
+    - item: 实施方案
+      weight: "10-12分"
+      sub_items:
+        - 实施计划与里程碑
+        - 风险管理
+        - 业务连续性保障
+    - item: 项目团队
+      weight: "5-8分"
+      details: [央国企项目经验, 技术认证]
+    - item: 售后服务
+      weight: "6-8分"
+      sub_items:
+        - 长期技术支持承诺（≥5年）
+        - 响应时间承诺
+        - 驻场服务
+        - 定期巡检
+
+# 技术规格默认框架
+tech_spec_defaults:
+  sections:
+    - name: 项目总体要求
+      content: [项目背景, 建设目标, 建设原则, 建设范围]
+    - name: 业务需求分析
+      content: [业务流程, 用户角色, 功能需求]
+    - name: 自主可控技术路线要求
+      content:
+        - 核心技术自主可控
+        - 避免单一厂商锁定
+        - 开源技术优先
+        - 国产化替代路线
+    - name: 云原生技术架构要求
+      content:
+        - 容器编排平台（Kubernetes）
+        - 容器云平台核心能力
+        - 多集群管理能力
+        - 混合云/多云支持
+    - name: 功能需求规格
+      content: [功能模块清单, 各模块详细需求]
+    - name: 非功能性要求
+      content:
+        - 性能要求
+        - 安全要求
+        - 可靠性要求（99.9%可用性）
+        - 兼容性要求
+        - 可维护性要求
+    - name: 国产化适配要求
+      content:
+        - 国产化CPU支持（鲲鹏、海光、龙芯、飞腾）
+        - 国产化操作系统支持（麒麟、统信UOS、欧拉）
+        - 国产化数据库支持（达梦、人大金仓、OceanBase）
+        - 国产化中间件支持（东方通、金蝶天燕）
+        - 国产化适配测试报告
+    - name: 长期技术支持要求
+      content:
+        - 技术支持期限（≥5年）
+        - 版本升级策略
+        - 安全补丁及时性
+        - 技术培训与知识转移
+        - 备件供应保障
+    - name: 交付物要求
+      content: [软件交付物, 文档交付物, 培训要求, 源码交付（如有要求）]
+    - name: 验收标准
+      content: [功能验收, 性能验收, 安全验收, 稳定性测试, 国产化适配验证]
+
+# 反控标行业覆盖配置
+anti_control_overrides:
+  allowed_specific_terms:
+    - Kubernetes
+    - CNCF
+    - OCI
+    - CNI
+    - CSI
+  required_standard_references:
+    - 国资委信息化建设指导意见
+    - 央企网络安全管理办法
+    - 等保（GB/T 22239）
+    - 信创产品目录
+  metric_sensitivity: high  # 央国企对自主可控要求明确，指标调整需更激进避免品牌关联

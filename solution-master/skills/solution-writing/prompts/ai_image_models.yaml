@@ -1,0 +1,139 @@
+# AI 图片生成模型注册表
+# v1.0.0 | 定义各提供商的可用模型、规格和状态
+# 此文件为静态数据源，/solution-config models 命令读取此文件渲染固定格式输出
+# 新增模型只需在对应 provider.models 列表中添加条目
+
+version: "1.0.0"
+last_updated: "2026-04-08"
+
+providers:
+  ark:
+    name: "火山方舟 (Volcengine Ark)"
+    sdk_package: volcengine-python-sdk
+    env_key: ARK_API_KEY
+    config_key: api_keys.ark
+    models:
+      - id: doubao-seedream-5-0-260128
+        name: Seedream 5.0 Lite
+        max_resolution: "原生2K, AI增强4K"
+        price: "~¥0.25/张"
+        features: "联网搜索、多步推理、模糊意图编辑"
+        status: current
+      - id: doubao-seedream-4-5-251128
+        name: Seedream 4.5
+        max_resolution: "4K (4096×4096)"
+        price: "¥0.30/张"
+        features: "极致写实、精准文字渲染、商用优化"
+        status: available
+      - id: doubao-seedream-4-0-250828
+        name: Seedream 4.0
+        max_resolution: "4K (4096×4096)"
+        price: "¥0.20/张"
+        features: "多图融合(最多15张)、性价比最优"
+        status: available
+      - id: doubao-seedream-3-0-t2i-250415
+        name: Seedream 3.0
+        max_resolution: "2K (2048×2048)"
+        price: "¥0.26/张"
+        features: "中英双语、文字生成准确"
+        status: deprecated
+
+  dashscope:
+    name: "阿里云 (DashScope)"
+    sdk_package: null  # HTTP REST API，无需额外 SDK
+    env_key: DASHSCOPE_API_KEY
+    config_key: api_keys.dashscope
+    models:
+      - id: qwen-image-2.0-pro
+        name: Qwen Image 2.0 Pro
+        max_resolution: "2K (2048×2048)"
+        price: "~$0.075/张"
+        features: "中文文字渲染最强、图表/PPT生成"
+        status: current
+      - id: qwen-image-2.0
+        name: Qwen Image 2.0
+        max_resolution: "2K (2048×2048)"
+        price: "~$0.035/张"
+        features: "加速版，效果与速度平衡"
+        status: available
+      - id: wan2.7-image-pro
+        name: 万相 2.7 Pro
+        max_resolution: "4K (4096×4096)"
+        price: "待公布"
+        features: "Thinking推理、组图1-12张、12语言文字渲染"
+        status: available
+      - id: wan2.6-t2i
+        name: 万相 2.6
+        max_resolution: "~1.4K"
+        price: "~¥0.20/张"
+        features: "基础写实"
+        status: available
+      - id: z-image-turbo
+        name: Z-Image Turbo
+        max_resolution: "2K (2048×2048)"
+        price: "$0.015/张"
+        features: "最便宜、高速、高逼真人像"
+        status: available
+
+  gemini:
+    name: "Google Gemini"
+    sdk_package: google-genai
+    env_key: GEMINI_API_KEY
+    config_key: api_keys.gemini
+    models:
+      # --- Gemini 多模态生图（generateContent API）---
+      - id: gemini-2.5-flash-image
+        name: Gemini 2.5 Flash Image
+        api: generateContent
+        max_resolution: "4K (4096×4096)"
+        price: "~$0.039/张"
+        features: "原生生图、图片编辑、角色一致性、对话式优化、支持2K/4K"
+        status: current
+      - id: gemini-3.1-flash-image-preview
+        name: Gemini 3.1 Flash Image Preview
+        api: generateContent
+        max_resolution: "4K (4096×4096)"
+        price: "~$0.045/张"
+        features: "快速生成、文字渲染优化、支持14张参考图风格一致性"
+        status: available
+      - id: gemini-3-pro-image-preview
+        name: Gemini 3 Pro Image Preview
+        api: generateContent
+        max_resolution: "4K (4096×4096)"
+        price: "~$0.134/张"
+        features: "专业级画质、深度推理(Thinking)、工作室级4K"
+        status: available
+      - id: gemini-2.0-flash-exp
+        name: Gemini 2.0 Flash Exp
+        api: generateContent
+        max_resolution: "1K (1024×1024)"
+        price: "按量计费"
+        features: "实验性、对话式编辑"
+        status: deprecated
+      # --- Imagen 系列（generate_images API）---
+      - id: imagen-4.0-fast-generate-001
+        name: Imagen 4.0 Fast
+        api: generate_images
+        max_resolution: "1K (1024×1024)"
+        price: "按量计费"
+        features: "极速(~4秒)、英文提示词优先"
+        status: available
+      - id: imagen-4.0-generate-001
+        name: Imagen 4.0
+        api: generate_images
+        max_resolution: "1K (1024×1024)"
+        price: "按量计费"
+        features: "高质量、速度较慢"
+        status: available
+
+# /solution-config models 输出模板（确保弱模型也能固定格式输出）
+display:
+  header: "## AI 图片生成模型列表\n"
+  table_header: "| 提供商 | 模型 ID | 名称 | 最大分辨率 | 价格 | 特点 | 状态 |"
+  table_separator: "|--------|---------|------|-----------|------|------|------|"
+  status_map:
+    current: "★ 推荐"
+    available: "○ 可用"
+    deprecated: "✗ 已弃用"
+  user_default_marker: "● 当前默认"
+  footer: "\n> 状态说明：● 当前默认（用户配置）  ★ 推荐  ○ 可选  ✗ 已弃用\n> 更改默认模型：`/solution-config set ai_image.models.<provider> <model_id>`\n> 更改默认供应商：`/solution-config set ai_image.default_provider <ark|dashscope|gemini>`"

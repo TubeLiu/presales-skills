@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+# SessionStart hook for Solution Master plugin
+#
+# Adapted from superpowers-zh/hooks/session-start (MIT, jnMetaCode)
+# Source commit: 4a55cbf9f348ba694cf5cbf4d56df7340ff2b74f
+#
+# Changes from upstream:
+#   - Variable rename: PLUGIN_ROOT -> SM_ROOT
+#   - Read skills/using-solution-master/SKILL.md (instead of using-superpowers)
+#   - Injected text adapted to Solution Master context
+#   - Added project-gate: only fires in Solution Master projects
+#     (presence of drafts/, docs/specs/, or solution-writing skill marker)
+
+set -euo pipefail
+
+# Determine plugin root directory (self-locating)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SM_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+# -------- Project gate --------
+# Only inject context when the current project looks like a Solution Master
+# project. This prevents the hook from polluting non-SM projects when the
+# plugin is installed globally.
+PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$PWD}"
+if [ ! -d "${PROJECT_DIR}/drafts" ] && \
+   [ ! -d "${PROJECT_DIR}/docs/specs" ] && \
+   [ ! -f "${PROJECT_DIR}/skills/solution-writing/SKILL.md" ] && \
+   [ ! -f "${PROJECT_DIR}/.claude/skills/solution-writing/SKILL.md" ]; then
+  exit 0
+fi
+
+# Read using-solution-master content
+using_sm_content=$(cat "${SM_ROOT}/skills/using-solution-master/SKILL.md" 2>&1 || echo "Error reading using-solution-master skill")
+
+# Escape string for JSON embedding using bash parameter substitution.
+# Each ${s//old/new} is a single C-level pass - orders of magnitude
+# faster than the character-by-character loop this replaces.
+#
+# Handles the five most common JSON escape sequences per RFC 8259:
+# backslash, double-quote, newline, CR, tab, backspace, form-feed.
+# Other control chars (U+0000–U+0007, U+000E–U+001F) are rare in
+# markdown content and intentionally not handled — if they appear in
+# a SKILL file, JSON validity is not guaranteed.
+escape_for_json() {
+    local s="$1"
+    s="${s//\\/\\\\}"
+    s="${s//\"/\\\"}"
+    s="${s//$'\b'/\\b}"
+    s="${s//$'\f'/\\f}"
+    s="${s//$'\n'/\\n}"
+    s="${s//$'\r'/\\r}"
+    s="${s//$'\t'/\\t}"
+    printf '%s' "$s"
+}
+
+using_sm_escaped=$(escape_for_json "$using_sm_content")
+session_context="<EXTREMELY_IMPORTANT>\nYou are operating Solution Master — an AI 辅助通用解决方案撰写框架.\n\n**Below is the full content of your 'solution-master:using-solution-master' skill — your introduction to Solution Master's iron rules, red lines, and skill routing. For all other skills, use the 'Skill' tool:**\n\n${using_sm_escaped}\n</EXTREMELY_IMPORTANT>"
+
+# Output context injection as JSON.
+#
+# Cursor hooks expect `additional_context` at the top level.
+# Claude Code hooks expect `hookSpecificOutput.additionalContext` — this is
+# the documented API and is also what Solution Master's npx installer relies
+# on (the SessionStart hook is registered via settings.json, where
+# CLAUDE_PLUGIN_ROOT is NOT set, so the script falls through to the
+# default branch).
+#
+# Therefore: Cursor is detected via CURSOR_PLUGIN_ROOT, everything else
+# defaults to Claude Code format (which covers both plugin mode, npx mode,
+# and direct invocation for testing).
+#
+# Uses printf instead of heredoc (cat <<EOF) to work around a bash 5.3+
+# bug where heredoc variable expansion hangs when content exceeds ~512 bytes.
+if [ -n "${CURSOR_PLUGIN_ROOT:-}" ]; then
+  printf '{\n  "additional_context": "%s"\n}\n' "$session_context"
+else
+  printf '{\n  "hookSpecificOutput": {\n    "hookEventName": "SessionStart",\n    "additionalContext": "%s"\n  }\n}\n' "$session_context"
+fi
+
+exit 0

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+    <!-- Content Variant: Timeline - Alauda Style (Slide 27) -->
+    <!-- White background -->
+    <rect width="1280" height="720" fill="#FFFFFF"/>
+
+    <!-- Background decorations (approximated from master EMF) -->
+    <circle cx="1350" cy="600" r="280" fill="#3BAEE3" fill-opacity="0.04"/>
+    <circle cx="1400" cy="250" r="220" fill="#3BAEE3" fill-opacity="0.03"/>
+    <ellipse cx="1150" cy="780" rx="350" ry="130" fill="#3BAEE3" fill-opacity="0.02"/>
+
+    <!-- Left edge accent bar (PPTX: pos 0,29 size 22x45) -->
+    <rect x="0" y="29" width="22" height="45" fill="#3BAEE3"/>
+
+    <!-- Page title -->
+    <text x="46" y="55" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="37" font-weight="bold" fill="#334155">
+        {{PAGE_TITLE}}
+    </text>
+    <!-- Key message -->
+    <text x="32" y="95" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="21" fill="#334155">
+        {{KEY_MESSAGE}}
+    </text>
+
+    <!-- Timeline backbone line -->
+    <line x1="100" y1="300" x2="1180" y2="300" stroke="#E2E8F0" stroke-width="3"/>
+
+    <!-- Timeline node 1 -->
+    <circle cx="170" cy="300" r="16" fill="#3BAEE3"/>
+    <circle cx="170" cy="300" r="6" fill="#FFFFFF"/>
+    <text x="170" y="265" text-anchor="middle" font-family="&quot;Aptos Display&quot;, sans-serif" font-size="18" font-weight="bold" fill="#3BAEE3">
+        {{TIME_1}}
+    </text>
+    <!-- Card above line -->
+    <rect x="100" y="330" width="160" height="280" fill="#F8FAFC" rx="8" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="100" y="330" width="160" height="4" fill="#3BAEE3" rx="2"/>
+    <text x="120" y="365" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="15" font-weight="bold" fill="#334155">
+        {{EVENT_1_TITLE}}
+    </text>
+    <text x="120" y="390" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="12" fill="#475569">
+        {{EVENT_1_DESC}}
+    </text>
+
+    <!-- Timeline node 2 -->
+    <circle cx="390" cy="300" r="16" fill="#14B8A6"/>
+    <circle cx="390" cy="300" r="6" fill="#FFFFFF"/>
+    <text x="390" y="265" text-anchor="middle" font-family="&quot;Aptos Display&quot;, sans-serif" font-size="18" font-weight="bold" fill="#14B8A6">
+        {{TIME_2}}
+    </text>
+    <rect x="310" y="330" width="160" height="280" fill="#F8FAFC" rx="8" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="310" y="330" width="160" height="4" fill="#14B8A6" rx="2"/>
+    <text x="330" y="365" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="15" font-weight="bold" fill="#334155">
+        {{EVENT_2_TITLE}}
+    </text>
+    <text x="330" y="390" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="12" fill="#475569">
+        {{EVENT_2_DESC}}
+    </text>
+
+    <!-- Timeline node 3 -->
+    <circle cx="620" cy="300" r="16" fill="#25B273"/>
+    <circle cx="620" cy="300" r="6" fill="#FFFFFF"/>
+    <text x="620" y="265" text-anchor="middle" font-family="&quot;Aptos Display&quot;, sans-serif" font-size="18" font-weight="bold" fill="#25B273">
+        {{TIME_3}}
+    </text>
+    <rect x="540" y="330" width="160" height="280" fill="#F8FAFC" rx="8" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="540" y="330" width="160" height="4" fill="#25B273" rx="2"/>
+    <text x="560" y="365" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="15" font-weight="bold" fill="#334155">
+        {{EVENT_3_TITLE}}
+    </text>
+    <text x="560" y="390" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="12" fill="#475569">
+        {{EVENT_3_DESC}}
+    </text>
+
+    <!-- Timeline node 4 -->
+    <circle cx="850" cy="300" r="16" fill="#125B7D"/>
+    <circle cx="850" cy="300" r="6" fill="#FFFFFF"/>
+    <text x="850" y="265" text-anchor="middle" font-family="&quot;Aptos Display&quot;, sans-serif" font-size="18" font-weight="bold" fill="#125B7D">
+        {{TIME_4}}
+    </text>
+    <rect x="770" y="330" width="160" height="280" fill="#F8FAFC" rx="8" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="770" y="330" width="160" height="4" fill="#125B7D" rx="2"/>
+    <text x="790" y="365" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="15" font-weight="bold" fill="#334155">
+        {{EVENT_4_TITLE}}
+    </text>
+    <text x="790" y="390" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="12" fill="#475569">
+        {{EVENT_4_DESC}}
+    </text>
+
+    <!-- Timeline node 5 -->
+    <circle cx="1080" cy="300" r="16" fill="#FFC832"/>
+    <circle cx="1080" cy="300" r="6" fill="#FFFFFF"/>
+    <text x="1080" y="265" text-anchor="middle" font-family="&quot;Aptos Display&quot;, sans-serif" font-size="18" font-weight="bold" fill="#FFC832">
+        {{TIME_5}}
+    </text>
+    <rect x="1000" y="330" width="160" height="280" fill="#F8FAFC" rx="8" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="1000" y="330" width="160" height="4" fill="#FFC832" rx="2"/>
+    <text x="1020" y="365" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="15" font-weight="bold" fill="#334155">
+        {{EVENT_5_TITLE}}
+    </text>
+    <text x="1020" y="390" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="12" fill="#475569">
+        {{EVENT_5_DESC}}
+    </text>
+
+    <!-- Footer line -->
+    <line x1="0" y1="682" x2="1280" y2="682" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="60" y="706" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8" letter-spacing="1">Alauda</text>
+    <text x="1220" y="706" text-anchor="end" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8">{{PAGE_NUM}}</text>
+
+</svg>

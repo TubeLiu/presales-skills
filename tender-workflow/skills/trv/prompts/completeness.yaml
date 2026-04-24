@@ -1,0 +1,415 @@
+# 完整性检查清单
+
+system:
+  role: 文档质量审核专家
+  task: 检查文档完整性，识别缺失要素
+  output_format: 结构化检查清单
+  language: 中文
+
+# 通用预检项（所有 DOCX 文件适用，在各审核类型检查之前执行）
+common_pre_checks:
+  - item: 文档编码完整性（无乱码/U+FFFD 替换字符）
+    required: true
+    critical: true
+    check_logic: |
+      使用 python-docx 遍历所有段落和表格单元格文本，
+      检测是否包含 U+FFFD（替换字符）。
+      常见成因：DOCX 生成脚本中 UTF-8 多字节中文字符被截断。
+      发现任何乱码即判定为 critical 问题。
+
+# 按审核类型定义检查清单
+checklists:
+
+  tender_doc:
+    name: 技术规格与评标办法完整性检查（tpl v2.0 输出）
+    description: 检查 tpl 生成的技术规格（9章）与评标办法（6章）的完整性
+
+    sections:
+      - name: 技术规格 - 项目总体说明
+        required: true
+        check_items:
+          - item: 项目背景与建设目标
+            required: true
+          - item: 建设范围与内容概述
+            required: true
+          - item: 术语与缩略语（如适用）
+            required: false
+
+      - name: 技术规格 - 功能需求规格
+        required: true
+        check_items:
+          - item: 核心功能需求列表
+            required: true
+            critical: true
+          - item: 功能要求等级区分（实质性要求★标记 / 一般要求直接陈述）
+            required: true
+            critical: true
+          - item: 功能覆盖多个技术域（无单一域超 40%）
+            required: true
+
+      - name: 技术规格 - 性能需求规格
+        required: true
+        check_items:
+          - item: 并发/吞吐量指标
+            required: true
+          - item: 响应时间/延迟指标
+            required: true
+          - item: 指标使用下限表达（"不低于"/"不少于"/"不超过"）
+            required: true
+
+      - name: 技术规格 - 接口与集成要求
+        required: false
+        note: brief level 可无独立章节，合并至功能需求
+        check_items:
+          - item: 对外接口协议要求
+            required: false
+          - item: 第三方系统集成要求
+            required: false
+
+      - name: 技术规格 - 安全要求
+        required: true
+        check_items:
+          - item: 身份认证与访问控制要求
+            required: true
+            critical: true
+          - item: 数据安全与加密要求
+            required: true
+            critical: true
+          - item: 安全审计与日志要求
+            required: true
+
+      - name: 技术规格 - 行业专项章节
+        required: false
+        note: 动态注入，如等保/信创/金融合规/自主可控等，视行业模板而定
+        check_items:
+          - item: 行业专项合规要求（如等保三级、信创适配、金融监管等）
+            required: false
+
+      - name: 技术规格 - 质量与可靠性要求
+        required: true
+        check_items:
+          - item: 可用性/SLA 要求
+            required: true
+          - item: 容灾与备份要求
+            required: true
+          - item: 故障恢复时间要求（RTO/RPO）
+            required: false
+
+      - name: 技术规格 - 交付物要求
+        required: true
+        check_items:
+          - item: 软件/系统交付物清单
+            required: true
+          - item: 文档交付物清单（含用户手册、运维手册等）
+            required: true
+          - item: 源代码/知识产权交付要求（如适用）
+            required: false
+
+      - name: 技术规格 - 实施与服务要求
+        required: true
+        check_items:
+          - item: 项目实施计划要求
+            required: true
+          - item: 培训服务要求
+            required: true
+          - item: 运维支持与保障期要求
+            required: true
+
+      - name: 技术规格 - 验收标准
+        required: true
+        note: brief level 可无独立章节，合并至交付物要求
+        check_items:
+          - item: 验收测试方法与标准
+            required: true
+          - item: 验收通过条件
+            required: true
+
+      - name: 评标办法 - 评标方法说明
+        required: true
+        check_items:
+          - item: 评标方法（综合评分法/最低价法）
+            required: true
+          - item: 评标委员会组成规则
+            required: true
+
+      - name: 评标办法 - 分值构成与权重
+        required: true
+        check_items:
+          - item: 价格/商务/技术三项权重明确
+            required: true
+          - item: 各项分值合计为 100 分
+            required: true
+
+      - name: 评标办法 - 价格评分（含公式）
+        required: true
+        check_items:
+          - item: 价格评分公式明确
+            required: true
+            critical: true
+          - item: 价格权重符合法规要求（货物≥30%，服务≥10%）
+            required: true
+            critical: true
+
+      - name: 评标办法 - 商务评分细则
+        required: true
+        check_items:
+          - item: 商务评分项目列表
+            required: true
+          - item: 各商务评分项分值与评分标准
+            required: true
+
+      - name: 评标办法 - 技术评分细则
+        required: true
+        check_items:
+          - item: 技术评分维度与分值
+            required: true
+            critical: true
+          - item: 客观评分项（量化指标，可验证）
+            required: true
+            critical: true
+          - item: 主观评分项（优/良/一般/较差四档）
+            required: true
+          - item: 客观分占技术分比例不低于 60%
+            required: true
+
+      - name: 评标办法 - 无效投标认定标准
+        required: true
+        check_items:
+          - item: 无效投标认定条款列表
+            required: true
+            critical: true
+          - item: 认定条款与技术规格实质性要求（★标记项）对应
+            required: true
+            critical: true
+
+  analysis:
+    name: 招标分析报告完整性检查
+    description: 检查7大模块分析完整性
+
+    modules:
+      - name: M1 基础信息分析
+        required: true
+        check_items:
+          - item: 项目名称、编号
+            required: true
+          - item: 招标人/代理机构信息
+            required: true
+          - item: 项目预算/最高限价
+            required: true
+          - item: 招标方式
+            required: true
+          - item: 项目概况
+            required: true
+
+      - name: M2 技术要求分析
+        required: true
+        check_items:
+          - item: 技术需求提取
+            required: true
+          - item: 功能需求清单
+            required: true
+          - item: 性能指标整理
+            required: true
+          - item: 技术难点识别
+            required: false
+
+      - name: M3 商务要求分析
+        required: true
+        check_items:
+          - item: 资质要求提取
+            required: true
+          - item: 业绩要求提取
+            required: true
+          - item: 财务要求提取
+            required: true
+          - item: 工期/交付期要求
+            required: true
+
+      - name: M4 评分标准分析
+        required: true
+        check_items:
+          - item: 评分方法
+            required: true
+          - item: 分值构成
+            required: true
+          - item: 评分细则提取
+            required: true
+          - item: 客观分/主观分区分
+            required: true
+
+      - name: M5 废标条款分析
+        required: true
+        check_items:
+          - item: 废标条款清单
+            required: true
+          - item: 重大偏差定义
+            required: true
+          - item: 废标风险提示
+            required: true
+
+      - name: M6 关键时间节点
+        required: true
+        check_items:
+          - item: 招标文件获取时间
+            required: true
+          - item: 投标截止时间
+            required: true
+          - item: 开标时间
+            required: true
+          - item: 其他重要时间
+            required: false
+
+      - name: M7 投标策略建议
+        required: true
+        check_items:
+          - item: 重点响应策略
+            required: true
+          - item: 难点应对建议
+            required: false
+          - item: 差异化优势建议
+            required: false
+
+  outline:
+    name: 投标大纲完整性检查
+    description: 检查大纲结构与招标需求覆盖的完整性
+
+    check_items:
+      - item: 封面与目录
+        required: true
+
+      - item: 大纲章节覆盖所有【必须】技术条款
+        required: true
+        critical: true
+        check_logic: 对照参考文件（招标分析报告）中M2的所有【必须】条款，验证大纲中每一条都有对应章节
+
+      - item: 高分评分项有独立章节
+        required: true
+        check_logic: 对照参考文件中M4评分细则，分值≥10分的评分项应有专项章节
+
+      - item: 需求-章节对应表（Part C）完整
+        required: true
+        critical: true
+        check_logic: 若大纲含Part C表格，验证其覆盖所有【必须】条款且无"⚠️ 待补充"项
+
+      - item: 章节编号体系一致
+        required: true
+        check_logic: 验证章节编号连续、层级一致，无跳号或编号混乱
+
+      - item: 无凑数章节
+        required: true
+        check_logic: 每个章节都应有对应的招标需求来源，无无需求支撑的空洞章节
+
+      - item: 服务管理类章节齐全
+        required: true
+        check_logic: 大纲应包含售后服务方案、培训方案、项目团队与人员配置等服务管理章节（整合在技术部分内），对照M2中服务管理类分类验证覆盖
+
+      - item: 大纲范围正确（仅技术部分）
+        required: true
+        check_logic: 大纲应仅包含技术部分内容，不应出现独立的商务标、报价标、资格文件等非技术章节
+
+  chapter:
+    name: 章节草稿完整性检查
+    description: 检查章节内容完整性
+
+    check_items:
+      - item: 章节标题与大纲一致
+        required: true
+      - item: 内容覆盖评分标准要求
+        required: true
+        critical: true
+      - item: 关键要点不遗漏
+        required: true
+      - item: 图表配套完整
+        required: false
+      - item: 引用与参考文献（如适用）
+        required: false
+
+  full_bid:
+    name: 技术标书完整性检查
+    description: 投标前技术标书最终完整性检查（技术部分，基于大纲和招标文件动态对照）
+
+    check_items:
+      - item: 大纲中每个章节在标书中都有实质内容
+        required: true
+        critical: true
+        scope: chapter
+        check_logic: 逐一对照大纲章节列表，验证标书中每个章节都有内容（非空/非占位符）
+
+      - item: 招标文件中所有【必须】技术条款在标书中都有响应
+        required: true
+        critical: true
+        scope: chapter
+        check_logic: 对照参考文件（招标文件或分析报告）中的【必须】技术条款，验证标书正文中逐条响应，无遗漏
+
+      - item: 偏离表（如有）与正文响应一致
+        required: true
+        scope: chapter
+        check_logic: 若标书含偏离表，验证偏离表内容与正文中对应章节的响应方案一致，无矛盾
+
+      - item: 全文数据一致性
+        required: true
+        critical: true
+        scope: global
+        check_logic: 同一技术指标/参数在不同章节中的表述应一致（如性能数据、架构描述、时间节点）
+
+      - item: 页码连续
+        required: true
+        scope: global
+
+      - item: 目录与正文对应
+        required: true
+        scope: global
+
+      - item: 格式统一
+        required: false
+        scope: global
+        check_logic: 标题层级、字体、段落格式保持一致
+
+      - item: 图表编号连续且有引用
+        required: false
+        scope: global
+
+      - item: 服务管理类章节内容完整
+        required: true
+        scope: chapter
+        check_logic: 标书中售后服务方案、培训方案、人员配置等服务管理章节应有实质性内容（非空壳/占位），包含具体承诺和方案细节
+
+# 输出格式定义
+output:
+  format: 结构化检查报告
+
+  structure:
+    summary:
+      - total_items: 检查项总数
+      - passed: 通过项数
+      - failed: 未通过项数
+      - critical_failed: 严重缺失项数
+      - completion_rate: 完整度百分比
+
+    details:
+      - section: 章节/模块名称
+        items:
+          - item: 检查项名称
+            status: [通过/未通过/不适用]
+            severity: "[严重/一般/建议]（未通过时）"
+            description: 检查说明
+            suggestion: 补充建议（未通过时）
+
+    recommendations:
+      critical: 必须补充的缺失项
+      major: 建议补充的重要项
+      minor: 可选补充的优化项
+
+# 严重度定义
+severity:
+  critical:
+    description: 严重缺失，可能导致废标或重大不利后果
+    action: 必须补充，阻塞性问题
+
+  major:
+    description: 重要缺失，影响评分或合规性
+    action: 强烈建议补充
+
+  minor:
+    description: 一般缺失，影响文档质量但不影响实质
+    action: 建议补充

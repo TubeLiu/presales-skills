@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+    <!-- Content Variant: 2x2 Matrix - Alauda Style (Slide 19) -->
+    <!-- White background -->
+    <rect width="1280" height="720" fill="#FFFFFF"/>
+
+    <!-- Background decorations (approximated from master EMF) -->
+    <circle cx="1350" cy="600" r="280" fill="#3BAEE3" fill-opacity="0.04"/>
+    <circle cx="1400" cy="250" r="220" fill="#3BAEE3" fill-opacity="0.03"/>
+    <ellipse cx="1150" cy="780" rx="350" ry="130" fill="#3BAEE3" fill-opacity="0.02"/>
+
+    <!-- Left edge accent bar (PPTX: pos 0,29 size 22x45) -->
+    <rect x="0" y="29" width="22" height="45" fill="#3BAEE3"/>
+
+    <!-- Page title -->
+    <text x="46" y="55" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="37" font-weight="bold" fill="#334155">
+        {{PAGE_TITLE}}
+    </text>
+    <!-- Key message -->
+    <text x="32" y="95" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="21" fill="#334155">
+        {{KEY_MESSAGE}}
+    </text>
+
+    <!-- Quadrant 1 (top-left) -->
+    <rect x="60" y="130" width="570" height="250" fill="#F8FAFC" rx="8" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="60" y="130" width="570" height="6" fill="#3BAEE3" rx="3"/>
+    <text x="90" y="172" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="18" font-weight="bold" fill="#334155">
+        {{QUAD_1_TITLE}}
+    </text>
+    <text x="90" y="200" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">
+        {{QUAD_1_DESC}}
+    </text>
+
+    <!-- Quadrant 2 (top-right) -->
+    <rect x="650" y="130" width="570" height="250" fill="#F8FAFC" rx="8" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="650" y="130" width="570" height="6" fill="#14B8A6" rx="3"/>
+    <text x="680" y="172" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="18" font-weight="bold" fill="#334155">
+        {{QUAD_2_TITLE}}
+    </text>
+    <text x="680" y="200" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">
+        {{QUAD_2_DESC}}
+    </text>
+
+    <!-- Quadrant 3 (bottom-left) -->
+    <rect x="60" y="400" width="570" height="250" fill="#F8FAFC" rx="8" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="60" y="400" width="570" height="6" fill="#125B7D" rx="3"/>
+    <text x="90" y="442" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="18" font-weight="bold" fill="#334155">
+        {{QUAD_3_TITLE}}
+    </text>
+    <text x="90" y="470" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">
+        {{QUAD_3_DESC}}
+    </text>
+
+    <!-- Quadrant 4 (bottom-right) -->
+    <rect x="650" y="400" width="570" height="250" fill="#F8FAFC" rx="8" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="650" y="400" width="570" height="6" fill="#FFC832" rx="3"/>
+    <text x="680" y="442" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="18" font-weight="bold" fill="#334155">
+        {{QUAD_4_TITLE}}
+    </text>
+    <text x="680" y="470" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">
+        {{QUAD_4_DESC}}
+    </text>
+
+    <!-- Footer line -->
+    <line x1="0" y1="682" x2="1280" y2="682" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="60" y="706" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8" letter-spacing="1">Alauda</text>
+    <text x="1220" y="706" text-anchor="end" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8">{{PAGE_NUM}}</text>
+
+</svg>

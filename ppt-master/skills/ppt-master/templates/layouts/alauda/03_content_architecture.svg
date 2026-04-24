@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+    <!-- Content Variant: Layered Architecture Diagram - Alauda Style -->
+    <!-- White background -->
+    <rect width="1280" height="720" fill="#FFFFFF"/>
+
+    <!-- Background decorations (approximated from master EMF) -->
+    <circle cx="1350" cy="600" r="280" fill="#3BAEE3" fill-opacity="0.04"/>
+    <circle cx="1400" cy="250" r="220" fill="#3BAEE3" fill-opacity="0.03"/>
+    <ellipse cx="1150" cy="780" rx="350" ry="130" fill="#3BAEE3" fill-opacity="0.02"/>
+
+    <!-- Left edge accent bar (PPTX: pos 0,29 size 22x45) -->
+    <rect x="0" y="29" width="22" height="45" fill="#3BAEE3"/>
+
+    <!-- Page title -->
+    <text x="46" y="55" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="37" font-weight="bold" fill="#334155">
+        {{PAGE_TITLE}}
+    </text>
+    <!-- Key message -->
+    <text x="32" y="95" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="21" fill="#334155">
+        {{KEY_MESSAGE}}
+    </text>
+
+    <!-- Layer 1 (Top) - Application Layer -->
+    <rect x="160" y="130" width="960" height="100" fill="#D8EFF9" rx="6" stroke="#3BAEE3" stroke-width="1"/>
+    <text x="640" y="172" text-anchor="middle" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="16" font-weight="bold" fill="#125B7D">
+        {{LAYER_1_TITLE}}
+    </text>
+    <text x="640" y="196" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="13" fill="#475569">
+        {{LAYER_1_DESC}}
+    </text>
+
+    <!-- Down arrow 1 -->
+    <polygon points="630,234 650,234 640,248" fill="#3BAEE3" fill-opacity="0.4"/>
+
+    <!-- Layer 2 - Platform Layer -->
+    <rect x="160" y="252" width="960" height="100" fill="#EFF6FF" rx="6" stroke="#3BAEE3" stroke-width="1" stroke-opacity="0.6"/>
+    <text x="640" y="294" text-anchor="middle" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="16" font-weight="bold" fill="#125B7D">
+        {{LAYER_2_TITLE}}
+    </text>
+    <text x="640" y="318" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="13" fill="#475569">
+        {{LAYER_2_DESC}}
+    </text>
+
+    <!-- Down arrow 2 -->
+    <polygon points="630,356 650,356 640,370" fill="#3BAEE3" fill-opacity="0.4"/>
+
+    <!-- Layer 3 - Infrastructure Layer -->
+    <rect x="160" y="374" width="960" height="100" fill="#F1F5F9" rx="6" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="640" y="416" text-anchor="middle" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="16" font-weight="bold" fill="#334155">
+        {{LAYER_3_TITLE}}
+    </text>
+    <text x="640" y="440" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="13" fill="#475569">
+        {{LAYER_3_DESC}}
+    </text>
+
+    <!-- Down arrow 3 -->
+    <polygon points="630,478 650,478 640,492" fill="#94A3B8" fill-opacity="0.4"/>
+
+    <!-- Layer 4 (Bottom) - Base Layer -->
+    <rect x="160" y="496" width="960" height="100" fill="#F8FAFC" rx="6" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="640" y="538" text-anchor="middle" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="16" font-weight="bold" fill="#334155">
+        {{LAYER_4_TITLE}}
+    </text>
+    <text x="640" y="562" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="13" fill="#475569">
+        {{LAYER_4_DESC}}
+    </text>
+
+    <!-- Left side label -->
+    <rect x="60" y="130" width="80" height="466" fill="none" stroke="#3BAEE3" stroke-width="1" stroke-opacity="0.2" rx="4"/>
+    <text x="100" y="370" text-anchor="middle" font-family="Aptos, sans-serif" font-size="12" fill="#3BAEE3" transform="rotate(-90,100,370)">
+        PLATFORM STACK
+    </text>
+
+    <!-- Footer line -->
+    <line x1="0" y1="682" x2="1280" y2="682" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="60" y="706" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8" letter-spacing="1">Alauda</text>
+    <text x="1220" y="706" text-anchor="end" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8">{{PAGE_NUM}}</text>
+
+</svg>

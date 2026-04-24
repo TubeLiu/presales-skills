@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720">
+    <!-- Template: Table of Contents - Alauda Style -->
+
+    <!-- White background -->
+    <rect width="1280" height="720" fill="#FFFFFF"/>
+
+    <!-- Background decorations -->
+    <circle cx="1350" cy="600" r="280" fill="#3BAEE3" fill-opacity="0.04"/>
+    <circle cx="1400" cy="250" r="220" fill="#3BAEE3" fill-opacity="0.03"/>
+    <ellipse cx="1150" cy="780" rx="350" ry="130" fill="#3BAEE3" fill-opacity="0.02"/>
+
+    <!-- City skyline photo (PPTX: pos 137,137 size 335x446) -->
+    <image x="137" y="137" width="335" height="446" href="city_skyline.jpg" preserveAspectRatio="xMidYMid slice"/>
+
+    <!-- Blue overlay rectangle (PPTX: pos 285,193 size 243x335) -->
+    <rect x="285" y="193" width="243" height="335" fill="#3BAEE3" fill-opacity="0.88"/>
+
+    <!-- "目录" text (36pt = 48px) -->
+    <text x="406" y="370" text-anchor="middle" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="48" font-weight="bold" fill="#FFFFFF">
+        目录
+    </text>
+
+    <!-- "CONTENT" text (28pt = 37px) -->
+    <text x="406" y="420" text-anchor="middle" font-family="&quot;Aptos Display&quot;, sans-serif" font-size="37" fill="#FFFFFF" fill-opacity="0.8">
+        CONTENT
+    </text>
+
+    <!-- TOC Items (right side) -->
+    <text x="580" y="200" font-family="&quot;Aptos Display&quot;, sans-serif" font-size="56" font-weight="bold" fill="#3BAEE3" fill-opacity="0.2">01</text>
+    <text x="660" y="200" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="22" font-weight="bold" fill="#334155">{{TOC_ITEM_1_TITLE}}</text>
+    <text x="660" y="228" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#94A3B8">{{TOC_ITEM_1_DESC}}</text>
+    <line x1="580" y1="250" x2="1200" y2="250" stroke="#E2E8F0" stroke-width="1"/>
+
+    <text x="580" y="310" font-family="&quot;Aptos Display&quot;, sans-serif" font-size="56" font-weight="bold" fill="#3BAEE3" fill-opacity="0.2">02</text>
+    <text x="660" y="310" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="22" font-weight="bold" fill="#334155">{{TOC_ITEM_2_TITLE}}</text>
+    <text x="660" y="338" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#94A3B8">{{TOC_ITEM_2_DESC}}</text>
+    <line x1="580" y1="360" x2="1200" y2="360" stroke="#E2E8F0" stroke-width="1"/>
+
+    <text x="580" y="420" font-family="&quot;Aptos Display&quot;, sans-serif" font-size="56" font-weight="bold" fill="#3BAEE3" fill-opacity="0.2">03</text>
+    <text x="660" y="420" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="22" font-weight="bold" fill="#334155">{{TOC_ITEM_3_TITLE}}</text>
+    <text x="660" y="448" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#94A3B8">{{TOC_ITEM_3_DESC}}</text>
+    <line x1="580" y1="470" x2="1200" y2="470" stroke="#E2E8F0" stroke-width="1"/>
+
+    <text x="580" y="530" font-family="&quot;Aptos Display&quot;, sans-serif" font-size="56" font-weight="bold" fill="#3BAEE3" fill-opacity="0.2">04</text>
+    <text x="660" y="530" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="22" font-weight="bold" fill="#334155">{{TOC_ITEM_4_TITLE}}</text>
+    <text x="660" y="558" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#94A3B8">{{TOC_ITEM_4_DESC}}</text>
+
+    <!-- Footer -->
+    <line x1="0" y1="682" x2="1280" y2="682" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="60" y="706" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8" letter-spacing="1">Alauda</text>
+</svg>

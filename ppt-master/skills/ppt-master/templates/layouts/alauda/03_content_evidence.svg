@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+    <!-- Content Variant: Evidence Page - Alauda Style (Slide 23) -->
+    <!-- White background -->
+    <rect width="1280" height="720" fill="#FFFFFF"/>
+
+    <!-- Background decorations (approximated from master EMF) -->
+    <circle cx="1350" cy="600" r="280" fill="#3BAEE3" fill-opacity="0.04"/>
+    <circle cx="1400" cy="250" r="220" fill="#3BAEE3" fill-opacity="0.03"/>
+    <ellipse cx="1150" cy="780" rx="350" ry="130" fill="#3BAEE3" fill-opacity="0.02"/>
+
+    <!-- Left edge accent bar (PPTX: pos 0,29 size 22x45) -->
+    <rect x="0" y="29" width="22" height="45" fill="#3BAEE3"/>
+
+    <!-- Page title -->
+    <text x="46" y="55" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="37" font-weight="bold" fill="#334155">
+        {{PAGE_TITLE}}
+    </text>
+    <!-- Featured quote / thesis -->
+    <rect x="60" y="100" width="1160" height="120" fill="#D8EFF9" rx="8"/>
+    <rect x="60" y="100" width="8" height="120" fill="#3BAEE3" rx="4"/>
+    <text x="96" y="148" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="24" font-weight="bold" fill="#125B7D">
+        {{THESIS_STATEMENT}}
+    </text>
+    <text x="96" y="185" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">
+        {{THESIS_SOURCE}}
+    </text>
+
+    <!-- Evidence cards (3 columns) -->
+    <!-- Evidence 1 -->
+    <rect x="60" y="245" width="370" height="400" fill="#F8FAFC" rx="8" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="60" y="245" width="370" height="6" fill="#3BAEE3" rx="3"/>
+    <text x="90" y="290" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="18" font-weight="bold" fill="#334155">
+        {{EVIDENCE_1_TITLE}}
+    </text>
+    <text x="90" y="320" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">
+        {{EVIDENCE_1_DESC}}
+    </text>
+
+    <!-- Evidence 2 -->
+    <rect x="455" y="245" width="370" height="400" fill="#F8FAFC" rx="8" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="455" y="245" width="370" height="6" fill="#14B8A6" rx="3"/>
+    <text x="485" y="290" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="18" font-weight="bold" fill="#334155">
+        {{EVIDENCE_2_TITLE}}
+    </text>
+    <text x="485" y="320" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">
+        {{EVIDENCE_2_DESC}}
+    </text>
+
+    <!-- Evidence 3 -->
+    <rect x="850" y="245" width="370" height="400" fill="#F8FAFC" rx="8" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="850" y="245" width="370" height="6" fill="#125B7D" rx="3"/>
+    <text x="880" y="290" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="18" font-weight="bold" fill="#334155">
+        {{EVIDENCE_3_TITLE}}
+    </text>
+    <text x="880" y="320" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">
+        {{EVIDENCE_3_DESC}}
+    </text>
+
+    <!-- Footer line -->
+    <line x1="0" y1="682" x2="1280" y2="682" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="60" y="706" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8" letter-spacing="1">Alauda</text>
+    <text x="1220" y="706" text-anchor="end" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8">{{PAGE_NUM}}</text>
+
+</svg>

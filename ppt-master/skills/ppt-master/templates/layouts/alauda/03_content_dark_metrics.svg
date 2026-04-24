@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720">
+    <!-- Content Variant: Dark Four-Metric Page - Alauda Style (Slide 6) -->
+
+    <defs>
+        <linearGradient id="darkBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#125B7D"/>
+            <stop offset="100%" style="stop-color:#0D3F56"/>
+        </linearGradient>
+    </defs>
+
+    <!-- Dark background -->
+    <rect width="1280" height="720" fill="url(#darkBgGrad)"/>
+
+    <!-- Grid texture overlay -->
+    <image x="0" y="0" width="1280" height="720" href="dark_grid_texture.png" preserveAspectRatio="xMidYMid slice"/>
+    <rect x="0" y="0" width="1280" height="720" fill="#125B7D" fill-opacity="0.7"/>
+
+    <!-- Background decorations (approximated from master EMF) -->
+    <circle cx="1350" cy="600" r="280" fill="#FFFFFF" fill-opacity="0.03"/>
+    <circle cx="1400" cy="250" r="220" fill="#FFFFFF" fill-opacity="0.02"/>
+    <ellipse cx="1150" cy="780" rx="350" ry="130" fill="#FFFFFF" fill-opacity="0.015"/>
+
+    <!-- Left edge accent bar (PPTX: pos 0,29 size 22x45) -->
+    <rect x="0" y="29" width="22" height="45" fill="#3BAEE3"/>
+
+    <!-- Page title -->
+    <text x="46" y="55" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="37" font-weight="bold" fill="#FFFFFF">
+        {{PAGE_TITLE}}
+    </text>
+    <!-- Key message -->
+    <text x="32" y="95" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="21" fill="#FFFFFF" fill-opacity="0.7">
+        {{KEY_MESSAGE}}
+    </text>
+
+    <!-- Metric Card 1 -->
+    <rect x="60" y="140" width="270" height="220" fill="#FFFFFF" fill-opacity="0.08" rx="8"/>
+    <rect x="60" y="140" width="270" height="4" fill="#3BAEE3" rx="2"/>
+    <text x="88" y="170" font-family="Aptos, sans-serif" font-size="12" fill="#3BAEE3" letter-spacing="1">01</text>
+    <text x="88" y="240" font-family="&quot;Aptos Display&quot;, sans-serif" font-size="52" font-weight="bold" fill="#FFFFFF">
+        {{METRIC_1_VALUE}}
+    </text>
+    <text x="88" y="275" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="16" font-weight="bold" fill="#FFFFFF">
+        {{METRIC_1_LABEL}}
+    </text>
+    <text x="88" y="305" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="13" fill="#FFFFFF" fill-opacity="0.5">
+        {{METRIC_1_DESC}}
+    </text>
+
+    <!-- Metric Card 2 -->
+    <rect x="360" y="140" width="270" height="220" fill="#FFFFFF" fill-opacity="0.08" rx="8"/>
+    <rect x="360" y="140" width="270" height="4" fill="#14B8A6" rx="2"/>
+    <text x="388" y="170" font-family="Aptos, sans-serif" font-size="12" fill="#14B8A6" letter-spacing="1">02</text>
+    <text x="388" y="240" font-family="&quot;Aptos Display&quot;, sans-serif" font-size="52" font-weight="bold" fill="#FFFFFF">
+        {{METRIC_2_VALUE}}
+    </text>
+    <text x="388" y="275" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="16" font-weight="bold" fill="#FFFFFF">
+        {{METRIC_2_LABEL}}
+    </text>
+    <text x="388" y="305" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="13" fill="#FFFFFF" fill-opacity="0.5">
+        {{METRIC_2_DESC}}
+    </text>
+
+    <!-- Metric Card 3 -->
+    <rect x="660" y="140" width="270" height="220" fill="#FFFFFF" fill-opacity="0.08" rx="8"/>
+    <rect x="660" y="140" width="270" height="4" fill="#25B273" rx="2"/>
+    <text x="688" y="170" font-family="Aptos, sans-serif" font-size="12" fill="#25B273" letter-spacing="1">03</text>
+    <text x="688" y="240" font-family="&quot;Aptos Display&quot;, sans-serif" font-size="52" font-weight="bold" fill="#FFFFFF">
+        {{METRIC_3_VALUE}}
+    </text>
+    <text x="688" y="275" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="16" font-weight="bold" fill="#FFFFFF">
+        {{METRIC_3_LABEL}}
+    </text>
+    <text x="688" y="305" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="13" fill="#FFFFFF" fill-opacity="0.5">
+        {{METRIC_3_DESC}}
+    </text>
+
+    <!-- Metric Card 4 -->
+    <rect x="960" y="140" width="260" height="220" fill="#FFFFFF" fill-opacity="0.08" rx="8"/>
+    <rect x="960" y="140" width="260" height="4" fill="#FFC832" rx="2"/>
+    <text x="988" y="170" font-family="Aptos, sans-serif" font-size="12" fill="#FFC832" letter-spacing="1">04</text>
+    <text x="988" y="240" font-family="&quot;Aptos Display&quot;, sans-serif" font-size="52" font-weight="bold" fill="#FFFFFF">
+        {{METRIC_4_VALUE}}
+    </text>
+    <text x="988" y="275" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="16" font-weight="bold" fill="#FFFFFF">
+        {{METRIC_4_LABEL}}
+    </text>
+    <text x="988" y="305" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="13" fill="#FFFFFF" fill-opacity="0.5">
+        {{METRIC_4_DESC}}
+    </text>
+
+    <!-- Detail area -->
+    <rect x="60" y="390" width="1160" height="260" fill="#FFFFFF" fill-opacity="0.05" rx="8"/>
+    <text x="640" y="525" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="16" fill="#FFFFFF" fill-opacity="0.3">
+        {{CONTENT_AREA}}
+    </text>
+
+    <!-- Footer -->
+    <line x1="60" y1="682" x2="1220" y2="682" stroke="#FFFFFF" stroke-width="1" stroke-opacity="0.1"/>
+    <text x="60" y="706" font-family="Aptos, sans-serif" font-size="12" fill="#FFFFFF" fill-opacity="0.4" letter-spacing="1">Alauda</text>
+    <text x="1220" y="706" text-anchor="end" font-family="Aptos, sans-serif" font-size="12" fill="#FFFFFF" fill-opacity="0.4">{{PAGE_NUM}}</text>
+
+</svg>

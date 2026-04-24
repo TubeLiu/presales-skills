@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+    <!-- Content Variant: Logo Wall - Alauda Style (Slide 22) -->
+    <!-- White background -->
+    <rect width="1280" height="720" fill="#FFFFFF"/>
+
+    <!-- Background decorations (approximated from master EMF) -->
+    <circle cx="1350" cy="600" r="280" fill="#3BAEE3" fill-opacity="0.04"/>
+    <circle cx="1400" cy="250" r="220" fill="#3BAEE3" fill-opacity="0.03"/>
+    <ellipse cx="1150" cy="780" rx="350" ry="130" fill="#3BAEE3" fill-opacity="0.02"/>
+
+    <!-- Left edge accent bar (PPTX: pos 0,29 size 22x45) -->
+    <rect x="0" y="29" width="22" height="45" fill="#3BAEE3"/>
+
+    <!-- Page title -->
+    <text x="46" y="55" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="37" font-weight="bold" fill="#334155">
+        {{PAGE_TITLE}}
+    </text>
+    <!-- Key message -->
+    <text x="32" y="95" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="21" fill="#334155">
+        {{KEY_MESSAGE}}
+    </text>
+
+    <!-- Industry Group 1 -->
+    <rect x="60" y="130" width="280" height="36" fill="#125B7D" rx="4"/>
+    <text x="200" y="154" text-anchor="middle" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF">{{GROUP_1_LABEL}}</text>
+
+    <!-- Logo grid Row 1 -->
+    <rect x="60" y="178" width="130" height="70" fill="#F8FAFC" rx="6" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="125" y="218" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="12" fill="#94A3B8">{{LOGO_1_1}}</text>
+
+    <rect x="200" y="178" width="130" height="70" fill="#F8FAFC" rx="6" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="265" y="218" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="12" fill="#94A3B8">{{LOGO_1_2}}</text>
+
+    <!-- Industry Group 2 -->
+    <rect x="370" y="130" width="280" height="36" fill="#3BAEE3" rx="4"/>
+    <text x="510" y="154" text-anchor="middle" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF">{{GROUP_2_LABEL}}</text>
+
+    <rect x="370" y="178" width="130" height="70" fill="#F8FAFC" rx="6" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="435" y="218" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="12" fill="#94A3B8">{{LOGO_2_1}}</text>
+
+    <rect x="510" y="178" width="130" height="70" fill="#F8FAFC" rx="6" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="575" y="218" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="12" fill="#94A3B8">{{LOGO_2_2}}</text>
+
+    <!-- Industry Group 3 -->
+    <rect x="680" y="130" width="280" height="36" fill="#14B8A6" rx="4"/>
+    <text x="820" y="154" text-anchor="middle" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF">{{GROUP_3_LABEL}}</text>
+
+    <rect x="680" y="178" width="130" height="70" fill="#F8FAFC" rx="6" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="745" y="218" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="12" fill="#94A3B8">{{LOGO_3_1}}</text>
+
+    <rect x="820" y="178" width="130" height="70" fill="#F8FAFC" rx="6" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="885" y="218" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="12" fill="#94A3B8">{{LOGO_3_2}}</text>
+
+    <!-- Industry Group 4 -->
+    <rect x="990" y="130" width="230" height="36" fill="#25B273" rx="4"/>
+    <text x="1105" y="154" text-anchor="middle" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF">{{GROUP_4_LABEL}}</text>
+
+    <rect x="990" y="178" width="110" height="70" fill="#F8FAFC" rx="6" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="1045" y="218" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="12" fill="#94A3B8">{{LOGO_4_1}}</text>
+
+    <rect x="1110" y="178" width="110" height="70" fill="#F8FAFC" rx="6" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="1165" y="218" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="12" fill="#94A3B8">{{LOGO_4_2}}</text>
+
+    <!-- Extended content area for more logos -->
+    <rect x="60" y="280" width="1160" height="370" fill="#F8FAFC" rx="8" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="640" y="470" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="16" fill="#CBD5E1">
+        {{CONTENT_AREA}}
+    </text>
+
+    <!-- Footer line -->
+    <line x1="0" y1="682" x2="1280" y2="682" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="60" y="706" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8" letter-spacing="1">Alauda</text>
+    <text x="1220" y="706" text-anchor="end" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8">{{PAGE_NUM}}</text>
+
+</svg>

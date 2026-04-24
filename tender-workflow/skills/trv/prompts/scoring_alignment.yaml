@@ -1,0 +1,285 @@
+# 评分契合度分析
+
+system:
+  role: 投标策略分析专家
+  task: 分析内容与评分标准的契合度，识别覆盖缺口
+  output_format: 契合度分析报告
+  language: 中文
+
+# 可选输入（提高分析精度）
+optional_inputs:
+  phase1_handoff:
+    name: taa Phase 1 交接文件
+    path_hint: "output/.temp/phase1_handoff.yaml"
+    description: |
+      taa v2.3.0+ 生成的结构化交接文件，包含 M4 评分要点的结构化数据。
+      如果此文件存在，优先使用其中的 m4_scoring 字段作为评分标准来源，
+      可跳过 step_1 中的评分标准解析步骤，提高分析精度。
+    fields_used:
+      - m4_scoring: 评分项名称、分值、策略
+      - m5_risks: 废标条款（用于交叉检查）
+
+# 分析流程
+workflow:
+  step_1:
+    name: 评分标准解析
+    actions:
+      - 提取招标文件中的评分标准
+      - 识别评分项、分值、评分细则
+      - 区分客观分与主观分
+      - 标记关键评分点
+    note: 若 phase1_handoff.yaml 可用，直接使用 m4_scoring 字段，无需从原文重新提取
+
+  step_2:
+    name: 内容映射
+    actions:
+      - 将内容与评分项进行对应映射
+      - 识别直接对应的内容
+      - 识别间接相关的内容
+      - 标记未覆盖的评分点
+
+  step_3:
+    name: 契合度评估
+    actions:
+      - 评估每评分点的覆盖程度
+      - 评估内容质量与评分标准的匹配度
+      - 识别优势项与劣势项
+      - 计算总体覆盖度
+
+  step_4:
+    name: 优化建议
+    actions:
+      - 针对未覆盖/覆盖不足的评分点提出补充建议
+      - 针对可优化项提出改进建议
+      - 提供竞争策略建议
+
+# 契合度评估维度
+evaluation_dimensions:
+
+  coverage:
+    name: 覆盖度
+    levels:
+      - level: 完全覆盖
+        description: 内容完整响应该评分点的所有要求
+        score: 100
+
+      - level: 基本覆盖
+        description: 内容基本响应，但存在细节遗漏
+        score: 75
+
+      - level: 部分覆盖
+        description: 内容部分响应，存在明显缺口
+        score: 50
+
+      - level: 弱覆盖
+        description: 内容仅提及，缺乏实质响应
+        score: 25
+
+      - level: 未覆盖
+        description: 内容完全未涉及该评分点
+        score: 0
+
+  quality:
+    name: 质量契合度
+    levels:
+      - level: 优秀
+        description: 内容质量超出评分标准要求，具有竞争优势
+        score: 100
+
+      - level: 良好
+        description: 内容质量满足评分标准要求
+        score: 80
+
+      - level: 合格
+        description: 内容质量基本满足要求，但缺乏亮点
+        score: 60
+
+      - level: 待提升
+        description: 内容质量与评分要求存在差距
+        score: 40
+
+      - level: 不合格
+        description: 内容质量不满足评分要求
+        score: 20
+
+  alignment:
+    name: 精准契合度
+    description: 内容与评分标准关键词、关键要求的匹配程度
+    check_points:
+      - 关键词匹配：是否使用评分标准中的关键词
+      - 要求对应：是否针对评分标准的具体要求进行响应
+      - 格式契合：是否符合评分标准要求的格式
+      - 量化指标：是否提供评分标准要求的量化指标
+
+# 分析模板（按审核类型）
+analysis_templates:
+
+  analysis:
+    name: 招标分析报告评分契合度
+    description: 分析报告与招标文件的契合度
+    focus_areas:
+      - 评分标准提取完整性
+      - 评分细则理解准确性
+      - 重点评分项识别
+
+  outline:
+    name: 投标大纲评分契合度
+    description: 大纲结构与评分标准的契合度
+    focus_areas:
+      - 章节设置与评分项对应关系
+      - 分值权重与章节篇幅匹配
+      - 重点评分项章节安排
+
+    mapping_template:
+      - scoring_item: 评分项名称
+        weight: 分值
+        outline_section: 对应大纲章节
+        coverage: 覆盖度评估
+        notes: 说明
+
+  chapter:
+    name: 章节内容评分契合度
+    description: 章节内容与对应评分项的契合度
+    focus_areas:
+      - 内容覆盖评分点情况
+      - 响应深度与分值匹配
+      - 竞争优势体现
+
+    analysis_template:
+      - scoring_item: 评分项名称
+        score: 分值
+        subsection: 对应小节
+        coverage: 覆盖度
+        quality: 质量契合度
+        key_points: 关键评分点响应情况
+        gaps: 缺口识别
+        suggestions: 优化建议
+
+  full_bid:
+    name: 技术标书评分契合度
+    description: 技术标书整体与技术评分标准的契合度
+    scope: chapter
+    focus_areas:
+      - name: 技术评分项综合覆盖情况
+        scope: chapter
+      - name: 客观分确保策略（技术参数响应）
+        scope: chapter
+      - name: 主观分竞争策略（方案创新性、案例支撑）
+        scope: chapter
+      - name: 技术得分预估
+        scope: global
+
+# 覆盖度计算
+coverage_calculation:
+  method: 加权计算
+  formula: |
+    总体覆盖度 = Σ(各评分点覆盖度 × 评分点权重) / 总分值 × 100%
+
+  interpretation:
+    - range: "90%-100%"
+      rating: 优秀
+      description: 覆盖全面，重点突出
+
+    - range: "75%-89%"
+      rating: 良好
+      description: 覆盖较好，个别缺口需补充
+
+    - range: "60%-74%"
+      rating: 一般
+      description: 基本覆盖，存在明显缺口需改进
+
+    - range: "40%-59%"
+      rating: 较差
+      description: 覆盖不足，大量评分点未充分响应
+
+    - range: "0%-39%"
+      rating: 很差
+      description: 严重偏离，需大幅调整
+
+# 竞争策略建议
+competitive_strategy:
+  high_score_items:
+    description: 高分值评分项策略
+    actions:
+      - 确保高分值项完全覆盖
+      - 重点投入资源打造亮点
+      - 提供超出预期的内容
+
+  subjective_items:
+    description: 主观分评分项策略
+    actions:
+      - 突出差异化优势
+      - 提供详实案例和数据支撑
+      - 展现专业能力和经验
+
+  objective_items:
+    description: 客观分评分项策略
+    actions:
+      - 确保满足所有硬性要求
+      - 提供完整证明材料
+      - 避免任何疏漏
+
+  gap_items:
+    description: 缺口项补救策略
+    actions:
+      - 优先补充高分值缺口
+      - 分析缺口原因（能力/理解/遗漏）
+      - 制定针对性补救措施
+
+# 输出格式定义
+output:
+  format: 契合度分析报告
+
+  structure:
+    executive_summary:
+      - overall_coverage: 总体覆盖度百分比
+      - overall_rating: 总体评级
+      - total_score_estimate: 预估总得分区间
+      - key_findings: 关键发现
+      - priority_actions: 优先行动项
+
+    scoring_matrix:
+      description: 评分项与内容映射矩阵
+      columns:
+        - 评分项编号
+        - 评分项名称
+        - 分值
+        - 对应章节/小节
+        - 覆盖度
+        - 质量契合度
+        - 综合评分
+        - 缺口描述
+        - 优化建议
+
+    coverage_analysis:
+      by_category:
+        - category: 技术方案与架构
+          coverage: 覆盖度
+          score_contribution: 预估得分贡献
+        - category: 实施与服务保障
+          coverage: 覆盖度
+          score_contribution: 预估得分贡献
+        - category: 安全与合规
+          coverage: 覆盖度
+          score_contribution: 预估得分贡献
+
+      gaps_analysis:
+        critical_gaps: 严重缺口（高分值且覆盖度低）
+        major_gaps: 重要缺口（中等分值覆盖不足）
+        minor_gaps: 一般缺口（低分值或轻微不足）
+
+    competitive_assessment:
+      strengths: 竞争优势项
+      weaknesses: 竞争劣势项
+      opportunities: 机会点
+      threats: 威胁点
+
+    action_plan:
+      immediate_actions: 立即执行（严重缺口补救）
+      short_term_actions: 短期优化（提升竞争力）
+      nice_to_have: 锦上添花（亮点打造）
+
+    appendices:
+      - 完整评分标准清单
+      - 详细映射表
+      - 竞争对手分析（如有）

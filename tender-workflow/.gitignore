@@ -1,0 +1,36 @@
+# Claude Code 配置（本地使用，不提交）
+# 用 .claude/* 而非 .claude/ 才能让子目录的 ! 例外生效
+.claude/*
+!.claude/skills
+.claude/skills/*
+!.claude/skills/taa
+!.claude/skills/taw
+!.claude/skills/tpl
+!.claude/skills/trv
+!.claude/skills/twc
+
+# 测试产出物
+output/
+drafts/
+tests/e2e/reports/
+
+# 测试物料文件（招标文件、产品清单等，仅本地使用）
+tests/*.md
+tests/*.xlsx
+tests/*.pdf
+tests/*.docx
+
+# macOS 系统文件
+.DS_Store
+**/.DS_Store
+
+# Python 缓存
+__pycache__/
+
+# Word 临时文件
+~$*.docx
+~$*.doc
+
+# 备份文件
+*.backup
+*.bak

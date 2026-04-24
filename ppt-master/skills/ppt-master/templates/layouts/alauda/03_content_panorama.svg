@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+    <!-- Content Variant: Platform Panorama - Alauda Style (Slide 14) -->
+    <!-- White background -->
+    <rect width="1280" height="720" fill="#FFFFFF"/>
+
+    <!-- Background decorations (approximated from master EMF) -->
+    <circle cx="1350" cy="600" r="280" fill="#3BAEE3" fill-opacity="0.04"/>
+    <circle cx="1400" cy="250" r="220" fill="#3BAEE3" fill-opacity="0.03"/>
+    <ellipse cx="1150" cy="780" rx="350" ry="130" fill="#3BAEE3" fill-opacity="0.02"/>
+
+    <!-- Left edge accent bar (PPTX: pos 0,29 size 22x45) -->
+    <rect x="0" y="29" width="22" height="45" fill="#3BAEE3"/>
+
+    <!-- Page title -->
+    <text x="46" y="55" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="37" font-weight="bold" fill="#334155">
+        {{PAGE_TITLE}}
+    </text>
+    <!-- Key message -->
+    <text x="32" y="95" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="21" fill="#334155">
+        {{KEY_MESSAGE}}
+    </text>
+
+    <!-- Top domain row: 4 product blocks -->
+    <rect x="60" y="128" width="280" height="70" fill="#D8EFF9" rx="6" stroke="#3BAEE3" stroke-width="1"/>
+    <text x="200" y="170" text-anchor="middle" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="14" font-weight="bold" fill="#125B7D">{{DOMAIN_1}}</text>
+
+    <rect x="355" y="128" width="280" height="70" fill="#D8EFF9" rx="6" stroke="#3BAEE3" stroke-width="1"/>
+    <text x="495" y="170" text-anchor="middle" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="14" font-weight="bold" fill="#125B7D">{{DOMAIN_2}}</text>
+
+    <rect x="650" y="128" width="280" height="70" fill="#D8EFF9" rx="6" stroke="#3BAEE3" stroke-width="1"/>
+    <text x="790" y="170" text-anchor="middle" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="14" font-weight="bold" fill="#125B7D">{{DOMAIN_3}}</text>
+
+    <rect x="945" y="128" width="275" height="70" fill="#D8EFF9" rx="6" stroke="#3BAEE3" stroke-width="1"/>
+    <text x="1082" y="170" text-anchor="middle" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="14" font-weight="bold" fill="#125B7D">{{DOMAIN_4}}</text>
+
+    <!-- Middle: Platform core layer -->
+    <rect x="60" y="215" width="1160" height="180" fill="#EFF6FF" rx="8" stroke="#3BAEE3" stroke-width="1" stroke-opacity="0.5"/>
+    <rect x="60" y="215" width="1160" height="36" fill="#3BAEE3" rx="8"/>
+    <rect x="60" y="235" width="1160" height="16" fill="#3BAEE3"/>
+    <text x="640" y="240" text-anchor="middle" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF">{{PLATFORM_TITLE}}</text>
+
+    <!-- Platform capabilities (6 blocks inside) -->
+    <rect x="80" y="265" width="175" height="110" fill="#FFFFFF" rx="6" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="168" y="300" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="13" font-weight="bold" fill="#334155">{{CAP_1}}</text>
+    <text x="168" y="322" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="11" fill="#94A3B8">{{CAP_1_SUB}}</text>
+
+    <rect x="270" y="265" width="175" height="110" fill="#FFFFFF" rx="6" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="358" y="300" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="13" font-weight="bold" fill="#334155">{{CAP_2}}</text>
+    <text x="358" y="322" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="11" fill="#94A3B8">{{CAP_2_SUB}}</text>
+
+    <rect x="460" y="265" width="175" height="110" fill="#FFFFFF" rx="6" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="548" y="300" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="13" font-weight="bold" fill="#334155">{{CAP_3}}</text>
+    <text x="548" y="322" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="11" fill="#94A3B8">{{CAP_3_SUB}}</text>
+
+    <rect x="650" y="265" width="175" height="110" fill="#FFFFFF" rx="6" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="738" y="300" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="13" font-weight="bold" fill="#334155">{{CAP_4}}</text>
+    <text x="738" y="322" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="11" fill="#94A3B8">{{CAP_4_SUB}}</text>
+
+    <rect x="840" y="265" width="175" height="110" fill="#FFFFFF" rx="6" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="928" y="300" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="13" font-weight="bold" fill="#334155">{{CAP_5}}</text>
+    <text x="928" y="322" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="11" fill="#94A3B8">{{CAP_5_SUB}}</text>
+
+    <rect x="1030" y="265" width="175" height="110" fill="#FFFFFF" rx="6" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="1118" y="300" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="13" font-weight="bold" fill="#334155">{{CAP_6}}</text>
+    <text x="1118" y="322" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="11" fill="#94A3B8">{{CAP_6_SUB}}</text>
+
+    <!-- Bottom: Infrastructure layer -->
+    <rect x="60" y="415" width="1160" height="80" fill="#F1F5F9" rx="6" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="640" y="462" text-anchor="middle" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="14" font-weight="bold" fill="#334155">{{INFRA_TITLE}}</text>
+
+    <!-- Environment row -->
+    <rect x="60" y="510" width="370" height="60" fill="#F8FAFC" rx="6" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="245" y="546" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="13" fill="#475569">{{ENV_1}}</text>
+
+    <rect x="455" y="510" width="370" height="60" fill="#F8FAFC" rx="6" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="640" y="546" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="13" fill="#475569">{{ENV_2}}</text>
+
+    <rect x="850" y="510" width="370" height="60" fill="#F8FAFC" rx="6" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="1035" y="546" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="13" fill="#475569">{{ENV_3}}</text>
+
+    <!-- Right sidebar: Governance -->
+    <rect x="1190" y="128" width="40" height="442" fill="#125B7D" fill-opacity="0.1" rx="4"/>
+    <text x="1210" y="355" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="12" fill="#125B7D" transform="rotate(-90,1210,355)">
+        {{GOVERNANCE_LABEL}}
+    </text>
+
+    <!-- Footer line -->
+    <line x1="0" y1="682" x2="1280" y2="682" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="60" y="706" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8" letter-spacing="1">Alauda</text>
+    <text x="1220" y="706" text-anchor="end" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8">{{PAGE_NUM}}</text>
+
+</svg>

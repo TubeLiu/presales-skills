@@ -1,0 +1,26 @@
+{
+  "name": "solution-master",
+  "description": "AI 辅助通用解决方案撰写框架 — 苏格拉底式需求提取、子智能体驱动撰写、双重审查、多源知识检索、上下文感知配图、Markdown/DOCX 双格式输出，内置防脱轨 hook 机制。Depends on drawio and ai-image plugins.",
+  "version": "0.1.0",
+  "author": {
+    "name": "LiuZiJiao"
+  },
+  "license": "MIT",
+  "keywords": [
+    "solution",
+    "writing",
+    "docx",
+    "markdown",
+    "subagent",
+    "workflow",
+    "chinese",
+    "中文",
+    "technical-writing"
+  ],
+  "mcpServers": {
+    "anythingllm-sm": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/tools/mcp-anythingllm/index.js"]
+    }
+  }
+}

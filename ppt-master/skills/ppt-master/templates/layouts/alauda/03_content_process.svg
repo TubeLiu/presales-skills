@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+    <!-- Content Variant: 4-Step Process Flow - Alauda Style -->
+    <!-- White background -->
+    <rect width="1280" height="720" fill="#FFFFFF"/>
+
+    <!-- Background decorations (approximated from master EMF) -->
+    <circle cx="1350" cy="600" r="280" fill="#3BAEE3" fill-opacity="0.04"/>
+    <circle cx="1400" cy="250" r="220" fill="#3BAEE3" fill-opacity="0.03"/>
+    <ellipse cx="1150" cy="780" rx="350" ry="130" fill="#3BAEE3" fill-opacity="0.02"/>
+
+    <!-- Left edge accent bar (PPTX: pos 0,29 size 22x45) -->
+    <rect x="0" y="29" width="22" height="45" fill="#3BAEE3"/>
+
+    <!-- Page title -->
+    <text x="46" y="55" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="37" font-weight="bold" fill="#334155">
+        {{PAGE_TITLE}}
+    </text>
+    <!-- Key message -->
+    <text x="32" y="95" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="21" fill="#334155">
+        {{KEY_MESSAGE}}
+    </text>
+
+    <!-- Connecting line between steps -->
+    <line x1="170" y1="210" x2="1140" y2="210" stroke="#E2E8F0" stroke-width="2"/>
+
+    <!-- Step 1 -->
+    <circle cx="170" cy="210" r="28" fill="#3BAEE3"/>
+    <text x="170" y="217" text-anchor="middle" font-family="&quot;Aptos Display&quot;, sans-serif" font-size="20" font-weight="bold" fill="#FFFFFF">1</text>
+    <text x="170" y="270" text-anchor="middle" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="18" font-weight="bold" fill="#334155">
+        {{STEP_1_TITLE}}
+    </text>
+    <rect x="70" y="290" width="200" height="340" fill="#F8FAFC" rx="8" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="100" y="320" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">
+        {{STEP_1_DESC}}
+    </text>
+
+    <!-- Step 2 -->
+    <circle cx="490" cy="210" r="28" fill="#14B8A6"/>
+    <text x="490" y="217" text-anchor="middle" font-family="&quot;Aptos Display&quot;, sans-serif" font-size="20" font-weight="bold" fill="#FFFFFF">2</text>
+    <text x="490" y="270" text-anchor="middle" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="18" font-weight="bold" fill="#334155">
+        {{STEP_2_TITLE}}
+    </text>
+    <rect x="390" y="290" width="200" height="340" fill="#F8FAFC" rx="8" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="420" y="320" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">
+        {{STEP_2_DESC}}
+    </text>
+
+    <!-- Step 3 -->
+    <circle cx="810" cy="210" r="28" fill="#25B273"/>
+    <text x="810" y="217" text-anchor="middle" font-family="&quot;Aptos Display&quot;, sans-serif" font-size="20" font-weight="bold" fill="#FFFFFF">3</text>
+    <text x="810" y="270" text-anchor="middle" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="18" font-weight="bold" fill="#334155">
+        {{STEP_3_TITLE}}
+    </text>
+    <rect x="710" y="290" width="200" height="340" fill="#F8FAFC" rx="8" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="740" y="320" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">
+        {{STEP_3_DESC}}
+    </text>
+
+    <!-- Step 4 -->
+    <circle cx="1130" cy="210" r="28" fill="#125B7D"/>
+    <text x="1130" y="217" text-anchor="middle" font-family="&quot;Aptos Display&quot;, sans-serif" font-size="20" font-weight="bold" fill="#FFFFFF">4</text>
+    <text x="1130" y="270" text-anchor="middle" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="18" font-weight="bold" fill="#334155">
+        {{STEP_4_TITLE}}
+    </text>
+    <rect x="1030" y="290" width="200" height="340" fill="#F8FAFC" rx="8" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="1060" y="320" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">
+        {{STEP_4_DESC}}
+    </text>
+
+    <!-- Footer line -->
+    <line x1="0" y1="682" x2="1280" y2="682" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="60" y="706" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8" letter-spacing="1">Alauda</text>
+    <text x="1220" y="706" text-anchor="end" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8">{{PAGE_NUM}}</text>
+
+</svg>

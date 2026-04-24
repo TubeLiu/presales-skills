@@ -1,0 +1,12 @@
+#!/bin/sh
+# 当暂存区包含 SKILL.md 或 prompts/ 变更时，自动运行路径引用检查
+
+if git diff --cached --name-only | grep -qE '(SKILL\.md|/prompts/)'; then
+  echo "[pre-commit] 检测到 SKILL.md 或 prompts/ 变更，运行引用检查..."
+  python3 -m pytest tests/test_skill_refs.py -q 2>&1
+  if [ $? -ne 0 ]; then
+    echo "[pre-commit] ❌ 引用检查失败，提交已阻止。请修复后重试。"
+    exit 1
+  fi
+  echo "[pre-commit] ✅ 引用检查通过"
+fi

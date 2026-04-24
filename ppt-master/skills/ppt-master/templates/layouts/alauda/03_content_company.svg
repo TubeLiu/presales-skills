@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720">
+    <!-- Content Variant: Company Introduction - Alauda Style (Slide 17) -->
+    <!-- White background -->
+    <rect width="1280" height="720" fill="#FFFFFF"/>
+
+    <!-- Background decorations (approximated from master EMF) -->
+    <circle cx="1350" cy="600" r="280" fill="#3BAEE3" fill-opacity="0.04"/>
+    <circle cx="1400" cy="250" r="220" fill="#3BAEE3" fill-opacity="0.03"/>
+    <ellipse cx="1150" cy="780" rx="350" ry="130" fill="#3BAEE3" fill-opacity="0.02"/>
+
+    <!-- Left edge accent bar (PPTX: pos 0,29 size 22x45) -->
+    <rect x="0" y="29" width="22" height="45" fill="#3BAEE3"/>
+
+    <!-- Page title -->
+    <text x="46" y="55" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="37" font-weight="bold" fill="#334155">
+        {{PAGE_TITLE}}
+    </text>
+    <!-- Left: Photo / visual placeholder -->
+    <rect x="60" y="100" width="480" height="550" fill="#F1F5F9" rx="8" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="300" y="380" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="16" fill="#94A3B8">
+        {{COMPANY_IMAGE}}
+    </text>
+
+    <!-- Right: Company info -->
+    <!-- Company logo area -->
+    <image x="580" y="100" width="160" height="50" href="alauda_logo.png" preserveAspectRatio="xMinYMid meet"/>
+
+    <!-- Company name -->
+    <text x="580" y="195" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="26" font-weight="bold" fill="#334155">
+        {{COMPANY_NAME}}
+    </text>
+
+    <!-- Company tagline -->
+    <text x="580" y="225" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="15" fill="#475569">
+        {{COMPANY_TAGLINE}}
+    </text>
+
+    <!-- Divider -->
+    <line x1="580" y1="245" x2="760" y2="245" stroke="#3BAEE3" stroke-width="2"/>
+
+    <!-- Company description -->
+    <text x="580" y="280" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">
+        {{COMPANY_DESC}}
+    </text>
+
+    <!-- Key metrics row -->
+    <rect x="580" y="420" width="190" height="100" fill="#F8FAFC" rx="6" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="675" y="460" text-anchor="middle" font-family="&quot;Aptos Display&quot;, sans-serif" font-size="32" font-weight="bold" fill="#3BAEE3">{{STAT_1_VALUE}}</text>
+    <text x="675" y="490" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="12" fill="#94A3B8">{{STAT_1_LABEL}}</text>
+
+    <rect x="790" y="420" width="190" height="100" fill="#F8FAFC" rx="6" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="885" y="460" text-anchor="middle" font-family="&quot;Aptos Display&quot;, sans-serif" font-size="32" font-weight="bold" fill="#14B8A6">{{STAT_2_VALUE}}</text>
+    <text x="885" y="490" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="12" fill="#94A3B8">{{STAT_2_LABEL}}</text>
+
+    <rect x="1000" y="420" width="190" height="100" fill="#F8FAFC" rx="6" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="1095" y="460" text-anchor="middle" font-family="&quot;Aptos Display&quot;, sans-serif" font-size="32" font-weight="bold" fill="#125B7D">{{STAT_3_VALUE}}</text>
+    <text x="1095" y="490" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="12" fill="#94A3B8">{{STAT_3_LABEL}}</text>
+
+    <!-- Highlights -->
+    <text x="580" y="570" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">
+        {{COMPANY_HIGHLIGHTS}}
+    </text>
+
+    <!-- Footer line -->
+    <line x1="0" y1="682" x2="1280" y2="682" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="60" y="706" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8" letter-spacing="1">Alauda</text>
+    <text x="1220" y="706" text-anchor="end" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8">{{PAGE_NUM}}</text>
+
+</svg>

@@ -1,0 +1,321 @@
+# 风险识别清单
+
+system:
+  role: 招投标风险管控专家
+  task: 识别文档中的各类风险，评估风险等级，提供应对建议
+  output_format: 风险识别报告
+  language: 中文
+
+# 风险分类体系
+risk_categories:
+
+  disqualification:
+    name: 废标风险
+    description: 可能导致投标文件被否决或废标的风险
+    severity: critical
+    indicators:
+      - name: 响应性废标风险
+        check_points:
+          - 工期/交货期不符合要求
+          - 质量标准不满足要求
+          - 关键技术参数负偏离
+          - 不接受招标文件重要条款
+          - 存在采购人不能接受的附加条件
+
+      - name: 合规性废标风险
+        check_points:
+          - 串通投标迹象
+          - 弄虚作假（资质/业绩/人员）
+          - 行贿等违法行为
+
+  compliance:
+    name: 合规风险
+    description: 违反法律法规或招标文件规定的风险
+    severity: high
+    indicators:
+      - name: 资质合规风险
+        check_points:
+          - 借用资质或挂靠
+          - 超资质范围承接
+          - 资质证书造假
+
+      - name: 人员合规风险
+        check_points:
+          - 项目经理同时在多个项目任职
+          - 承诺人员无法到位
+          - 人员资质造假
+
+      - name: 业绩合规风险
+        check_points:
+          - 虚构业绩
+          - 业绩证明材料造假
+          - 业绩归属争议
+
+      - name: 知识产权风险
+        check_points:
+          - 侵犯第三方知识产权
+          - 使用未经授权的软件/技术
+          - 知识产权归属约定不清
+
+  performance:
+    name: 履约风险
+    description: 中标后无法按约履行合同的风险
+    severity: high
+    indicators:
+      - name: 技术履约风险
+        check_points:
+          - 承诺的技术指标超出实际能力
+          - 技术方案不可行
+          - 关键技术依赖第三方
+          - 技术实现存在重大不确定性
+
+      - name: 工期履约风险
+        check_points:
+          - 承诺工期过于紧张
+          - 关键里程碑设置不合理
+          - 未充分考虑风险缓冲
+
+      - name: 资源履约风险
+        check_points:
+          - 承诺的人员/设备资源不足
+          - 同时中标多个项目资源冲突
+          - 关键资源可获得性不确定
+
+      - name: 成本履约风险
+        check_points:
+          - 报价低于成本价
+          - 对变更调价机制约定不利
+          - 成本上涨风险未充分评估
+
+  dispute:
+    name: 争议风险
+    description: 可能引发合同纠纷的风险
+    severity: medium
+    indicators:
+      - name: 条款理解分歧
+        check_points:
+          - 技术规格描述模糊
+          - 验收标准不明确
+          - 服务范围界定不清
+
+      - name: 责任界定不清
+        check_points:
+          - 界面划分不清
+          - 配合义务不明确
+          - 风险分担不合理
+
+      - name: 争议解决机制
+        check_points:
+          - 争议解决方式（诉讼/仲裁）选择
+          - 管辖约定不利
+
+# 风险等级定义
+risk_levels:
+  critical:
+    name: 严重风险
+    description: 极可能导致废标或重大损失
+    probability: 高
+    impact: 致命
+    action: 必须立即消除
+    color: 红色
+
+  high:
+    name: 高风险
+    description: 可能导致严重不利后果
+    probability: 中高
+    impact: 重大
+    action: 必须整改
+    color: 橙色
+
+  medium:
+    name: 中等风险
+    description: 可能导致一定损失或争议
+    probability: 中
+    impact: 中等
+    action: 建议整改
+    color: 黄色
+
+  low:
+    name: 低风险
+    description: 影响较小，可接受
+    probability: 低
+    impact: 轻微
+    action: 关注即可
+    color: 蓝色
+
+# 按审核类型的风险检查重点
+risk_check_focus:
+
+  tender_doc:
+    description: 技术规格与评标办法风险检查（tpl v2.0 输出）
+    focus_areas:
+      - 技术规格反控标合规性（品牌残留、精确值指标、排他性条款）
+      - 评标办法合规性（价格权重、客观分占比、评分标准明确性）
+      - 技术评分维度映射完整性（维度与章节对应、分值合理性）
+      - 技术规格与评标办法的内部一致性（必须项↔评分项↔无效投标认定）
+
+  analysis:
+    description: 分析报告风险检查
+    focus_areas:
+      - 关键信息提取错误风险
+      - 评分标准理解偏差风险
+      - 时间节点遗漏风险
+
+  outline:
+    description: 投标大纲风险检查
+    focus_areas:
+      - 评分项遗漏风险
+      - 章节结构缺陷风险
+      - 否决项未响应风险
+      - 服务管理章节缺失风险（售后/培训/人员配置等服务章节已整合到技术部分，缺失将导致评分空白）
+
+  chapter:
+    description: 章节内容风险检查
+    focus_areas:
+      - 过度承诺风险
+      - 技术偏离风险
+      - 数据矛盾风险
+      - 与评分标准不符风险
+
+  full_bid:
+    description: 技术标书风险检查
+    focus_areas:
+      - name: 技术偏离废标风险
+        scope: chapter
+      - name: 内容矛盾风险
+        scope: global
+      - name: 过度承诺风险
+        scope: chapter
+      - name: 关键技术要求未响应风险
+        scope: chapter
+      - name: 服务管理内容薄弱风险（售后服务、培训方案等章节内容空泛或缺少具体承诺）
+        scope: chapter
+      - name: 并行写作章节一致性风险（长章节可能由多个子智能体并行撰写，检查术语统一性、H3子节间衔接自然度、技术描述无矛盾）
+        scope: global
+
+# 风险应对策略
+mitigation_strategies:
+
+  preventive:
+    name: 预防策略
+    description: 在风险发生前采取措施避免
+    actions:
+      - 仔细研读招标文件，准确理解要求
+      - 建立内部审核机制
+      - 使用checklist逐项核对
+      - 关键条款法律顾问审核
+
+  corrective:
+    name: 纠正策略
+    description: 发现风险后立即采取措施消除
+    actions:
+      - 针对发现的问题立即修改
+      - 补充缺失的证明材料
+      - 调整不合理的承诺
+      - 重新计算报价
+
+  transfer:
+    name: 转移策略
+    description: 将风险转移给第三方
+    actions:
+      - 购买保险
+      - 分包部分工作
+      - 联合体投标分担风险
+      - 设置保护性条款
+
+  accept:
+    name: 接受策略
+    description: 对无法消除的低风险予以接受
+    actions:
+      - 记录并接受低风险
+      - 准备应急预案
+      - 在报价中考虑风险成本
+
+# 输出格式定义
+output:
+  format: 风险识别报告
+
+  structure:
+    executive_summary:
+      - total_risks: 识别风险总数
+      - critical_count: 严重风险数量
+      - high_count: 高风险数量
+      - medium_count: 中等风险数量
+      - low_count: 低风险数量
+      - overall_assessment: 总体风险评估
+
+    risk_register:
+      format: 风险登记册
+      columns:
+        - 风险编号
+        - 风险类别
+        - 风险描述
+        - 风险等级
+        - 发生概率
+        - 影响程度
+        - 责任部门/人
+        - 应对措施
+        - 状态
+
+    critical_risks:
+      description: 严重风险（必须立即处理）
+      template:
+        - risk_id: 风险编号
+          category: 风险类别
+          description: 详细描述
+          location: 所在位置（页码/章节）
+          consequence: 可能后果
+          mitigation: 应对措施
+          deadline: 处理时限
+
+    high_risks:
+      description: 高风险（必须整改）
+      template:
+        - risk_id: 风险编号
+          category: 风险类别
+          description: 详细描述
+          location: 所在位置
+          consequence: 可能后果
+          mitigation: 应对措施
+
+    medium_risks:
+      description: 中等风险（建议整改）
+      template:
+        - risk_id: 风险编号
+          category: 风险类别
+          description: 风险描述
+          suggestion: 改进建议
+
+    low_risks:
+      description: 低风险（关注即可）
+      template:
+        - risk_id: 风险编号
+          category: 风险类别
+          description: 风险描述
+          note: 备注
+
+    risk_matrix:
+      description: 风险矩阵图
+      axes:
+        x: 影响程度
+        y: 发生概率
+      quadrants:
+        - name: 高风险区
+          description: 高概率 × 高影响
+          action: 优先处理
+        - name: 关注区
+          description: 高概率 × 低影响 或 低概率 × 高影响
+          action: 重点监控
+        - name: 低风险区
+          description: 低概率 × 低影响
+          action: 一般关注
+
+    action_plan:
+      immediate_actions: 立即执行（严重风险）
+      short_term_actions: 短期整改（高风险）
+      monitoring_items: 持续监控（中低风险）
+
+    appendices:
+      - 详细风险检查清单
+      - 风险案例库
+      - 应对策略模板

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+    <!-- Content Variant: Case Study - Alauda Style -->
+    <!-- White background -->
+    <rect width="1280" height="720" fill="#FFFFFF"/>
+
+    <!-- Background decorations (approximated from master EMF) -->
+    <circle cx="1350" cy="600" r="280" fill="#3BAEE3" fill-opacity="0.04"/>
+    <circle cx="1400" cy="250" r="220" fill="#3BAEE3" fill-opacity="0.03"/>
+    <ellipse cx="1150" cy="780" rx="350" ry="130" fill="#3BAEE3" fill-opacity="0.02"/>
+
+    <!-- Left edge accent bar (PPTX: pos 0,29 size 22x45) -->
+    <rect x="0" y="29" width="22" height="45" fill="#3BAEE3"/>
+
+    <!-- Page title -->
+    <text x="46" y="55" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="37" font-weight="bold" fill="#334155">
+        {{PAGE_TITLE}}
+    </text>
+    <!-- Case study label -->
+    <rect x="60" y="100" width="120" height="28" fill="#3BAEE3" rx="4"/>
+    <text x="120" y="119" text-anchor="middle" font-family="&quot;Aptos Display&quot;, sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" letter-spacing="1">CASE STUDY</text>
+
+    <!-- Case header card -->
+    <rect x="60" y="145" width="1160" height="100" fill="#F8FAFC" rx="8" stroke="#E2E8F0" stroke-width="1"/>
+    <rect x="60" y="145" width="6" height="100" fill="#3BAEE3" rx="3"/>
+
+    <!-- Customer name -->
+    <text x="90" y="185" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="22" font-weight="bold" fill="#334155">
+        {{CASE_CUSTOMER}}
+    </text>
+
+    <!-- Case summary -->
+    <text x="90" y="218" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">
+        {{CASE_SUMMARY}}
+    </text>
+
+    <!-- Three result cards -->
+    <!-- Challenge -->
+    <rect x="60" y="270" width="370" height="290" fill="#FEF2F2" rx="8" stroke="#FECACA" stroke-width="1"/>
+    <rect x="60" y="270" width="370" height="6" fill="#FE574C" rx="3"/>
+    <text x="90" y="310" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="16" font-weight="bold" fill="#334155">
+        {{CHALLENGE_TITLE}}
+    </text>
+    <text x="90" y="340" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">
+        {{CHALLENGE_DESC}}
+    </text>
+
+    <!-- Solution -->
+    <rect x="455" y="270" width="370" height="290" fill="#EFF6FF" rx="8" stroke="#BFDBFE" stroke-width="1"/>
+    <rect x="455" y="270" width="370" height="6" fill="#3BAEE3" rx="3"/>
+    <text x="485" y="310" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="16" font-weight="bold" fill="#334155">
+        {{SOLUTION_TITLE}}
+    </text>
+    <text x="485" y="340" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">
+        {{SOLUTION_DESC}}
+    </text>
+
+    <!-- Result -->
+    <rect x="850" y="270" width="370" height="290" fill="#F0FDF4" rx="8" stroke="#BBF7D0" stroke-width="1"/>
+    <rect x="850" y="270" width="370" height="6" fill="#25B273" rx="3"/>
+    <text x="880" y="310" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="16" font-weight="bold" fill="#334155">
+        {{RESULT_TITLE}}
+    </text>
+    <text x="880" y="340" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#475569">
+        {{RESULT_DESC}}
+    </text>
+
+    <!-- Bottom KPI row -->
+    <rect x="60" y="585" width="1160" height="65" fill="#F1F5F9" rx="6"/>
+    <text x="640" y="624" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#94A3B8">
+        {{CASE_METRICS}}
+    </text>
+
+    <!-- Footer line -->
+    <line x1="0" y1="682" x2="1280" y2="682" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="60" y="706" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8" letter-spacing="1">Alauda</text>
+    <text x="1220" y="706" text-anchor="end" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8">{{PAGE_NUM}}</text>
+
+</svg>

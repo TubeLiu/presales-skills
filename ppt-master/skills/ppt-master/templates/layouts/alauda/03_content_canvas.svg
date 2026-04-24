@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+    <!-- Content Variant: Capability Canvas (3-Column) - Alauda Style (Slide 16) -->
+    <!-- White background -->
+    <rect width="1280" height="720" fill="#FFFFFF"/>
+
+    <!-- Background decorations (approximated from master EMF) -->
+    <circle cx="1350" cy="600" r="280" fill="#3BAEE3" fill-opacity="0.04"/>
+    <circle cx="1400" cy="250" r="220" fill="#3BAEE3" fill-opacity="0.03"/>
+    <ellipse cx="1150" cy="780" rx="350" ry="130" fill="#3BAEE3" fill-opacity="0.02"/>
+
+    <!-- Left edge accent bar (PPTX: pos 0,29 size 22x45) -->
+    <rect x="0" y="29" width="22" height="45" fill="#3BAEE3"/>
+
+    <!-- Page title -->
+    <text x="46" y="55" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="37" font-weight="bold" fill="#334155">
+        {{PAGE_TITLE}}
+    </text>
+    <!-- Key message -->
+    <text x="32" y="95" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="21" fill="#334155">
+        {{KEY_MESSAGE}}
+    </text>
+
+    <!-- Column headers -->
+    <rect x="60" y="128" width="370" height="40" fill="#125B7D" rx="6"/>
+    <text x="245" y="154" text-anchor="middle" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF">
+        {{COL_1_HEADER}}
+    </text>
+
+    <rect x="455" y="128" width="370" height="40" fill="#3BAEE3" rx="6"/>
+    <text x="640" y="154" text-anchor="middle" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF">
+        {{COL_2_HEADER}}
+    </text>
+
+    <rect x="850" y="128" width="370" height="40" fill="#14B8A6" rx="6"/>
+    <text x="1035" y="154" text-anchor="middle" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF">
+        {{COL_3_HEADER}}
+    </text>
+
+    <!-- Column 1: Capabilities -->
+    <rect x="60" y="180" width="370" height="470" fill="#F8FAFC" rx="0" stroke="#E2E8F0" stroke-width="1"/>
+
+    <!-- Capability items (3 rows) -->
+    <rect x="80" y="200" width="330" height="120" fill="#FFFFFF" rx="6" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="100" y="235" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="15" font-weight="bold" fill="#334155">{{CAP_1_TITLE}}</text>
+    <text x="100" y="260" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="13" fill="#475569">{{CAP_1_DESC}}</text>
+
+    <rect x="80" y="336" width="330" height="120" fill="#FFFFFF" rx="6" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="100" y="371" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="15" font-weight="bold" fill="#334155">{{CAP_2_TITLE}}</text>
+    <text x="100" y="396" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="13" fill="#475569">{{CAP_2_DESC}}</text>
+
+    <rect x="80" y="472" width="330" height="120" fill="#FFFFFF" rx="6" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="100" y="507" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="15" font-weight="bold" fill="#334155">{{CAP_3_TITLE}}</text>
+    <text x="100" y="532" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="13" fill="#475569">{{CAP_3_DESC}}</text>
+
+    <!-- Column 2: Mechanisms -->
+    <rect x="455" y="180" width="370" height="470" fill="#F8FAFC" rx="0" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="640" y="420" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="15" fill="#94A3B8">
+        {{COL_2_CONTENT}}
+    </text>
+
+    <!-- Column 3: Results -->
+    <rect x="850" y="180" width="370" height="470" fill="#F8FAFC" rx="0" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="1035" y="420" text-anchor="middle" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="15" fill="#94A3B8">
+        {{COL_3_CONTENT}}
+    </text>
+
+    <!-- Footer line -->
+    <line x1="0" y1="682" x2="1280" y2="682" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="60" y="706" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8" letter-spacing="1">Alauda</text>
+    <text x="1220" y="706" text-anchor="end" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8">{{PAGE_NUM}}</text>
+
+</svg>

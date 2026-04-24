@@ -1,0 +1,128 @@
+# 商务部分章节模板
+# v2.0.0 | 语义驱动，无硬编码章节号
+
+chapter_type: business
+display_name: "商务部分"
+description: "企业资质、项目业绩、团队配置、财务状况、商务响应"
+
+# ─────────────────────────────────────────────
+# 通用写作规则（适用于所有商务类章节）
+# ─────────────────────────────────────────────
+writing_rules: |
+  **商务部分写作总则**：
+  - 客观严谨，数据驱动，证明材料一一对应
+  - 资质与业绩描述须与 M3 要求逐条呼应，不得遗漏
+  - 人员信息、财务数据标注 `[待商务确认]`
+  - 避免主观夸大，用事实和数据说话
+  - 以{VENDOR_NAME}视角撰写，展现企业实力和项目经验
+
+# ─────────────────────────────────────────────
+# 章节类型细分（按语义，不按编号）
+# ─────────────────────────────────────────────
+section_types:
+  company_profile:
+    semantic_keywords: [公司简介, 企业资质, 资质证明, 企业介绍, 资质响应, 荣誉资质]
+    word_count: 1500
+    image_quota: 1
+    required_images: 0
+    content_elements:
+      - 企业基本情况（成立时间、注册资本、员工规模、办公地点）
+      - 企业资质与体系认证（ISO、CMMI、信创目录等）
+      - 与 M3 资质要求逐条对应，逐一说明满足情况
+      - 资质证书编号标注 `[待商务确认]`
+    kb_priority: [fixed, reusable]
+    image_types: [公司资质, 荣誉证书, 企业认证]
+
+  project_cases:
+    semantic_keywords: [项目业绩, 类似项目, 项目案例, 成功案例, 业绩案例]
+    word_count: 4500
+    image_quota: 1
+    required_images: 0
+    content_elements:
+      - 从知识库 cases.yaml 中匹配与本项目相关的案例
+      - 每个案例包含：案例 ID、项目名称、合同金额、实施时间、客户名称、项目成果
+      - 每个案例需说明与本项目的关联性（行业相似/技术相似/规模相似）
+      - 按 M3 业绩要求和 M4 商务评分项组织案例顺序
+      - 案例数量与评分规则匹配（如"提供3个以上案例得满分"）
+      - 合同金额、时间等具体数据来自知识库，无数据标注 `[待商务确认]`
+    kb_priority: [history, reusable]
+    image_types: [项目架构图, 实施效果图, 案例截图]
+    scoring_alignment: |
+      重点关注评分标准中的"类似项目经验"要求：
+      - 项目规模（用户数、节点数、数据量）
+      - 项目行业（政府/金融/央企）
+      - 项目时间（近3年优先）
+      - 项目金额（与本项目相当）
+
+  team_profile:
+    semantic_keywords: [项目团队, 团队简历, 人员配置, 团队组建, 团队结构]
+    word_count: 1500
+    image_quota: 1
+    required_images: 0
+    content_elements:
+      - 项目经理简历（资质、年限、类似项目经验）
+      - 核心技术人员配置（架构师、开发、运维）
+      - 与 M3 人员资质要求逐条对应
+      - 人员信息标注 `[待商务确认]`
+    kb_priority: [fixed, reusable]
+    image_types: [团队组织架构图]
+
+  financial_status:
+    semantic_keywords: [财务状况, 财务报表, 资信证明, 财务健康]
+    word_count: 1500
+    image_quota: 0
+    required_images: 0
+    content_elements:
+      - 财务报表（营收、利润、资产）
+      - 纳税证明
+      - 银行资信证明
+      - 财务健康度分析
+    kb_priority: [fixed]
+    image_types: []
+
+  business_deviation:
+    semantic_keywords: [商务偏离, 商务响应, 偏离表, 商务条款]
+    word_count: 1500
+    image_quota: 0
+    required_images: 0
+    content_elements:
+      - 逐条列出 M3 中的商务条款
+      - 对每条标注偏离情况：无偏离 / 正偏离（优于招标要求）
+      - 偏离说明须具体，不可笼统写"完全响应"
+      - 格式为表格：序号 | 招标要求 | 偏离情况 | 说明
+    kb_priority: [fixed]
+    image_types: []
+
+  other_business:
+    semantic_keywords: [其他商务, 商务要求, 付款方式, 质保期, 违约责任]
+    word_count: 1500
+    image_quota: 0
+    required_images: 0
+    content_elements:
+      - 响应 M3 中的其他商务要求（付款方式、质保期、违约责任等）
+      - 逐条说明响应情况
+      - 无法完全响应的标注 `[待商务确认]`
+    kb_priority: [fixed]
+    image_types: []
+
+# ─────────────────────────────────────────────
+# 图片推荐规则（按语义触发，不按章节号）
+# ─────────────────────────────────────────────
+image_recommendations:
+  - triggers: [公司资质, 企业认证, ISO, CMMI, 高新技术企业]
+    type: 证书扫描件
+    description: 企业资质证书（ISO/CMMI/高新技术企业等）
+    placement: after_content
+    priority: high
+
+  - triggers: [组织架构, 团队结构, 人员配置]
+    type: 组织架构图
+    description: 项目团队组织架构图
+    placement: after_content
+    priority: medium
+
+  - triggers: [项目业绩, 案例, 客户]
+    type: 案例截图
+    description: 项目实施效果图或客户评价截图
+    placement: after_content
+    priority: medium
