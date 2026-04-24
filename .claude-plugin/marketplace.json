@@ -7,6 +7,15 @@
   },
   "plugins": [
     {
+      "name": "drawio",
+      "source": "./drawio",
+      "description": "Draw.io 图表生成（.drawio XML + PNG/SVG/PDF 导出）。独立共享 plugin，solution-master 与 tender-workflow 均依赖。",
+      "version": "0.1.0",
+      "author": { "name": "LiuZiJiao" },
+      "category": "productivity",
+      "tags": ["diagram", "drawio", "shared"]
+    },
+    {
       "name": "solution-master",
       "source": "./solution-master",
       "description": "AI 辅助通用解决方案撰写框架。依赖 drawio、ai-image plugin。",

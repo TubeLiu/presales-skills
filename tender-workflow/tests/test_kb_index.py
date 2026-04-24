@@ -15,7 +15,7 @@ import subprocess
 import tempfile
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-KB_INDEXER = os.path.join(PROJECT_ROOT, '.claude', 'skills', 'taw', 'tools', 'kb_indexer.py')
+KB_INDEXER = os.path.join(PROJECT_ROOT, 'skills', 'taw', 'tools', 'kb_indexer.py')
 sys.path.insert(0, PROJECT_ROOT)
 
 

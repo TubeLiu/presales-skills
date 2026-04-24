@@ -43,8 +43,8 @@ solution-master/
 │   ├── docx-formatting/
 │   ├── solution-config/
 │   ├── writing-skills/
-│   ├── drawio/
 │   └── web-access/
+│   # (drawio 已抽为独立 plugin `drawio`，位于 presales-skills marketplace 的 ../drawio/)
 ├── agents/                           # 子智能体角色定义
 │   ├── writer.md
 │   ├── spec-reviewer.md
@@ -128,7 +128,7 @@ Solution Master 的防脱轨依赖两层相互加强的机制：
 | knowledge-retrieval | 头脑风暴时获取领域知识、撰写前检索相关内容 |
 | image-generation | 章节需要配图 |
 | docx-formatting | 需要输出 DOCX 格式文件 |
-| drawio | 需要绘制架构图/流程图/拓扑图等 |
+| drawio | 由独立 plugin `drawio` 提供（需配套安装），需要绘制架构图/流程图/拓扑图等时触发 |
 | solution-config | 配置管理需求，`/solution-config` 手动调用 |
 | writing-skills | 需要创建或编辑 Solution Master 技能 |
 | web-access | 联网、浏览器自动化、CDP 登录态操作 |

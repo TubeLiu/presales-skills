@@ -302,15 +302,19 @@ def validate() -> List[str]:
         if not any(p.exists() for p in wa_candidates):
             issues.append("web-access skill 未安装（CDP 站点检索依赖此 skill）")
 
-    # 检查 drawio skill 和 CLI（同上：先 sibling 再 home fallback）
+    # 检查 drawio plugin 是否已随 umbrella marketplace 安装
+    # drawio 自 Milestone C 起已抽为独立 plugin；solution-master/skills/drawio/ 不再存在
+    # 候选位置：
+    #   1. Umbrella marketplace sibling：_SKILLS_ROOT.parent.parent / "drawio" / "skills" / "drawio" / "SKILL.md"
+    #   2. 用户 home 全局安装：~/.claude/skills/drawio/SKILL.md
     drawio_candidates = [
-        _SKILLS_ROOT / "drawio" / "SKILL.md",
+        _SKILLS_ROOT.parent.parent / "drawio" / "skills" / "drawio" / "SKILL.md",
         Path.home() / ".claude" / "skills" / "drawio" / "SKILL.md",
     ]
     drawio_skill_installed = any(p.exists() for p in drawio_candidates)
 
     if not drawio_skill_installed:
-        issues.append("draw.io skill 未安装（架构图/流程图将降级为 AI 生成）。运行 /solution-config setup 安装")
+        issues.append("drawio plugin 未安装（架构图/流程图将降级为 AI 生成）。请执行 /plugin install drawio@presales-skills")
     else:
         # skill 已安装时才检查 CLI 配置
         drawio_path = _deep_get(cfg, "drawio.cli_path")

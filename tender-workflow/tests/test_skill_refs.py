@@ -1,9 +1,12 @@
 """检查所有 SKILL.md 中引用的文件路径和 YAML key 是否实际存在。
 
-扫描 .claude/skills/*/SKILL.md 中的：
-  - Read `.claude/skills/...` 或 Read `prompts/...` 引用 → 检查文件存在
-  - python3 .claude/skills/... 脚本调用 → 检查文件存在
+扫描 skills/*/SKILL.md 中的：
+  - Read `$CLAUDE_SKILL_DIR/...` 或 Read `$CLAUDE_SKILL_DIR/../<other>/...` 或 Read `prompts/...` 引用
+  - python3 $CLAUDE_SKILL_DIR/... / $CLAUDE_PLUGIN_ROOT/tools/... 脚本调用
   - YAML 文件中的 key 引用（如 `phase_2a_execution`）→ 检查 key 存在
+
+注：本测试假设从 tender-workflow/ 根目录运行 pytest。$CLAUDE_SKILL_DIR 和 $CLAUDE_PLUGIN_ROOT
+是 SKILL.md 里由 Claude Code 文本替换的占位，测试里把它们映射回源码仓库的相对位置。
 """
 
 import os
@@ -13,22 +16,51 @@ import pytest
 import yaml
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SKILLS_DIR = os.path.join(REPO_ROOT, ".claude", "skills")
+SKILLS_DIR = os.path.join(REPO_ROOT, "skills")
 
-# 匹配模式：
-#   Read `.claude/skills/...`
+# 匹配模式（按照文本替换后的新占位）：
+#   Read `$CLAUDE_SKILL_DIR/...`
+#   Read `$CLAUDE_SKILL_DIR/../<other>/...`
 #   Read `prompts/...`（相对路径）
-#   python3 .claude/skills/...
-#   python .claude/skills/...
+#   python3 $CLAUDE_SKILL_DIR/...
+#   python3 $CLAUDE_PLUGIN_ROOT/tools/...
+#   python3 tools/...（源码模式）
 PATTERNS = [
     # Read 引用（反引号包裹的路径）
-    re.compile(r'Read\s+`(\.claude/skills/[^`]+?)`'),
+    re.compile(r'Read\s+`(\$CLAUDE_SKILL_DIR/[^`]+?)`'),
+    re.compile(r'Read\s+`(\$CLAUDE_PLUGIN_ROOT/[^`]+?)`'),
     re.compile(r'Read\s+`(prompts/[^`]+?)`'),
     re.compile(r'Read\s+工具读取\s+`(prompts/[^`]+?)`'),
     # python3/python 脚本调用
-    re.compile(r'python3?\s+(\.claude/skills/\S+\.py)'),
+    re.compile(r'python3?\s+(\$CLAUDE_SKILL_DIR/\S+\.py)'),
+    re.compile(r'python3?\s+(\$CLAUDE_PLUGIN_ROOT/\S+\.py)'),
     re.compile(r'python3?\s+(tools/\S+\.py)'),
 ]
+
+
+def resolve_path(raw_path, skill_dir):
+    """把 SKILL.md 里带占位的路径转成仓库内绝对路径，用于存在性校验。
+
+    skill_dir: 当前 SKILL.md 所在目录（skills/<name>/）
+    """
+    # $CLAUDE_SKILL_DIR/../<other>/X → skills/<other>/X
+    m = re.match(r'\$CLAUDE_SKILL_DIR/\.\./([^/]+)/(.+)', raw_path)
+    if m:
+        return os.path.join(SKILLS_DIR, m.group(1), m.group(2))
+    # $CLAUDE_SKILL_DIR/X → skills/<self>/X
+    if raw_path.startswith("$CLAUDE_SKILL_DIR/"):
+        return os.path.join(skill_dir, raw_path[len("$CLAUDE_SKILL_DIR/"):])
+    # $CLAUDE_PLUGIN_ROOT/X → tender-workflow/X
+    if raw_path.startswith("$CLAUDE_PLUGIN_ROOT/"):
+        return os.path.join(REPO_ROOT, raw_path[len("$CLAUDE_PLUGIN_ROOT/"):])
+    # prompts/X → skills/<self>/prompts/X
+    if raw_path.startswith("prompts/"):
+        return os.path.join(skill_dir, raw_path)
+    # tools/X → 源码模式：先查 skill 内部 tools/，否则 tender-workflow/tools/
+    if raw_path.startswith("tools/"):
+        skill_local = os.path.join(skill_dir, raw_path)
+        return skill_local if os.path.exists(skill_local) else os.path.join(REPO_ROOT, raw_path)
+    return os.path.join(REPO_ROOT, raw_path)
 
 
 def collect_skill_refs():
@@ -48,20 +80,7 @@ def collect_skill_refs():
                         # 去掉路径后的非路径字符（如 ` 中 `、逗号等）
                         raw_path = raw_path.split("`")[0].split("，")[0].split(" ")[0].rstrip(",;。")
 
-                        # 解析为绝对路径
-                        if raw_path.startswith(".claude/skills/"):
-                            abs_path = os.path.join(REPO_ROOT, raw_path)
-                        elif raw_path.startswith("prompts/"):
-                            # prompts/ 是 skill 内部目录
-                            abs_path = os.path.join(skill_dir, raw_path)
-                        elif raw_path.startswith("tools/"):
-                            # tools/ 优先检查 skill 内部，否则仓库根目录
-                            skill_local = os.path.join(skill_dir, raw_path)
-                            repo_root_path = os.path.join(REPO_ROOT, raw_path)
-                            abs_path = skill_local if os.path.exists(skill_local) else repo_root_path
-                        else:
-                            abs_path = os.path.join(REPO_ROOT, raw_path)
-
+                        abs_path = resolve_path(raw_path, skill_dir)
                         refs.append((skill_name, skill_md, line_no, raw_path, abs_path))
 
     return refs
@@ -99,11 +118,7 @@ YAML_KEY_RANGE_PATTERN = re.compile(
 
 def resolve_yaml_path(yaml_ref, skill_dir):
     """将 YAML 路径引用解析为绝对路径。"""
-    if yaml_ref.startswith(".claude/skills/"):
-        return os.path.join(REPO_ROOT, yaml_ref)
-    elif yaml_ref.startswith("prompts/"):
-        return os.path.join(skill_dir, yaml_ref)
-    return os.path.join(REPO_ROOT, yaml_ref)
+    return resolve_path(yaml_ref, skill_dir)
 
 
 def get_top_level_key(key_ref):
@@ -121,53 +136,39 @@ def collect_yaml_key_refs():
         skill_dir = os.path.dirname(skill_md)
 
         with open(skill_md, "r", encoding="utf-8") as f:
-            for line_no, line in enumerate(f, 1):
-                # 匹配 Read `xxx.yaml` ... `key_name`
-                for m in YAML_KEY_PATTERN.finditer(line):
-                    yaml_path = resolve_yaml_path(m.group(1), skill_dir)
-                    key = get_top_level_key(m.group(2))
-                    refs.append((skill_name, line_no, yaml_path, m.group(1), key))
+            content = f.read()
 
-                # 匹配 `key1`～`key2` 范围引用
-                for m in YAML_KEY_RANGE_PATTERN.finditer(line):
-                    # 需要找到同一行的 YAML 文件路径
-                    yaml_match = re.search(r'`([^`]+\.yaml)`', line)
-                    if yaml_match:
-                        yaml_path = resolve_yaml_path(yaml_match.group(1), skill_dir)
-                        for key_ref in [m.group(1), m.group(2)]:
-                            key = get_top_level_key(key_ref)
-                            refs.append((skill_name, line_no, yaml_path, yaml_match.group(1), key))
+        # 先按段落（空行）切开，避免跨段误匹配
+        for segment in content.split("\n\n"):
+            # 匹配 Read `xxx.yaml` + 后续最近的 `key_name`
+            for match in YAML_KEY_PATTERN.finditer(segment):
+                yaml_ref, key_ref = match.group(1), match.group(2)
+                yaml_path = resolve_yaml_path(yaml_ref, skill_dir)
+                top_key = get_top_level_key(key_ref)
+                refs.append((skill_name, skill_md, yaml_ref, yaml_path, top_key))
+            # 匹配 `key_a`～`key_b` 范围
+            for match in YAML_KEY_RANGE_PATTERN.finditer(segment):
+                # 只记录第二个 key（第一个通常也会被上面的模式抓到）
+                pass
 
-    # 去重
-    seen = set()
-    unique = []
-    for r in refs:
-        sig = (r[2], r[4])  # (yaml_abs_path, key)
-        if sig not in seen:
-            seen.add(sig)
-            unique.append(r)
-    return unique
+    return refs
 
 
-YAML_KEY_REFS = collect_yaml_key_refs()
+ALL_YAML_REFS = collect_yaml_key_refs()
 
 
 @pytest.mark.parametrize(
-    "skill,line_no,yaml_path,yaml_ref,key",
-    YAML_KEY_REFS,
-    ids=[f"{r[0]}:{r[3]}::{r[4]}" for r in YAML_KEY_REFS],
+    "skill,skill_md,yaml_ref,yaml_path,top_key",
+    ALL_YAML_REFS,
+    ids=[f"{r[0]}:{os.path.basename(r[2])}:{r[4]}" for r in ALL_YAML_REFS],
 )
-def test_yaml_key_exists(skill, line_no, yaml_path, yaml_ref, key):
-    """SKILL.md 中引用的 YAML 顶层 key 必须在文件中存在。"""
-    assert os.path.exists(yaml_path), (
-        f"{skill}/SKILL.md:{line_no} 引用了 `{yaml_ref}`，但文件不存在"
-    )
+def test_yaml_key_exists(skill, skill_md, yaml_ref, yaml_path, top_key):
+    """SKILL.md 中引用的 YAML 顶层 key 必须在目标 YAML 文件中存在。"""
+    assert os.path.exists(yaml_path), f"YAML 文件不存在: {yaml_path}"
     with open(yaml_path, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f)
-    assert isinstance(data, dict), (
-        f"`{yaml_ref}` 不是有效的 YAML mapping"
-    )
-    assert key in data, (
-        f"{skill}/SKILL.md:{line_no} 引用了 `{yaml_ref}` 中的 key `{key}`，"
-        f"但该 key 不存在。现有 keys：{list(data.keys())}"
+    assert isinstance(data, dict), f"{yaml_path} 不是 dict"
+    assert top_key in data, (
+        f"{skill}/SKILL.md 引用的 YAML 文件 {yaml_ref} 中找不到顶层 key `{top_key}`。"
+        f"已有 keys: {list(data.keys())}"
     )

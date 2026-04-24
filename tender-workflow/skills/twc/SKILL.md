@@ -84,31 +84,31 @@ trv:
 
 配置读写通过 `tools/tw_config.py` 执行：
 ```bash
-python3 tools/tw_config.py show [skill]          # 显示配置
-python3 tools/tw_config.py get <skill> <key>     # 获取单个值
-python3 tools/tw_config.py set <key> <value>     # 设置值
-python3 tools/tw_config.py models [provider]     # 列出 AI 生图模型
-python3 tools/tw_config.py validate              # 验证
-python3 tools/tw_config.py migrate               # 迁移旧配置
-python3 tools/tw_config.py normalize             # 规范化 schema
+python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py show [skill]          # 显示配置
+python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py get <skill> <key>     # 获取单个值
+python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py set <key> <value>     # 设置值
+python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py models [provider]     # 列出 AI 生图模型
+python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py validate              # 验证
+python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py migrate               # 迁移旧配置
+python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py normalize             # 规范化 schema
 ```
 
 ## 执行流程
 
 ### /twc show [skill]
 
-1. 执行 `python3 tools/tw_config.py show [skill]`
+1. 执行 `python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py show [skill]`
 2. 将输出格式化为表格展示给用户
 
 ### /twc set \<key\> \<value\>
 
-1. 执行 `python3 tools/tw_config.py set <key> <value>`
+1. 执行 `python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py set <key> <value>`
 2. 显示变更确认
 
 ### /twc models [provider]
 
-1. 执行 `python3 tools/tw_config.py models [provider]`
-2. 将输出的 Markdown 表格直接展示给用户（固定格式，数据来自 `.claude/skills/taw/prompts/ai_image_models.yaml`）
+1. 执行 `python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py models [provider]`
+2. 将输出的 Markdown 表格直接展示给用户（固定格式，数据来自 `$CLAUDE_SKILL_DIR/../taw/prompts/ai_image_models.yaml`）
 3. 表格中标记当前配置的默认模型（`←`）
 4. 底部显示如何更改默认模型的命令提示
 5. 若注册表 `last_updated` 距今超过 90 天，底部自动显示过期警告
@@ -119,7 +119,7 @@ python3 tools/tw_config.py normalize             # 规范化 schema
 
 **执行流程**：
 
-1. 读取当前注册表 `.claude/skills/taw/prompts/ai_image_models.yaml`，记录现有模型列表
+1. 读取当前注册表 `$CLAUDE_SKILL_DIR/../taw/prompts/ai_image_models.yaml`，记录现有模型列表
 2. 对每个供应商**并行**联网搜索最新可用的图片生成模型：
    - **火山方舟**：搜索"火山方舟 Seedream 图片生成模型 最新"或查阅火山方舟官方文档
    - **阿里云 DashScope**：搜索"阿里云 通义万相 DashScope 图片生成模型 最新"或查阅阿里云官方文档
@@ -140,10 +140,10 @@ python3 tools/tw_config.py normalize             # 规范化 schema
    ```
 5. 询问用户确认是否应用变更
 6. 用户确认后：
-   a. 更新 `.claude/skills/taw/prompts/ai_image_models.yaml`（保持现有格式不变）
+   a. 更新 `$CLAUDE_SKILL_DIR/../taw/prompts/ai_image_models.yaml`（保持现有格式不变）
    b. 更新 `last_updated` 为当日日期
    c. 更新 `version` 递增 patch 版本号
-7. 执行 `python3 tools/tw_config.py models` 展示更新后的完整表格
+7. 执行 `python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py models` 展示更新后的完整表格
 
 **注意事项**：
 - 搜索结果需交叉验证（至少两个来源确认），避免误将不存在的模型写入注册表
@@ -152,7 +152,7 @@ python3 tools/tw_config.py normalize             # 规范化 schema
 
 ### /twc validate
 
-1. 执行 `python3 tools/tw_config.py validate`
+1. 执行 `python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py validate`
 2. 对每个问题给出修复建议
 
 ### /twc migrate
@@ -160,7 +160,7 @@ python3 tools/tw_config.py normalize             # 规范化 schema
 1. 检查旧配置文件是否存在：
    - `~/.config/taw/config.yaml`
    - `~/.config/taa/config.yaml`
-2. 执行 `python3 tools/tw_config.py migrate`
+2. 执行 `python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py migrate`
 3. 显示迁移结果（哪些 key 被迁移、哪些文件被删除）
 
 ### /twc reset
@@ -230,7 +230,7 @@ python3 -c "import shutil; n=shutil.which('node'); print(f'node: {n}') if n else
 知识库目录包含公司技术文档（Markdown 格式）。
 目录名称和位置不固定，可在项目内或外部（如 OneDrive 同步目录）。
 
-1. 读取已有配置 `python3 tools/tw_config.py get global localkb.path`
+1. 读取已有配置 `python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py get global localkb.path`
 2. 若已有配置且路径存在：
    - 告知用户"当前知识库目录：<路径>"，询问是否保留
    - 用户确认 → 跳到步骤 5
@@ -239,7 +239,7 @@ python3 -c "import shutil; n=shutil.which('node'); print(f'node: {n}') if n else
 4. 验证路径存在
 5. 检查 `<路径>/.index/` 是否存在
    - 若不存在 → 提示：索引尚未生成，建议运行 `/taw --build-kb-index` 构建
-6. 执行 `python3 tools/tw_config.py set localkb.path <路径>`
+6. 执行 `python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py set localkb.path <路径>`
 
 #### Step 2：AnythingLLM 配置
 
@@ -273,34 +273,30 @@ python3 -c "import shutil; n=shutil.which('node'); print(f'node: {n}') if n else
       ```
    c. 将配置写入统一配置：
       ```bash
-      python3 tools/tw_config.py set anythingllm.enabled true
-      python3 tools/tw_config.py set anythingllm.workspace <workspace>
-      python3 tools/tw_config.py set anythingllm.base_url <url>
+      python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py set anythingllm.enabled true
+      python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py set anythingllm.workspace <workspace>
+      python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py set anythingllm.base_url <url>
       ```
    d. 提示用户：安装完成，需在 setup 全部完成后**重启 Claude Code** 以加载新 MCP Server
 
-#### Step 3：draw.io MCP Skill 安装
+#### Step 3：draw.io plugin 安装检测
 
-1. 检查 draw.io skill 是否已安装（检测两个位置）：
-   ```python
-   python3 -c "
-   from pathlib import Path
-   proj = Path('.claude/skills/drawio/SKILL.md')
-   glob = Path.home() / '.claude/skills/drawio/SKILL.md'
-   if proj.exists(): print(f'INSTALLED: project ({proj})')
-   elif glob.exists(): print(f'INSTALLED: global ({glob})')
-   else: print('NOT_INSTALLED')
-   "
+drawio 现已从 tender-workflow 独立成 `presales-skills` marketplace 内的 shared plugin。用户通常与 tender-workflow 同时通过 umbrella marketplace 安装。
+
+1. 检查 drawio plugin 是否已随 umbrella marketplace 安装：
+   ```bash
+   # plugin 模式下 drawio 是 sibling plugin，可通过 $CLAUDE_PLUGIN_ROOT/../drawio 访问
+   [ -e "$CLAUDE_PLUGIN_ROOT/../drawio/skills/drawio/SKILL.md" ] && echo "INSTALLED: sibling plugin" || echo "NOT_INSTALLED"
    ```
 2. 若已安装：
-   - 显示"draw.io MCP Skill 已安装"
+   - 显示"drawio plugin 已随 presales-skills marketplace 安装"
    - 检测 draw.io Desktop CLI 路径：
      ```python
      python3 -c "
      import shutil, sys
      from pathlib import Path
      import os
-     candidates = [shutil.which('draw.io')]
+     candidates = [shutil.which('draw.io'), shutil.which('drawio-cli')]
      if sys.platform == 'darwin':
          candidates.append('/Applications/draw.io.app/Contents/MacOS/draw.io')
      elif sys.platform == 'win32':
@@ -311,32 +307,16 @@ python3 -c "import shutil; n=shutil.which('node'); print(f'node: {n}') if n else
      "
      ```
    - 若检测到 → 设置 `drawio.cli_path`
-   - 若未检测到 → 提示：draw.io Desktop 未安装，导出功能不可用（draw.io skill 仍可生成 .drawio 文件）
+   - 若未检测到 → 提示：draw.io Desktop / drawio-cli 未安装，导出功能不可用（drawio plugin 仍可生成 .drawio 文件）。安装命令：
+     - macOS: `brew install --cask drawio`
+     - npm:   `npm install -g @drawio/drawio-desktop-cli`
 3. 若未安装：
-   - 询问用户是否安装 draw.io MCP Skill（用于专业图表生成：架构图、流程图等）
-   - 若用户选择跳过 → 继续下一步
-   - 若用户选择安装：
-     a. 询问安装位置：
-        - **本项目**（推荐）：安装到 `.claude/skills/drawio/`，仅当前项目可用
-        - **全局**：安装到 `~/.claude/skills/drawio/`，所有项目可用
-     b. 从 GitHub 下载 skill-cli 版本（跨平台 Python 方式）：
-        ```python
-        python3 -c "
-        from pathlib import Path
-        import urllib.request
-        target = Path('<安装路径>/drawio')  # 替换为实际路径
-        target.mkdir(parents=True, exist_ok=True)
-        url = 'https://raw.githubusercontent.com/jgraph/drawio-mcp/main/skill-cli/drawio/SKILL.md'
-        out = target / 'SKILL.md'
-        urllib.request.urlretrieve(url, out)
-        print(f'已下载到 {out}' if out.exists() else 'FAILED')
-        "
-        ```
-        - 本项目路径：`.claude/skills/drawio/`
-        - 全局路径：`~/.claude/skills/drawio/`（`Path.home() / '.claude/skills/drawio/'`）
-     c. 若下载失败（网络问题）→ 提示手动安装方式并跳过
-     d. 检测 draw.io Desktop CLI 路径（同上 step 2）
-     e. 若检测到 → 设置 `drawio.cli_path`
+   - 提示用户：drawio plugin 未安装，请在 Claude Code 里执行：
+     ```
+     /plugin install drawio@presales-skills
+     ```
+   - 若 marketplace `presales-skills` 尚未注册，先 `/plugin marketplace add Alauda-io/presales-skills`（远程订阅）或本地路径 `/plugin marketplace add /path/to/presales-skills`
+   - 安装后 `/reload-plugins` 生效，随后 setup 可返回此步继续检测
 
 #### Step 4：MCP 搜索工具配置（可选）
 
@@ -391,9 +371,9 @@ taw 撰写章节时可通过 MCP 搜索工具（tavily_search、exa_search）从
    - 若只配置了一个 → 自动设置该工具为唯一优先
    - 写入示例：
      ```bash
-     python3 tools/tw_config.py set mcp_search.priority '["tavily_search", "exa_search"]'
+     python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py set mcp_search.priority '["tavily_search", "exa_search"]'
      # 或仅配置了一个：
-     python3 tools/tw_config.py set mcp_search.priority '["tavily_search"]'
+     python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py set mcp_search.priority '["tavily_search"]'
      ```
 5. 若用户选择全部跳过 → 保持默认值，提示后续可通过 `/twc set mcp_search.priority [...]` 修改
 
@@ -406,30 +386,30 @@ taw 撰写章节时可通过 MCP 搜索工具（tavily_search、exa_search）从
       - 检查环境变量 `ARK_API_KEY` 是否已设置
       - 若已设置 → 显示"已通过环境变量配置"，询问是否同时写入配置文件
       - 若未设置 → 引导用户输入 API Key
-      - 写入：`python3 tools/tw_config.py set api_keys.ark <key>`
+      - 写入：`python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py set api_keys.ark <key>`
    b. **阿里云 DashScope API Key**（备选）：
       - 同上逻辑，检查 `DASHSCOPE_API_KEY`
-      - 写入：`python3 tools/tw_config.py set api_keys.dashscope <key>`
+      - 写入：`python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py set api_keys.dashscope <key>`
    c. **Google Gemini API Key**（可选）：
       - 检查环境变量 `GEMINI_API_KEY` 是否已设置
       - 若已设置 → 显示"已通过环境变量配置"，询问是否同时写入配置文件
       - 若未设置 → 引导用户输入 API Key（需安装 `pip install google-genai`）
-      - 写入：`python3 tools/tw_config.py set api_keys.gemini <key>`
+      - 写入：`python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py set api_keys.gemini <key>`
    d. 选择默认 AI 生图供应商：
       - 仅配置了一个 API Key → 自动设为默认
       - 配置了多个 API Key → 通过 AskUserQuestion 让用户选择一个作为默认
-      - 写入：`python3 tools/tw_config.py set ai_image.default_provider <供应商>`
+      - 写入：`python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py set ai_image.default_provider <供应商>`
 
 #### Step 6：Skill 默认值（可选）
 
 1. **taa 厂商名**：
    - 当前默认"灵雀云"，询问是否修改
-   - 若修改 → `python3 tools/tw_config.py set taa.vendor <名称>`
+   - 若修改 → `python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py set taa.vendor <名称>`
 
 2. **tpl 默认模板**：
    - 显示可选模板：government / finance / soe / enterprise
    - 询问是否设置默认模板（设置后 /tpl 可省略 --template 参数）
-   - 若设置 → `python3 tools/tw_config.py set tpl.default_template <模板>`
+   - 若设置 → `python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py set tpl.default_template <模板>`
 
 3. **tpl 默认细致程度**：
    - 显示可选级别：detailed / standard / general / brief
@@ -437,14 +417,14 @@ taw 撰写章节时可通过 MCP 搜索工具（tavily_search、exa_search）从
 
 #### Step 7：写入配置并验证
 
-1. 执行 `python3 tools/tw_config.py validate`
-2. 显示配置摘要表格（调用 `python3 tools/tw_config.py show`）
+1. 执行 `python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py validate`
+2. 显示配置摘要表格（调用 `python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py show`）
 3. 若存在旧配置文件：
    ```python
    python3 -c "from pathlib import Path; taw=Path.home()/'.config/taw/config.yaml'; taa=Path.home()/'.config/taa/config.yaml'; print(f'taw: {taw.exists()}, taa: {taa.exists()}')"
    ```
    - 若存在 → 询问是否迁移删除（推荐）
-   - 若确认 → 执行 `python3 tools/tw_config.py migrate`
+   - 若确认 → 执行 `python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py migrate`
 4. 若 setup 过程中新增了 MCP Server（AnythingLLM / Tavily / Exa），在完成提示中**统一提醒**重启：
    ```
    配置完成！配置文件保存在：~/.config/tender-workflow/config.yaml

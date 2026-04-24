@@ -5,9 +5,12 @@ taw DOCX 生成工具库
 提供中文排版的 DOCX 生成函数，替代在 SKILL.md 中内嵌代码模板。
 所有正文写入统一使用 write_markdown()，禁止直接使用 doc.add_heading() / doc.add_paragraph()。
 
-用法（在 Bash 中执行 Python 脚本时 import）：
-    import sys; sys.path.insert(0, '.claude/skills/taw/tools')
+用法（在 SKILL.md 的 bash 注入块 !` ... ` 里执行 Python，$CLAUDE_SKILL_DIR 会被 Claude Code 替换为 skill 绝对路径）：
+    import sys; sys.path.insert(0, '$CLAUDE_SKILL_DIR/tools')
     from docx_writer import create_document, write_markdown, add_heading_cn, add_picture_cn
+
+源码模式直接从 tender-workflow/ 根目录运行时：
+    import sys; sys.path.insert(0, 'skills/taw/tools')
 """
 
 import os

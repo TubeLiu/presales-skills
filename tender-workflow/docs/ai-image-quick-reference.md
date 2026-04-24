@@ -86,14 +86,14 @@ ai_image:
 ## 测试命令
 
 ```bash
-python3 .claude/skills/taw/tools/ai_image_generator.py \
+python3 skills/taw/tools/ai_image_generator.py \
   --type architecture \
   --topic "容器云平台总体架构" \
   --components "基础设施层,K8s编排层,ACP平台层,业务应用层" \
   --output /tmp/test.png
 
 # 指定供应商
-python3 .claude/skills/taw/tools/ai_image_generator.py \
+python3 skills/taw/tools/ai_image_generator.py \
   --type architecture --topic "测试" --components "A,B" \
   --provider gemini --output /tmp/test_gemini.png
 ```
@@ -119,5 +119,5 @@ python3 .claude/skills/taw/tools/ai_image_generator.py \
 ## 文档链接
 
 - 详细文档：`docs/ai-image-generation.md`
-- SKILL.md：`.claude/skills/taw/SKILL.md`
-- 模型注册表：`.claude/skills/taw/prompts/ai_image_models.yaml`
+- SKILL.md：`skills/taw/SKILL.md`
+- 模型注册表：`skills/taw/prompts/ai_image_models.yaml`

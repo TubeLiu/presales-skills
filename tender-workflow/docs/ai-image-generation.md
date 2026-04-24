@@ -178,14 +178,14 @@ Gemini 支持两类模型：
 
 ```bash
 # 生成架构图
-python3 .claude/skills/taw/tools/ai_image_generator.py \
+python3 skills/taw/tools/ai_image_generator.py \
   --type architecture \
   --topic "容器云平台总体架构" \
   --components "基础设施层,K8s编排层,ACP平台层,业务应用层" \
   --output /tmp/test_arch.png
 
 # 指定供应商
-python3 .claude/skills/taw/tools/ai_image_generator.py \
+python3 skills/taw/tools/ai_image_generator.py \
   --type architecture \
   --topic "测试架构" \
   --components "组件1,组件2" \
@@ -215,7 +215,7 @@ python3 .claude/skills/taw/tools/ai_image_generator.py \
 1. 检查 API Key：`/twc show` 或 `echo $ARK_API_KEY`
 2. 手动测试：
    ```bash
-   python3 .claude/skills/taw/tools/ai_image_generator.py \
+   python3 skills/taw/tools/ai_image_generator.py \
      --type architecture --topic "测试" --components "A,B" \
      --output /tmp/test.png
    ```

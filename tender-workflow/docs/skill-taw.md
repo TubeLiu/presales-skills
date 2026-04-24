@@ -473,8 +473,8 @@ skills/taw/
 /taw --build-kb-index --kb-path /path/to/Local-KnowledgeBase
 
 # 等价的直接调用
-python .claude/skills/taw/tools/kb_indexer.py --scan
-python .claude/skills/taw/tools/kb_indexer.py --scan --kb-path /path/to/KB --output /path/to/output.yaml
+python skills/taw/tools/kb_indexer.py --scan
+python skills/taw/tools/kb_indexer.py --scan --kb-path /path/to/KB --output /path/to/output.yaml
 ```
 
 ---

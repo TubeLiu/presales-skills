@@ -10,7 +10,7 @@ from pathlib import Path
 import sys
 
 # 添加 tools 目录到 Python 路径
-sys.path.insert(0, str(Path(__file__).parent.parent / '.claude' / 'skills' / 'taw' / 'tools'))
+sys.path.insert(0, str(Path(__file__).parent.parent / 'skills' / 'taw' / 'tools'))
 
 from ai_image_generator import AIImageGenerator
 

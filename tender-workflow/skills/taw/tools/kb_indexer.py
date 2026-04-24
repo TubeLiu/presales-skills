@@ -17,9 +17,9 @@
   - summary: 正文前 100 字（用于消歧相似内容）
 
 用法：
-  python .claude/skills/taw/tools/kb_indexer.py --scan
-  python .claude/skills/taw/tools/kb_indexer.py --scan --kb-path /path/to/Local-KnowledgeBase
-  python .claude/skills/taw/tools/kb_indexer.py --scan --output /path/to/output.yaml
+  python $CLAUDE_SKILL_DIR/tools/kb_indexer.py --scan
+  python $CLAUDE_SKILL_DIR/tools/kb_indexer.py --scan --kb-path /path/to/Local-KnowledgeBase
+  python $CLAUDE_SKILL_DIR/tools/kb_indexer.py --scan --output /path/to/output.yaml
 
 输出：Local-KnowledgeBase/.index/kb_catalog.yaml（默认）
 """
@@ -205,8 +205,10 @@ def get_default_output_path() -> Path:
         index_dir.mkdir(parents=True, exist_ok=True)
         return index_dir / "kb_catalog.yaml"
 
-    # 回退到项目目录
-    project_root = Path(__file__).resolve().parent.parent.parent.parent.parent
+    # 回退到 tender-workflow 项目目录。
+    # 文件位于 skills/taw/tools/kb_indexer.py，4 个 .parent 解析到 tender-workflow/
+    # 迁移前在 .claude/skills/taw/tools/ 下需要 5 个 .parent，.claude/ 层移除后相应减 1。
+    project_root = Path(__file__).resolve().parent.parent.parent.parent
     index_dir = project_root / "Local-KnowledgeBase" / ".index"
     index_dir.mkdir(parents=True, exist_ok=True)
     return index_dir / "kb_catalog.yaml"

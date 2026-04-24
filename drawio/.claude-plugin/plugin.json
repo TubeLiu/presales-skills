@@ -1,0 +1,8 @@
+{
+  "name": "drawio",
+  "description": "Draw.io diagram generation skill — create .drawio XML files and optionally export to PNG/SVG/PDF. Shared by solution-master (user-facing skill) and tender-workflow/taw (internal diagram generation via scripts/drawio_generator.py).",
+  "version": "0.1.0",
+  "author": { "name": "LiuZiJiao" },
+  "license": "MIT",
+  "keywords": ["diagram", "drawio", "flowchart", "architecture", "shared"]
+}

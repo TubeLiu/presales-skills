@@ -7,6 +7,17 @@ description: Always use when user asks to create, generate, draw, or design a di
 
 Generate draw.io diagrams as native `.drawio` files. Optionally export to PNG, SVG, or PDF. Keep the source `.drawio` file for future editing.
 
+## Environment check (warn-only, don't abort)
+
+!`HAS_CLI=0
+command -v drawio-cli >/dev/null 2>&1 && HAS_CLI=1
+command -v draw.io >/dev/null 2>&1 && HAS_CLI=1
+if [ "$HAS_CLI" = "0" ]; then
+  echo "WARN_NO_DRAWIO_CLI: can still generate .drawio XML source, but PNG/SVG/PDF export unavailable."
+  echo "  macOS: brew install --cask drawio"
+  echo "  npm:   npm install -g @drawio/drawio-desktop-cli"
+fi`
+
 ## How to create a diagram
 
 1. **Generate draw.io XML** in mxGraphModel format for the requested diagram
