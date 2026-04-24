@@ -20,17 +20,17 @@ API key 查找优先级：
     3. ~/.config/presales-skills/config.yaml 的 api_keys.<provider>
     4. 以上都空 → 报错，提示 /ai-image-config setup
 
-本模块通过 fcntl.flock 保护并发写。
+本模块通过 tmp 文件 + 原子 rename 保护配置写入；Windows 下 rename 遇到目标被占用时重试一次。
 """
 
 from __future__ import annotations
 
 import argparse
-import fcntl
 import hashlib
 import json
 import os
 import sys
+import time
 from pathlib import Path
 from typing import Any, Optional
 
@@ -95,7 +95,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
 }
 
 
-# ── 基础 IO（fcntl.flock 保护并发写）──────────────────────
+# ── 基础 IO（原子 tmp + rename 写入，跨平台）──────────────────────
 def _ensure_config_dir() -> None:
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -108,22 +108,20 @@ def _load_yaml(path: Path) -> dict[str, Any]:
 
 
 def _save_yaml(path: Path, data: dict[str, Any]) -> None:
-    """原子写入 + 锁保护，避免并发写丢字段。"""
     _ensure_config_dir()
-    with path.open("a+", encoding="utf-8") as fh:
-        fcntl.flock(fh.fileno(), fcntl.LOCK_EX)
-        try:
-            fh.seek(0)
-            # 不复用 open 的文件做读再 truncate——简化为：锁住后再写 tmp、mv
-            pass
-        finally:
-            fcntl.flock(fh.fileno(), fcntl.LOCK_UN)
-
-    # 写 tmp 再 rename（原子）
     tmp_path = path.with_suffix(path.suffix + ".tmp")
     with tmp_path.open("w", encoding="utf-8") as fh:
         yaml.safe_dump(data, fh, allow_unicode=True, sort_keys=False, indent=2)
-    tmp_path.replace(path)
+    # Windows: MoveFileEx 遇到目标被另一进程占用会 PermissionError，重试一次
+    for attempt in range(2):
+        try:
+            tmp_path.replace(path)
+            return
+        except PermissionError:
+            if attempt == 0:
+                time.sleep(0.1)
+            else:
+                raise
 
 
 def _deep_get(d: dict, key_path: str) -> Any:
