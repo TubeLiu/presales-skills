@@ -8,8 +8,8 @@ Product Index V2 - 三层索引生成器
 - L2: 完整详情（按需加载）- 完整字段
 
 用法:
-    python3 $CLAUDE_SKILL_DIR/tools/indexer_v2.py --input .index/product.yaml --output .index/
-    python3 $CLAUDE_SKILL_DIR/tools/indexer_v2.py --input /path/to/product.yaml --output /path/to/output/
+    python3 ${CLAUDE_SKILL_DIR}/tools/indexer_v2.py --input .index/product.yaml --output .index/
+    python3 ${CLAUDE_SKILL_DIR}/tools/indexer_v2.py --input /path/to/product.yaml --output /path/to/output/
 """
 
 import yaml

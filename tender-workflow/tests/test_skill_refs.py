@@ -1,12 +1,13 @@
 """检查所有 SKILL.md 中引用的文件路径和 YAML key 是否实际存在。
 
 扫描 skills/*/SKILL.md 中的：
-  - Read `$CLAUDE_SKILL_DIR/...` 或 Read `$CLAUDE_SKILL_DIR/../<other>/...` 或 Read `prompts/...` 引用
-  - python3 $CLAUDE_SKILL_DIR/... / $CLAUDE_PLUGIN_ROOT/tools/... 脚本调用
+  - Read `${CLAUDE_SKILL_DIR}/...` 或 Read `${CLAUDE_SKILL_DIR}/../<other>/...` 或 Read `prompts/...` 引用
+  - python3 ${CLAUDE_SKILL_DIR}/... / ${CLAUDE_PLUGIN_ROOT}/tools/... 脚本调用
   - YAML 文件中的 key 引用（如 `phase_2a_execution`）→ 检查 key 存在
 
-注：本测试假设从 tender-workflow/ 根目录运行 pytest。$CLAUDE_SKILL_DIR 和 $CLAUDE_PLUGIN_ROOT
-是 SKILL.md 里由 Claude Code 文本替换的占位，测试里把它们映射回源码仓库的相对位置。
+注：本测试假设从 tender-workflow/ 根目录运行 pytest。${CLAUDE_SKILL_DIR} 和 ${CLAUDE_PLUGIN_ROOT}
+是 SKILL.md 里由 Claude Code 文本替换的占位（仅带花括号形式被替换），测试里把它们映射回源码
+仓库的相对位置。
 """
 
 import os
@@ -18,22 +19,22 @@ import yaml
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SKILLS_DIR = os.path.join(REPO_ROOT, "skills")
 
-# 匹配模式（按照文本替换后的新占位）：
-#   Read `$CLAUDE_SKILL_DIR/...`
-#   Read `$CLAUDE_SKILL_DIR/../<other>/...`
+# 匹配模式（按照文本替换后的新占位——Claude Code 加载器只替换 ${...} 带花括号的形式）：
+#   Read `${CLAUDE_SKILL_DIR}/...`
+#   Read `${CLAUDE_SKILL_DIR}/../<other>/...`
 #   Read `prompts/...`（相对路径）
-#   python3 $CLAUDE_SKILL_DIR/...
-#   python3 $CLAUDE_PLUGIN_ROOT/tools/...
+#   python3 ${CLAUDE_SKILL_DIR}/...
+#   python3 ${CLAUDE_PLUGIN_ROOT}/tools/...
 #   python3 tools/...（源码模式）
 PATTERNS = [
     # Read 引用（反引号包裹的路径）
-    re.compile(r'Read\s+`(\$CLAUDE_SKILL_DIR/[^`]+?)`'),
-    re.compile(r'Read\s+`(\$CLAUDE_PLUGIN_ROOT/[^`]+?)`'),
+    re.compile(r'Read\s+`(\$\{CLAUDE_SKILL_DIR\}/[^`]+?)`'),
+    re.compile(r'Read\s+`(\$\{CLAUDE_PLUGIN_ROOT\}/[^`]+?)`'),
     re.compile(r'Read\s+`(prompts/[^`]+?)`'),
     re.compile(r'Read\s+工具读取\s+`(prompts/[^`]+?)`'),
     # python3/python 脚本调用
-    re.compile(r'python3?\s+(\$CLAUDE_SKILL_DIR/\S+\.py)'),
-    re.compile(r'python3?\s+(\$CLAUDE_PLUGIN_ROOT/\S+\.py)'),
+    re.compile(r'python3?\s+(\$\{CLAUDE_SKILL_DIR\}/\S+\.py)'),
+    re.compile(r'python3?\s+(\$\{CLAUDE_PLUGIN_ROOT\}/\S+\.py)'),
     re.compile(r'python3?\s+(tools/\S+\.py)'),
 ]
 
@@ -43,16 +44,16 @@ def resolve_path(raw_path, skill_dir):
 
     skill_dir: 当前 SKILL.md 所在目录（skills/<name>/）
     """
-    # $CLAUDE_SKILL_DIR/../<other>/X → skills/<other>/X
-    m = re.match(r'\$CLAUDE_SKILL_DIR/\.\./([^/]+)/(.+)', raw_path)
+    # ${CLAUDE_SKILL_DIR}/../<other>/X → skills/<other>/X
+    m = re.match(r'\$\{CLAUDE_SKILL_DIR\}/\.\./([^/]+)/(.+)', raw_path)
     if m:
         return os.path.join(SKILLS_DIR, m.group(1), m.group(2))
-    # $CLAUDE_SKILL_DIR/X → skills/<self>/X
-    if raw_path.startswith("$CLAUDE_SKILL_DIR/"):
-        return os.path.join(skill_dir, raw_path[len("$CLAUDE_SKILL_DIR/"):])
-    # $CLAUDE_PLUGIN_ROOT/X → tender-workflow/X
-    if raw_path.startswith("$CLAUDE_PLUGIN_ROOT/"):
-        return os.path.join(REPO_ROOT, raw_path[len("$CLAUDE_PLUGIN_ROOT/"):])
+    # ${CLAUDE_SKILL_DIR}/X → skills/<self>/X
+    if raw_path.startswith("${CLAUDE_SKILL_DIR}/"):
+        return os.path.join(skill_dir, raw_path[len("${CLAUDE_SKILL_DIR}/"):])
+    # ${CLAUDE_PLUGIN_ROOT}/X → tender-workflow/X
+    if raw_path.startswith("${CLAUDE_PLUGIN_ROOT}/"):
+        return os.path.join(REPO_ROOT, raw_path[len("${CLAUDE_PLUGIN_ROOT}/"):])
     # prompts/X → skills/<self>/prompts/X
     if raw_path.startswith("prompts/"):
         return os.path.join(skill_dir, raw_path)

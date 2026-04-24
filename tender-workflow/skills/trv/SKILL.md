@@ -117,7 +117,7 @@ allowed-tools: Read, Write, Bash, Glob, Grep
 
 读取统一配置文件获取默认审核级别（可被 `--level` 参数覆盖）：
 ```bash
-python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py get trv default_level
+python3 ${CLAUDE_PLUGIN_ROOT}/tools/tw_config.py get trv default_level
 ```
 
 - 若未指定 `--level` 且配置中 `trv.default_level` 有值 → 使用配置值
@@ -180,7 +180,7 @@ python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py get trv default_level
 
 **步骤**：
 
-1. 执行 `python3 $CLAUDE_PLUGIN_ROOT/tools/docx_encoding_check.py --fix <file_path> --max-retries 3`
+1. 执行 `python3 ${CLAUDE_PLUGIN_ROOT}/tools/docx_encoding_check.py --fix <file_path> --max-retries 3`
 
 2. 根据退出码和输出判断结果：
 
@@ -358,7 +358,7 @@ python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py get trv default_level
 **步骤**：
 
 1. **读取子 Agent 提示词模板**：
-   - 使用 Read 工具读取 `$CLAUDE_SKILL_DIR/prompts/fullbid_chapter_agent.yaml`
+   - 使用 Read 工具读取 `${CLAUDE_SKILL_DIR}/prompts/fullbid_chapter_agent.yaml`
 
 2. **按批次分发子 Agent**：
    - 每批最多 4 个 Agent 并行
@@ -409,7 +409,7 @@ python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py get trv default_level
    - 合并为统一的数据点汇总表
 
 2. **读取一致性检查模板**：
-   - 使用 Read 工具读取 `$CLAUDE_SKILL_DIR/prompts/fullbid_consistency_agent.yaml`
+   - 使用 Read 工具读取 `${CLAUDE_SKILL_DIR}/prompts/fullbid_consistency_agent.yaml`
 
 3. **分发一致性检查 Agent**：
    - 构建提示词，填充变量：
@@ -472,7 +472,7 @@ python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py get trv default_level
 **步骤**：
 
 1. **加载检查清单**：
-   - 使用 Read 工具读取 `$CLAUDE_SKILL_DIR/prompts/completeness.yaml`
+   - 使用 Read 工具读取 `${CLAUDE_SKILL_DIR}/prompts/completeness.yaml`
    - 根据 --type 参数选择对应的检查清单
 
 2. **执行完整性检查**：
@@ -508,7 +508,7 @@ python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py get trv default_level
 **步骤**：
 
 1. **加载审查要点**：
-   - 使用 Read 工具读取 `$CLAUDE_SKILL_DIR/prompts/compliance.yaml`
+   - 使用 Read 工具读取 `${CLAUDE_SKILL_DIR}/prompts/compliance.yaml`
    - 根据 --type 参数选择对应的审查要点
 
 2. **执行合规性审查**：
@@ -543,7 +543,7 @@ python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py get trv default_level
 **步骤**：
 
 1. **加载分析模板**：
-   - 使用 Read 工具读取 `$CLAUDE_SKILL_DIR/prompts/scoring_alignment.yaml`
+   - 使用 Read 工具读取 `${CLAUDE_SKILL_DIR}/prompts/scoring_alignment.yaml`
    - 根据 --type 参数选择对应的分析模板
 
 2. **提取评分标准**：
@@ -597,7 +597,7 @@ python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py get trv default_level
 **步骤**：
 
 1. **加载风险清单**：
-   - 使用 Read 工具读取 `$CLAUDE_SKILL_DIR/prompts/risk_check.yaml`
+   - 使用 Read 工具读取 `${CLAUDE_SKILL_DIR}/prompts/risk_check.yaml`
    - 根据 --type 参数选择对应的风险检查重点
 
 2. **执行风险识别**：
@@ -802,10 +802,10 @@ python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py get trv default_level
 
 ### 审核检查清单
 
-- 完整性检查清单: $CLAUDE_SKILL_DIR/prompts/completeness.yaml
-- 合规性审查要点: $CLAUDE_SKILL_DIR/prompts/compliance.yaml
-- 评分契合度分析: $CLAUDE_SKILL_DIR/prompts/scoring_alignment.yaml
-- 风险识别清单: $CLAUDE_SKILL_DIR/prompts/risk_check.yaml
+- 完整性检查清单: ${CLAUDE_SKILL_DIR}/prompts/completeness.yaml
+- 合规性审查要点: ${CLAUDE_SKILL_DIR}/prompts/compliance.yaml
+- 评分契合度分析: ${CLAUDE_SKILL_DIR}/prompts/scoring_alignment.yaml
+- 风险识别清单: ${CLAUDE_SKILL_DIR}/prompts/risk_check.yaml
 
 ### 法规引用清单
 
@@ -926,7 +926,7 @@ python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py get trv default_level
 
 3. **执行修订工具**：
    ```bash
-   python3 $CLAUDE_PLUGIN_ROOT/tools/trv_docx_reviser.py \
+   python3 ${CLAUDE_PLUGIN_ROOT}/tools/trv_docx_reviser.py \
      --input <file> \
      --instructions “${OUTPUT_DIR}/.revision_instructions_${TIMESTAMP}.json” \
      --output-dir “${OUTPUT_DIR}”
@@ -935,7 +935,7 @@ python3 $CLAUDE_PLUGIN_ROOT/tools/tw_config.py get trv default_level
 4. **修订后编码检查**：
    - 若修订成功，继续执行：
      ```bash
-     python3 $CLAUDE_PLUGIN_ROOT/tools/docx_encoding_check.py --fix <revised_docx> --max-retries 3
+     python3 ${CLAUDE_PLUGIN_ROOT}/tools/docx_encoding_check.py --fix <revised_docx> --max-retries 3
      ```
    - 若发现残留乱码，将结果写入终端输出，并保留修订版文件供人工处理
 

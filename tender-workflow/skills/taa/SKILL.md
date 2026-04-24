@@ -471,7 +471,7 @@ Phase 1 完成后（包括 Phase 1.5 验证，如需要），使用 Agent 工具
 5. 读取 tools/docx_outline_template.py 并生成 DOCX 文件
 6. 输出完成确认
 
-注意：所有文件路径相对于 skill 根目录 $CLAUDE_SKILL_DIR/
+注意：所有文件路径相对于 skill 根目录 ${CLAUDE_SKILL_DIR}/
 ```
 
 **关键要求**：
