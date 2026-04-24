@@ -70,11 +70,15 @@ def _generate_image(api_key: str, prompt: str, negative_prompt: str = None,
     if negative_prompt:
         final_prompt += f"\n\nNegative prompt: {negative_prompt}"
 
+    # Google's ImageConfig accepts "512" (no unit) for sub-1K but "1K"/"2K"/"4K"
+    # for the others — `normalize_image_size` returns "512px" so strip the suffix.
+    api_image_size = "512" if image_size == "512px" else image_size
+
     config_kwargs = {
         "response_modalities": ["IMAGE"],
         "image_config": types.ImageConfig(
             aspect_ratio=aspect_ratio,
-            image_size=image_size,
+            image_size=api_image_size,
         ),
     }
     if "flash" in model.lower():

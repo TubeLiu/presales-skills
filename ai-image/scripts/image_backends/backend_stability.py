@@ -89,7 +89,10 @@ def _generate_image(api_key: str, prompt: str, negative_prompt: str = None,
     print("  [..] Generating...", end="", flush=True)
     start = time.time()
 
-    response = requests.post(url, headers=headers, data=data, timeout=300)
+    # v2beta requires multipart/form-data; `data=` would send x-www-form-urlencoded
+    # and the API rejects it.
+    files = {key: (None, str(value)) for key, value in data.items()}
+    response = requests.post(url, headers=headers, files=files, timeout=300)
     elapsed = time.time() - start
     print(f"\n  [DONE] Response received ({elapsed:.1f}s)")
 

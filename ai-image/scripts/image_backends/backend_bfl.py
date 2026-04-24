@@ -39,17 +39,19 @@ MODEL_ENDPOINTS = {
     "flux-dev": "/v1/flux-dev",
 }
 
+# flux-pro-1.1 / flux-dev: width & height must be multiples of 32 within 256–1440.
+# (flux-pro-1.1-ultra takes aspect_ratio directly and ignores this map.)
 ASPECT_RATIO_TO_DIMENSIONS = {
     "1:1": (1024, 1024),
-    "2:3": (1024, 1536),
-    "3:2": (1536, 1024),
-    "3:4": (1024, 1365),
-    "4:3": (1365, 1024),
+    "2:3": (1024, 1440),   # 1536 was above the 1440 per-side cap
+    "3:2": (1440, 1024),
+    "3:4": (1056, 1408),   # 1365 was not a multiple of 32
+    "4:3": (1408, 1056),
     "4:5": (1024, 1280),
     "5:4": (1280, 1024),
-    "9:16": (1024, 1820),
-    "16:9": (1820, 1024),
-    "21:9": (2048, 878),
+    "9:16": (1024, 1408),  # 1820 was above the 1440 per-side cap
+    "16:9": (1408, 1024),
+    "21:9": (1440, 608),   # 2048/878 were over 1440 / not multiples of 32
 }
 
 

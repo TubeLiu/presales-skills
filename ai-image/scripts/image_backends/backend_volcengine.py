@@ -25,57 +25,59 @@ from image_backends.backend_common import (
 )
 
 
-DEFAULT_ENDPOINT = "https://operator.las.cn-beijing.volces.com/api/v1/images/generations"
+DEFAULT_ENDPOINT = "https://ark.cn-beijing.volces.com/api/v3/images/generations"
 DEFAULT_MODEL = "doubao-seedream-4-5-251128"
 
+# Seedream 4.5 要求 width*height >= 3,686,400 像素且 1024 <= 单边 <= 4096。
+# 每档按 "像素总量不小于官方阈值" 的档位递增（1K ≈ 阈值、2K ≈ 2x、4K ≈ 上限）。
 ASPECT_RATIO_SIZE_MAP = {
     "512px": {
-        "1:1": "1024x1024",
-        "2:3": "1024x1536",
-        "3:2": "1536x1024",
-        "3:4": "1024x1365",
-        "4:3": "1365x1024",
-        "4:5": "1024x1280",
-        "5:4": "1280x1024",
-        "9:16": "1024x1820",
-        "16:9": "1820x1024",
-        "21:9": "2048x878",
+        "1:1": "2048x2048",
+        "2:3": "1600x2400",
+        "3:2": "2400x1600",
+        "3:4": "1728x2304",
+        "4:3": "2304x1728",
+        "4:5": "1792x2240",
+        "5:4": "2240x1792",
+        "9:16": "1440x2560",
+        "16:9": "2560x1440",
+        "21:9": "3024x1296",
     },
     "1K": {
-        "1:1": "1536x1536",
-        "2:3": "1344x2016",
-        "3:2": "2016x1344",
-        "3:4": "1440x1920",
-        "4:3": "1920x1440",
-        "4:5": "1536x1920",
-        "5:4": "1920x1536",
-        "9:16": "1152x2048",
-        "16:9": "2048x1152",
-        "21:9": "2048x878",
+        "1:1": "2048x2048",
+        "2:3": "1600x2400",
+        "3:2": "2400x1600",
+        "3:4": "1728x2304",
+        "4:3": "2304x1728",
+        "4:5": "1792x2240",
+        "5:4": "2240x1792",
+        "9:16": "1440x2560",
+        "16:9": "2560x1440",
+        "21:9": "3024x1296",
     },
     "2K": {
-        "1:1": "2048x2048",
-        "2:3": "1536x2048",
-        "3:2": "2048x1536",
-        "3:4": "1536x2048",
-        "4:3": "2048x1536",
-        "4:5": "1638x2048",
-        "5:4": "2048x1638",
-        "9:16": "1152x2048",
-        "16:9": "2048x1152",
-        "21:9": "2048x878",
+        "1:1": "2560x2560",
+        "2:3": "2112x3168",
+        "3:2": "3168x2112",
+        "3:4": "2304x3072",
+        "4:3": "3072x2304",
+        "4:5": "2304x2880",
+        "5:4": "2880x2304",
+        "9:16": "1728x3072",
+        "16:9": "3072x1728",
+        "21:9": "3528x1512",
     },
     "4K": {
-        "1:1": "2048x2048",
-        "2:3": "1536x2048",
-        "3:2": "2048x1536",
-        "3:4": "1536x2048",
-        "4:3": "2048x1536",
-        "4:5": "1638x2048",
-        "5:4": "2048x1638",
-        "9:16": "1152x2048",
-        "16:9": "2048x1152",
-        "21:9": "2048x878",
+        "1:1": "4096x4096",
+        "2:3": "2730x4096",
+        "3:2": "4096x2730",
+        "3:4": "3072x4096",
+        "4:3": "4096x3072",
+        "4:5": "3276x4096",
+        "5:4": "4096x3276",
+        "9:16": "2304x4096",
+        "16:9": "4096x2304",
+        "21:9": "4096x1756",
     },
 }
 
@@ -85,7 +87,7 @@ def _resolve_url(base_url: str) -> str:
     base = base_url.rstrip("/")
     if base.endswith("/images/generations"):
         return base
-    return base + "/api/v1/images/generations"
+    return base + "/api/v3/images/generations"
 
 
 def _resolve_size(aspect_ratio: str, image_size: str) -> str:
@@ -112,15 +114,16 @@ def _generate_image(api_key: str, prompt: str, negative_prompt: str = None,
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
     }
+    final_prompt = prompt
+    if negative_prompt:
+        final_prompt += f"\n\nAvoid the following: {negative_prompt}"
     payload = {
         "model": model,
-        "prompt": prompt,
+        "prompt": final_prompt,
         "size": size,
         "response_format": "url",
         "watermark": False,
     }
-    if negative_prompt:
-        payload["negative_prompt"] = negative_prompt
 
     print("[Volcengine Seedream]")
     print(f"  Model:        {model}")

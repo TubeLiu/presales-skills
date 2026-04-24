@@ -38,15 +38,15 @@ from image_backends.backend_common import (
 # Covers common PPT/social media ratios
 ASPECT_RATIO_TO_SIZE = {
     "1:1":  "1024x1024",
-    "16:9": "1792x1024",
-    "9:16": "1024x1792",
+    "16:9": "1536x1024",   # closest landscape (gpt-image-1 has no 16:9 native)
+    "9:16": "1024x1536",   # closest portrait
     "3:2":  "1536x1024",
     "2:3":  "1024x1536",
     "4:3":  "1536x1024",   # closest available
     "3:4":  "1024x1536",   # closest available
     "4:5":  "1024x1024",   # fallback to square
     "5:4":  "1024x1024",   # fallback to square
-    "21:9": "1792x1024",   # closest wide format
+    "21:9": "1536x1024",   # closest wide format
 }
 
 VALID_ASPECT_RATIOS = list(ASPECT_RATIO_TO_SIZE.keys())
@@ -123,7 +123,6 @@ def _generate_image(api_key: str, prompt: str, negative_prompt: str = None,
             size=size,
             quality=quality,
             n=1,
-            response_format="b64_json",
         )
     finally:
         heartbeat_stop.set()
