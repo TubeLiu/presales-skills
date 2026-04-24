@@ -46,64 +46,77 @@ The draw.io desktop app includes a command-line interface for exporting.
 
 ### Locating the CLI
 
-First, detect the environment, then locate the CLI accordingly:
-
-#### WSL2 (Windows Subsystem for Linux)
-
-WSL2 is detected when `/proc/version` contains `microsoft` or `WSL`:
+**Always try PATH first** — it covers macOS/Linux installs done via a package manager, Windows installs that opted into PATH, and any user who set `drawio` up manually. Only fall back to platform-specific absolute paths if PATH lookup fails.
 
 ```bash
-grep -qi microsoft /proc/version 2>/dev/null && echo "WSL2"
+command -v drawio >/dev/null 2>&1 && echo "DRAWIO_CMD=drawio"
 ```
 
-On WSL2, use the Windows draw.io Desktop executable via `/mnt/c/...`:
+If that fails, detect the environment and pick the right fallback.
+
+#### Environment detection
 
 ```bash
-DRAWIO_CMD=`/mnt/c/Program Files/draw.io/draw.io.exe`
+case "$(uname -s 2>/dev/null)" in
+  Darwin*) ENV=macos ;;
+  Linux*) grep -qi microsoft /proc/version 2>/dev/null && ENV=wsl2 || ENV=linux ;;
+  MINGW*|MSYS*|CYGWIN*) ENV=win_bash ;;
+esac
 ```
 
-The backtick quoting is required to handle the space in `Program Files` in bash.
+- `macos` → look under `/Applications/`
+- `linux` → the `drawio` binary was meant to be on PATH; if it's not, ask the user to install the snap/apt/flatpak package
+- `wsl2` → reach into the Windows host via `/mnt/c/...`
+- `win_bash` → **this is what Claude Code on Windows uses**. Git Bash (not WSL) sees the Windows filesystem via forward-slash drive paths (`C:/...`)
 
-If draw.io is installed in a non-default location, check common alternatives:
+Keep in mind: **Git Bash on Windows ≠ WSL2**. Git Bash cannot read `/mnt/c/...` paths; WSL2 cannot read `C:/...` paths. Use the exact forms below.
 
-```bash
-# Default install path
-`/mnt/c/Program Files/draw.io/draw.io.exe`
-
-# Per-user install (if the above does not exist)
-`/mnt/c/Users/$WIN_USER/AppData/Local/Programs/draw.io/draw.io.exe`
-```
-
-#### macOS
+#### macOS fallback
 
 ```bash
 /Applications/draw.io.app/Contents/MacOS/draw.io
 ```
 
-#### Linux (native)
+#### WSL2 fallback (Linux distro running inside Windows)
 
 ```bash
-drawio   # typically on PATH via snap/apt/flatpak
+"/mnt/c/Program Files/draw.io/draw.io.exe"
+# Per-user install (if the above does not exist):
+"/mnt/c/Users/$USER/AppData/Local/Programs/draw.io/draw.io.exe"
 ```
 
-#### Windows (native, non-WSL2)
+Double-quote the path — the embedded space in `Program Files` breaks on unquoted forms.
 
-```
-"C:\Program Files\draw.io\draw.io.exe"
+#### Windows Git Bash fallback (Claude Code default on Windows)
+
+Try each path in order until one exists:
+
+```bash
+"C:/Program Files/draw.io/draw.io.exe"
+"C:/Program Files (x86)/draw.io/draw.io.exe"
+"$LOCALAPPDATA/Programs/draw.io/draw.io.exe"
 ```
 
-Use `which drawio` (or `where drawio` on Windows) to check if it's on PATH before falling back to the platform-specific path.
+**Always use forward slashes in Windows paths** when calling from Git Bash — `"C:\Program Files\..."` with backslashes is interpreted as shell escapes and will fail. Forward-slash form is accepted by the Windows kernel and survives Git Bash as-is.
 
 ### Export command
 
 ```bash
-drawio -x -f <format> -b 10 -o <output> <input.drawio>
+"$DRAWIO_CMD" -x -f <format> -b 10 -o <output> <input.drawio>
 ```
+
+Quote `$DRAWIO_CMD` so paths with spaces (`Program Files`) do not split into arguments.
 
 **WSL2 example:**
 
 ```bash
-`/mnt/c/Program Files/draw.io/draw.io.exe` -x -f png -b 10 -o diagram.drawio.png diagram.drawio
+"/mnt/c/Program Files/draw.io/draw.io.exe" -x -f png -b 10 -o diagram.drawio.png diagram.drawio
+```
+
+**Windows Git Bash example:**
+
+```bash
+"C:/Program Files/draw.io/draw.io.exe" -x -f png -b 10 -o diagram.drawio.png diagram.drawio
 ```
 
 Key flags:
@@ -125,17 +138,15 @@ Key flags:
 | macOS | `open <file>` |
 | Linux (native) | `xdg-open <file>` |
 | WSL2 | `cmd.exe /c start "" "$(wslpath -w <file>)"` |
-| Windows | `start <file>` |
+| Windows Git Bash | `explorer.exe <file>` |
 
 **WSL2 notes:**
 - `wslpath -w <file>` converts a WSL2 path (e.g. `/home/user/diagram.drawio`) to a Windows path (e.g. `C:\Users\...`). This is required because `cmd.exe` cannot resolve `/mnt/c/...` style paths.
 - The empty string `""` after `start` is required to prevent `start` from interpreting the filename as a window title.
 
-**WSL2 example:**
-
-```bash
-cmd.exe /c start "" "$(wslpath -w diagram.drawio)"
-```
+**Windows Git Bash notes:**
+- Use `explorer.exe <file>` rather than `cmd.exe /c start` — Git Bash mangles the `/c` flag via its MSYS path conversion, and `explorer.exe` does not require that workaround.
+- Relative paths work; `explorer.exe` resolves them against the current directory. If the open call fails silently (Windows has no standard non-zero exit on "no file association"), print the absolute path so the user can open it by hand.
 
 ## File naming
 
