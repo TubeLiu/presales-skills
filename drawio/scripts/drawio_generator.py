@@ -40,9 +40,14 @@ def _find_drawio_cli() -> Optional[str]:
         # Linux 路径
         "/usr/bin/drawio",
         "/usr/local/bin/drawio",
-        # Windows 路径
+        # Windows 路径（system-wide 安装）
         r"C:\Program Files\draw.io\draw.io.exe",
+        r"C:\Program Files (x86)\draw.io\draw.io.exe",
     ]
+    # Windows per-user 安装（Draw.io Desktop installer 默认位置）
+    localappdata = os.environ.get("LOCALAPPDATA")
+    if localappdata:
+        possible_paths.append(os.path.join(localappdata, "Programs", "draw.io", "draw.io.exe"))
 
     # 检查 PATH 中的 drawio（跨平台：Linux/macOS 查 which 语义，Windows 查 where 语义）
     drawio_on_path = shutil.which("drawio")
