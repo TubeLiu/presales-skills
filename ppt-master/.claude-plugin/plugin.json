@@ -1,7 +1,7 @@
 {
   "name": "ppt-master",
   "description": "AI-driven multi-format SVG content generation system — converts PDF/DOCX/URL/Markdown into SVG pages and exports to PPTX. Depends on ai-image plugin for image generation.",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "author": {
     "name": "LiuZiJiao"
   },

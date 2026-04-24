@@ -318,8 +318,7 @@ export ARK_API_KEY="ark-xxxx"
 **步骤 3**：验证配置
 
 ```bash
-cd ~/projects/tender-workflow
-python3 ../ai-image/scripts/image_gen.py \
+image-gen \
   --type architecture \
   --topic "容器云平台总体架构" \
   --components "基础设施层,K8s编排层,平台层" \
@@ -1171,8 +1170,7 @@ ls .claude/skills/
 cat ~/.config/tender-workflow/config.yaml
 
 # 测试 AI 生图是否正常
-python3 ../ai-image/scripts/image_gen.py \
-  --type architecture --topic "测试" --output /tmp/test.png
+image-gen --type architecture --topic "测试" --output /tmp/test.png
 
 # 改用 draw.io（本地生成，零费用）
 /taw output/ --chapter 1.3 --image-source drawio
