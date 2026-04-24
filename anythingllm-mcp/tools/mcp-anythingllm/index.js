@@ -12,36 +12,51 @@ const path = require('path');
 const os = require('os');
 
 // Read unified config as fallback to env vars.
-// Precedence: env var > ~/.config/presales-skills/config.yaml > hard-coded default.
-function readConfigFallback() {
-  const configPath = path.join(os.homedir(), '.config', 'presales-skills', 'config.yaml');
-  if (!fs.existsSync(configPath)) return {};
-  try {
-    const text = fs.readFileSync(configPath, 'utf8');
-    // Minimal YAML subset parser — only the `anythingllm:` block's scalar fields.
-    // Avoids adding a YAML dep (MCP must stay zero-deps).
-    const result = {};
-    const lines = text.split('\n');
-    let inBlock = false;
-    for (const raw of lines) {
-      const line = raw.replace(/\r$/, '');
-      if (/^anythingllm\s*:\s*$/.test(line)) { inBlock = true; continue; }
-      if (inBlock) {
-        if (/^\S/.test(line)) { inBlock = false; continue; }  // dedented to top-level key
-        const m = line.match(/^\s{2,}(\w+)\s*:\s*(.*?)\s*$/);
-        if (m) {
-          let v = m[2];
-          if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
-            v = v.slice(1, -1);
-          }
-          result[m[1]] = v;
+// Precedence: env var > first-found config file (presales-skills / tender-workflow / solution-master) > default.
+// Multi-source: users who already configured via /twc or /solution-config don't need to re-enter keys.
+const CONFIG_CANDIDATES = [
+  path.join(os.homedir(), '.config', 'presales-skills', 'config.yaml'),
+  path.join(os.homedir(), '.config', 'tender-workflow', 'config.yaml'),
+  path.join(os.homedir(), '.config', 'solution-master', 'config.yaml'),
+];
+
+function parseAnythingllmBlock(text) {
+  // Minimal YAML subset parser — only the `anythingllm:` block's scalar fields.
+  // Avoids adding a YAML dep (MCP must stay zero-deps).
+  const result = {};
+  const lines = text.split('\n');
+  let inBlock = false;
+  for (const raw of lines) {
+    const line = raw.replace(/\r$/, '');
+    if (/^anythingllm\s*:\s*$/.test(line)) { inBlock = true; continue; }
+    if (inBlock) {
+      if (/^\S/.test(line)) { inBlock = false; continue; }  // dedented to top-level key
+      const m = line.match(/^\s{2,}(\w+)\s*:\s*(.*?)\s*$/);
+      if (m) {
+        let v = m[2];
+        if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+          v = v.slice(1, -1);
         }
+        result[m[1]] = v;
       }
     }
-    return result;
-  } catch (e) {
-    return {};
   }
+  return result;
+}
+
+function readConfigFallback() {
+  const merged = {};
+  // Iterate in reverse so later (higher-priority) sources overwrite.
+  for (const p of [...CONFIG_CANDIDATES].reverse()) {
+    if (!fs.existsSync(p)) continue;
+    try {
+      const parsed = parseAnythingllmBlock(fs.readFileSync(p, 'utf8'));
+      for (const [k, v] of Object.entries(parsed)) {
+        if (v !== '' && v !== undefined) merged[k] = v;
+      }
+    } catch (e) { /* ignore, try next */ }
+  }
+  return merged;
 }
 
 const _cfg = readConfigFallback();
