@@ -197,18 +197,26 @@ def cmd_show(section: Optional[str]) -> int:
         print(f"配置文件不存在：{CONFIG_PATH}")
         print("运行 /ai-image-config setup 创建")
         return 1
+
+    def _mask_api_keys_inplace(d: dict) -> None:
+        """对 dict 顶层的 api_keys 子树做 mask。在原 dict 上 mutate。"""
+        for k, v in (d.get("api_keys") or {}).items():
+            if v and isinstance(v, str):
+                d["api_keys"][k] = v[:6] + "…(masked)…" + v[-4:] if len(v) > 10 else "●●●●"
+
     if section:
         data = cfg.get(section)
         if data is None:
             print(f"section '{section}' 不存在")
             return 1
-        print(yaml.safe_dump({section: data}, allow_unicode=True, sort_keys=False))
+        # 深拷贝后按顶层 section name mask（若 section=api_keys）
+        view = yaml.safe_load(yaml.safe_dump({section: data}, allow_unicode=True))
+        _mask_api_keys_inplace(view)
+        print(yaml.safe_dump(view, allow_unicode=True, sort_keys=False))
     else:
         # 展示全部但 mask API keys
         masked = yaml.safe_load(yaml.safe_dump(cfg, allow_unicode=True))
-        for k, v in (masked.get("api_keys") or {}).items():
-            if v and isinstance(v, str):
-                masked["api_keys"][k] = v[:6] + "…(masked)…" + v[-4:] if len(v) > 10 else "●●●●"
+        _mask_api_keys_inplace(masked)
         print(yaml.safe_dump(masked, allow_unicode=True, sort_keys=False))
     return 0
 
