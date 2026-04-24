@@ -1,3 +1,14 @@
+---
+name: twc
+description: >
+  当用户说"配置工作流"、"配置 tender"、"设置配置"时触发，也可通过 /twc 手动调用。
+  管理 tender-workflow 统一配置文件（~/.config/tender-workflow/config.yaml）。
+  支持交互式初始配置（setup）、查看（show）、修改（set）、验证（validate）、旧配置迁移（migrate）、
+  列出 AI 生图模型（models）、重置（reset）等子命令。
+disable-model-invocation: false
+allowed-tools: Read, Write, Bash, Glob
+---
+
 # twc — Tender Workflow 配置管理
 
 当用户说"配置工作流"、"配置 tender"、"设置配置"时触发，也可通过 /twc 手动调用。

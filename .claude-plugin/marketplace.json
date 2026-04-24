@@ -55,7 +55,7 @@
       "name": "tender-workflow",
       "source": "./tender-workflow",
       "description": "四角色招投标工作流（tpl/taa/taw/trv/twc）。依赖 drawio、ai-image、anythingllm-mcp plugin。",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "author": { "name": "LiuZiJiao" },
       "category": "writing",
       "tags": ["tender", "招投标", "中文"]
