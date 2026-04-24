@@ -263,6 +263,54 @@ def _load_image_env_file() -> None:
             os.environ.setdefault(key, _strip_env_quotes(value.strip()))
 
 
+def _load_unified_config_into_env() -> None:
+    """Bridge ~/.config/presales-skills/config.yaml → os.environ.
+
+    Plugin mode's canonical config is the unified YAML written by
+    /ai-image-config-set, but backends only read os.environ. Without
+    this bridge the key disappears between "user set it" and "backend
+    asks for it", producing a spurious 401 on the provider call.
+
+    Registry yaml declares each provider's env_key (and optional
+    env_key_alt); config yaml keys api_keys by the registry's short
+    provider name. setdefault leaves any pre-existing env var intact,
+    so process env > .env > config.yaml precedence holds.
+    """
+    config_path = Path.home() / ".config" / "presales-skills" / "config.yaml"
+    registry_path = Path(__file__).resolve().parent.parent / "prompts" / "ai_image_models.yaml"
+    if not config_path.exists() or not registry_path.exists():
+        return
+
+    try:
+        import yaml  # noqa: PLC0415 — lazy: yaml is a plugin-installed dep
+    except ImportError:
+        return
+
+    try:
+        with config_path.open("r", encoding="utf-8") as fh:
+            config = yaml.safe_load(fh) or {}
+        with registry_path.open("r", encoding="utf-8") as fh:
+            registry = yaml.safe_load(fh) or {}
+    except yaml.YAMLError:
+        return
+
+    api_keys = config.get("api_keys") or {}
+    for provider_name, provider_data in (registry.get("providers") or {}).items():
+        key_value = api_keys.get(provider_name)
+        if not key_value or not isinstance(key_value, str):
+            continue
+        env_key = provider_data.get("env_key")
+        env_key_alt = provider_data.get("env_key_alt")
+        if env_key:
+            os.environ.setdefault(env_key, key_value)
+        if env_key_alt:
+            os.environ.setdefault(env_key_alt, key_value)
+
+    default_provider = (config.get("ai_image") or {}).get("default_provider")
+    if default_provider and isinstance(default_provider, str):
+        os.environ.setdefault("IMAGE_BACKEND", default_provider)
+
+
 def _validate_runtime_config() -> None:
     """Reject deprecated global image variables from any configuration source."""
     for key in DEPRECATED_IMAGE_KEYS:
@@ -424,6 +472,7 @@ def main() -> None:
 
     try:
         _load_image_env_file()
+        _load_unified_config_into_env()
         _validate_runtime_config()
     except ValueError as e:
         print(f"Error: {e}")
