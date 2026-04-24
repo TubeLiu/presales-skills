@@ -3,14 +3,14 @@
   "owner": { "name": "LiuZiJiao", "email": "tubeliu1@gmail.com" },
   "metadata": {
     "description": "Presales skills monorepo — solution-master / ppt-master / tender-workflow + shared plugins (drawio, ai-image, anythingllm-mcp).",
-    "version": "0.1.8"
+    "version": "0.1.9"
   },
   "plugins": [
     {
       "name": "drawio",
       "source": "./drawio",
       "description": "Draw.io 图表生成（.drawio XML + PNG/SVG/PDF 导出）。独立共享 plugin，solution-master 与 tender-workflow 均依赖。",
-      "version": "0.1.7",
+      "version": "0.1.8",
       "author": { "name": "LiuZiJiao" },
       "category": "productivity",
       "tags": ["diagram", "drawio", "shared"]
