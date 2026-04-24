@@ -1,20 +1,17 @@
 {
   "name": "mcp-anythingllm",
   "version": "1.0.0",
-  "description": "AnythingLLM MCP Server for Tender Workflow",
+  "description": "AnythingLLM MCP server for presales-skills (shared by solution-master, tender-workflow, and others).",
   "main": "index.js",
   "bin": {
     "mcp-anythingllm": "./index.js"
   },
   "scripts": {
-    "start": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js"
   },
   "keywords": [
     "mcp",
     "anythingllm",
     "claude"
-  ],
-  "author": "",
-  "license": "MIT"
+  ]
 }

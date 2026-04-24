@@ -1,7 +1,7 @@
 {
   "name": "tender-workflow",
-  "description": "四角色招投标工作流 — tpl（策划）/ taa（分析）/ taw（撰稿）/ trv（审核）/ twc（配置）。Depends on drawio and ai-image plugins.",
-  "version": "0.1.4",
+  "description": "四角色招投标工作流 — tpl（策划）/ taa（分析）/ taw（撰稿）/ trv（审核）/ twc（配置）。Depends on drawio, ai-image, and anythingllm-mcp plugins.",
+  "version": "0.1.5",
   "author": {
     "name": "LiuZiJiao"
   },
@@ -11,13 +11,5 @@
     "招标",
     "投标",
     "中文"
-  ],
-  "mcpServers": {
-    "anythingllm-tw": {
-      "command": "node",
-      "args": [
-        "${CLAUDE_PLUGIN_ROOT}/tools/mcp-anythingllm/index.js"
-      ]
-    }
-  }
+  ]
 }

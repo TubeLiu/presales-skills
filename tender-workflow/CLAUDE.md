@@ -63,8 +63,8 @@ tender-workflow/
 │       └── kb_catalog.yaml             # 自动生成目录索引（kb_indexer.py 产出）
 │
 ├── tools/                          # 工具脚本
-│   ├── tw_config.py                # 统一配置管理工具（CLI + Python import）
-│   └── mcp-anythingllm/            # AnythingLLM MCP Server
+│   └── tw_config.py                # 统一配置管理工具（CLI + Python import）
+│                                   # (AnythingLLM MCP 已抽到独立 plugin anythingllm-mcp)
 │
 └── docs/                           # 文档
     ├── data-format.md              # 各阶段产出物数据格式规范

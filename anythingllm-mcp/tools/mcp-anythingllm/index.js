@@ -1,15 +1,53 @@
 #!/usr/bin/env node
 /**
  * AnythingLLM MCP Server
- * 为 Tender Workflow 项目提供语义搜索能力
+ * 为 presales-skills（solution-master / tender-workflow 等）提供知识库语义搜索能力
  */
 
 const readline = require('readline');
 const https = require('https');
 const http = require('http');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
 
-const BASE_URL = process.env.ANYTHINGLLM_BASE_URL || 'http://localhost:3001';
-const API_KEY = process.env.ANYTHINGLLM_API_KEY || '';
+// Read unified config as fallback to env vars.
+// Precedence: env var > ~/.config/presales-skills/config.yaml > hard-coded default.
+function readConfigFallback() {
+  const configPath = path.join(os.homedir(), '.config', 'presales-skills', 'config.yaml');
+  if (!fs.existsSync(configPath)) return {};
+  try {
+    const text = fs.readFileSync(configPath, 'utf8');
+    // Minimal YAML subset parser — only the `anythingllm:` block's scalar fields.
+    // Avoids adding a YAML dep (MCP must stay zero-deps).
+    const result = {};
+    const lines = text.split('\n');
+    let inBlock = false;
+    for (const raw of lines) {
+      const line = raw.replace(/\r$/, '');
+      if (/^anythingllm\s*:\s*$/.test(line)) { inBlock = true; continue; }
+      if (inBlock) {
+        if (/^\S/.test(line)) { inBlock = false; continue; }  // dedented to top-level key
+        const m = line.match(/^\s{2,}(\w+)\s*:\s*(.*?)\s*$/);
+        if (m) {
+          let v = m[2];
+          if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+            v = v.slice(1, -1);
+          }
+          result[m[1]] = v;
+        }
+      }
+    }
+    return result;
+  } catch (e) {
+    return {};
+  }
+}
+
+const _cfg = readConfigFallback();
+const BASE_URL = process.env.ANYTHINGLLM_BASE_URL || _cfg.base_url || 'http://localhost:3001';
+const API_KEY = process.env.ANYTHINGLLM_API_KEY || _cfg.api_key || '';
+const DEFAULT_WS = process.env.ANYTHINGLLM_WORKSPACE || _cfg.workspace || '';
 
 function send(obj) {
   process.stdout.write(JSON.stringify(obj) + '\n');
@@ -68,7 +106,7 @@ const TOOLS = [
   },
 ];
 
-let defaultWorkspace = null;
+let defaultWorkspace = DEFAULT_WS || null;
 
 async function getDefaultWorkspace() {
   if (defaultWorkspace) return defaultWorkspace;

@@ -10,10 +10,13 @@ tender-workflow 现作为 `presales-skills` umbrella marketplace 的成员 plugi
 
 ```
 /plugin marketplace add Alauda-io/presales-skills     # 或本地路径 /path/to/presales-skills
+/plugin install drawio@presales-skills
+/plugin install ai-image@presales-skills
+/plugin install anythingllm-mcp@presales-skills       # 可选：知识库语义搜索，不装则降级
 /plugin install tender-workflow@presales-skills
 ```
 
-安装后 `/tpl` `/taa` `/taw` `/trv` `/twc` 五个命令可在任意目录调用。AnythingLLM MCP server（`anythingllm-tw`）已内置。源码模式（直接 cd 进本目录）同样可用，下文描述的 `python skills/...` 命令仅在源码模式下直接执行。
+安装后 `/tpl` `/taa` `/taw` `/trv` `/twc` 五个命令可在任意目录调用。AnythingLLM 语义搜索由独立共享 plugin `anythingllm-mcp` 提供（统一 MCP server 名 `anythingllm`，solution-master / tender-workflow 共用）；若未安装，taa/taw 会自动降级为本地 YAML 索引或联网检索。源码模式（直接 cd 进本目录）同样可用，下文描述的 `python skills/...` 命令仅在源码模式下直接执行。
 
 ---
 
@@ -121,8 +124,8 @@ tender-workflow/
 │   └── .index/                 # kb_catalog.yaml（自动生成目录索引）
 │
 ├── tools/                      # 工具脚本
-│   ├── tw_config.py            # 统一配置管理工具（CLI + Python import）
-│   └── mcp-anythingllm/        # AnythingLLM MCP Server
+│   └── tw_config.py            # 统一配置管理工具（CLI + Python import）
+│                               # (AnythingLLM MCP 已抽到独立 plugin anythingllm-mcp)
 │
 └── docs/                       # 文档
     ├── data-format.md              # 数据格式规范

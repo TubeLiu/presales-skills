@@ -466,7 +466,7 @@ def validate() -> List[str]:
             except Exception:
                 pass
         if not allm_registered and not shutil.which("mcp-anythingllm"):
-            issues.append("mcp-anythingllm 未注册（运行 /twc setup 或手动配置 ~/.claude.json）")
+            issues.append("AnythingLLM MCP 未注册（安装独立 plugin：/plugin install anythingllm-mcp@presales-skills）")
 
     # 检查 drawio
     drawio_path = _deep_get(cfg, "drawio.cli_path")

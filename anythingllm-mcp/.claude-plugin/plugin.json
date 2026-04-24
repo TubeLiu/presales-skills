@@ -1,0 +1,23 @@
+{
+  "name": "anythingllm-mcp",
+  "description": "AnythingLLM MCP server — 语义搜索 + workspace 列举。Shared plugin，被 solution-master 和 tender-workflow 依赖。",
+  "version": "0.1.0",
+  "author": {
+    "name": "LiuZiJiao"
+  },
+  "keywords": [
+    "mcp",
+    "anythingllm",
+    "knowledge-base",
+    "semantic-search",
+    "shared"
+  ],
+  "mcpServers": {
+    "anythingllm": {
+      "command": "node",
+      "args": [
+        "${CLAUDE_PLUGIN_ROOT}/tools/mcp-anythingllm/index.js"
+      ]
+    }
+  }
+}

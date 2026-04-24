@@ -246,38 +246,24 @@ python3 -c "import shutil; n=shutil.which('node'); print(f'node: {n}') if n else
 1. 询问用户是否需要配置 AnythingLLM 语义检索（推荐）
 2. 若用户选择"否" → 设置 `anythingllm.enabled: false`，跳到 Step 3
 3. 若选择"是"：
-   a. 通过 AskUserQuestion 一次性收集全部信息：
+   a. 检查 `anythingllm-mcp` plugin 是否已装：
+      ```bash
+      ls ~/.claude/plugins/cache/presales-skills/anythingllm-mcp/ 2>/dev/null || \
+        echo "MISSING: anythingllm-mcp plugin 未安装，请先执行 /plugin install anythingllm-mcp@presales-skills 然后 /reload-plugins"
+      ```
+      若未装，提示用户安装后再继续 Step 2。
+   b. 通过 AskUserQuestion 一次性收集全部信息：
       - **AnythingLLM Base URL**（默认 `http://localhost:3001`）
       - **API Key**（必填）
       - **Workspace slug 或 UUID**（必填，用户可从 AnythingLLM 界面获取）
-   b. **自动注册 MCP Server 到 `~/.claude.json`**（无需全局 npm 安装，index.js 无第三方依赖）：
-      ```python
-      python3 -c "
-      import json, os, subprocess
-      from pathlib import Path
-      p = Path.home() / '.claude.json'
-      c = json.loads(p.read_text()) if p.exists() else {}
-      c.setdefault('mcpServers', {})
-      project_root = subprocess.check_output(['git', 'rev-parse', '--show-toplevel'], text=True).strip()
-      c['mcpServers']['anythingllm'] = {
-        'command': 'node',
-        'args': [str(Path(project_root) / 'tools' / 'mcp-anythingllm' / 'index.js')],
-        'env': {
-          'ANYTHINGLLM_BASE_URL': '<用户输入的url>',
-          'ANYTHINGLLM_API_KEY': '<用户输入的key>'
-        }
-      }
-      p.write_text(json.dumps(c, indent=2, ensure_ascii=False))
-      print('AnythingLLM MCP Server 已注册到 ~/.claude.json')
-      "
-      ```
-   c. 将配置写入统一配置：
+   c. 写入统一配置（MCP server 会在启动时从这里读取凭据）：
       ```bash
       python3 ${CLAUDE_PLUGIN_ROOT}/tools/tw_config.py set anythingllm.enabled true
       python3 ${CLAUDE_PLUGIN_ROOT}/tools/tw_config.py set anythingllm.workspace <workspace>
       python3 ${CLAUDE_PLUGIN_ROOT}/tools/tw_config.py set anythingllm.base_url <url>
+      python3 ${CLAUDE_PLUGIN_ROOT}/tools/tw_config.py set anythingllm.api_key <key>
       ```
-   d. 提示用户：安装完成，需在 setup 全部完成后**重启 Claude Code** 以加载新 MCP Server
+   d. 提示用户：配置完成。MCP server 由 `anythingllm-mcp` plugin 自动注册（plugin.json 的 `mcpServers` 字段），无需手工改 `~/.claude.json`；下次 Claude Code 启动或 `/reload-plugins` 后生效。
 
 #### Step 3：draw.io plugin 安装检测
 

@@ -51,8 +51,6 @@ solution-master/
 │   └── quality-reviewer.md
 ├── bin/
 │   └── solution-master.js            # npx 安装器（fallback 模式）
-├── tools/                            # 外部工具（MCP 服务器等）
-│   └── mcp-anythingllm/
 ├── tests/                            # 自动化测试脚本 + fixtures
 ├── Local-KnowledgeBase/               # 本地知识库
 ├── output/                            # 最终产出
