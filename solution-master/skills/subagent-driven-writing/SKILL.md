@@ -1,6 +1,7 @@
 ---
 name: subagent-driven-writing
-description: 当在当前会话中执行包含多个独立章节任务的撰写计划时使用——每个章节一个全新子智能体，两阶段审查（先内容正确性，再写作质量）
+description: 当在当前会话中执行包含多个独立章节任务的撰写计划、需要为每个章节启用隔离子智能体时触发，也可通过 /subagent-driven-writing 手动调用。
+allowed-tools: TaskCreate, TaskGet, TaskUpdate, TaskList, TaskStop, Read, Write, Edit, Bash
 ---
 
 <!--

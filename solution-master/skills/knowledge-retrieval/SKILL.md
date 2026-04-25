@@ -1,6 +1,7 @@
 ---
 name: knowledge-retrieval
 description: 当需要从知识库检索相关内容用于方案撰写或头脑风暴时使用——支持本地KB、AnythingLLM语义搜索、互联网多源检索、CDP登录态站点检索与智能融合
+allowed-tools: Read, Write, Bash, Glob, Grep, WebSearch, WebFetch, mcp__tavily__tavily_search, mcp__exa__web_search_exa, mcp__plugin_anythingllm-mcp_anythingllm__anythingllm_search, mcp__plugin_anythingllm-mcp_anythingllm__anythingllm_list_workspaces
 ---
 
 # 知识检索：多源检索与智能融合

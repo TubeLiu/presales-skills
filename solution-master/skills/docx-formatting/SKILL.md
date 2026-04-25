@@ -1,6 +1,7 @@
 ---
 name: docx-formatting
 description: 当需要将方案内容输出为标准格式 DOCX 文件时使用——支持 Markdown 转 DOCX，遵循统一字体规范
+allowed-tools: Read, Write, Edit, Bash, Glob
 ---
 
 # DOCX 格式输出

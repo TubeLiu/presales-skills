@@ -1,6 +1,7 @@
 ---
 name: solution-planning
 description: 当方案设计规格已获用户批准、需要将方案分解为可执行的撰写任务时使用
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion
 ---
 
 # 方案规划：将设计转化为撰写任务

@@ -1,7 +1,9 @@
 ---
 name: trv
 description: >
-  审核者 (TRV) - Tender Reviewer
+  当用户说"审核标书"、"审一下标书"、"检查投标文件"、"审查招标文件"、"审核方案"、"review"、"quality check" 时触发，也可通过 /trv 手动调用。
+  对招标文件、分析报告、投标大纲、章节草稿、完整标书进行多维度审核（完整性 / 合规性 / 评分对齐 / 风险检查），支持 AI 驱动智能修订。
+  审核类型通过 --type 指定（tender_doc / analysis / outline / chapter / full_bid）。
 disable-model-invocation: false
 allowed-tools: Read, Write, Bash, Glob, Grep
 ---

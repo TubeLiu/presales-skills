@@ -1,6 +1,7 @@
 ---
 name: writing-skills
 description: 当需要为 Solution Master 框架创建新技能、编辑现有技能或在部署前验证技能是否有效时使用
+allowed-tools: Read, Edit, Write, Glob, Grep
 ---
 
 # 编写技能

@@ -1,6 +1,7 @@
 ---
 name: solution-config
 description: 当用户说"配置"、"设置"或需要管理 Solution Master 配置时使用，也可通过 /solution-config 手动调用
+allowed-tools: Read, Edit, Bash, AskUserQuestion
 ---
 
 # 配置管理

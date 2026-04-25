@@ -6,7 +6,7 @@ description: >
   自动生成投标文件章节内容草稿（DOCX 格式）。
   用户可提供具体文件路径或目录，目录时按扩展名自动匹配文件。
 disable-model-invocation: false
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, tavily_search, exa_search, anythingllm_search, anythingllm_list_workspaces, drawio
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, mcp__tavily__tavily_search, mcp__exa__web_search_exa, mcp__plugin_anythingllm-mcp_anythingllm__anythingllm_search, mcp__plugin_anythingllm-mcp_anythingllm__anythingllm_list_workspaces
 ---
 
 # 投标文件撰稿助手 — 主编排 Prompt

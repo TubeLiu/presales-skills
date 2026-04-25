@@ -1,6 +1,7 @@
 ---
 name: solution-writing
 description: 当有撰写计划中的具体章节任务需要执行时使用——根据计划、知识库素材和配图方案撰写方案章节
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, mcp__plugin_anythingllm-mcp_anythingllm__anythingllm_search, mcp__plugin_anythingllm-mcp_anythingllm__anythingllm_list_workspaces
 ---
 
 # 方案撰写：执行章节任务

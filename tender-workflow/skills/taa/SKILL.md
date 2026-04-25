@@ -6,7 +6,7 @@ description: >
   支持 --vendor 参数指定厂商名称（默认"灵雀云"）。
   支持 --build-index 构建产品能力索引，--save-index 保存索引到默认位置。
 disable-model-invocation: false
-allowed-tools: Read, Write, Bash, Glob, anythingllm_search, anythingllm_list_workspaces
+allowed-tools: Read, Write, Bash, Glob, mcp__plugin_anythingllm-mcp_anythingllm__anythingllm_search, mcp__plugin_anythingllm-mcp_anythingllm__anythingllm_list_workspaces
 ---
 
 # 招标分析助手 — 主编排 Prompt
