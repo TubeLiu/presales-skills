@@ -3,7 +3,7 @@
   "owner": { "name": "LiuZiJiao", "email": "tubeliu1@gmail.com", "homepage": "https://github.com/Alauda-io/presales-skills" },
   "metadata": {
     "description": "Presales skills monorepo — solution-master / ppt-master / tender-workflow + shared plugins (drawio, ai-image, anythingllm-mcp, web-access).",
-    "version": "0.2.1"
+    "version": "0.2.2"
   },
   "plugins": [
     {
@@ -45,8 +45,8 @@
     {
       "name": "solution-master",
       "source": "./solution-master",
-      "description": "AI 辅助通用解决方案撰写框架。依赖 drawio、ai-image plugin；anythingllm-mcp、web-access 可选。",
-      "version": "0.1.7",
+      "description": "AI 辅助通用解决方案撰写框架。依赖 drawio、ai-image plugin；anythingllm-mcp、web-access 可选。Slash 主入口：/solution-master:write。",
+      "version": "0.1.8",
       "author": { "name": "LiuZiJiao" },
       "category": "writing",
       "tags": ["solution", "docx", "中文"]

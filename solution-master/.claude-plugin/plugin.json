@@ -1,7 +1,7 @@
 {
   "name": "solution-master",
-  "description": "AI 辅助通用解决方案撰写框架。依赖 drawio、ai-image plugin；anythingllm-mcp、web-access 可选。",
-  "version": "0.1.7",
+  "description": "AI 辅助通用解决方案撰写框架。依赖 drawio、ai-image plugin；anythingllm-mcp、web-access 可选。Slash 主入口：/solution-master:write。",
+  "version": "0.1.8",
   "author": {
     "name": "LiuZiJiao"
   },
