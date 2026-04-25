@@ -1,7 +1,7 @@
 {
   "name": "ppt-master",
   "description": "PPT 生成 (PDF/DOCX/URL/MD → SVG → PPTX)。依赖 ai-image plugin。",
-  "version": "0.1.6",
+  "version": "0.2.0",
   "author": {
     "name": "LiuZiJiao"
   },
