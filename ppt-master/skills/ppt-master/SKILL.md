@@ -1,12 +1,64 @@
 ---
 name: ppt-make
 description: >
-  PPT 生成器（slash 调用 /ppt-make）——将 PDF/DOCX/URL/Markdown 等多源文档转换为原生可编辑的 PPTX（含真实 PowerPoint shape、文本框、图表，非图片）。
-  当用户说"做 PPT"、"生成 PPT"、"做演示稿"、"做 PowerPoint"、"把这份文档做成 PPT"、"生成PPT"、"制作演示文稿"、"generate PPT"、"create slides"、"make presentation"、"create deck"时触发，也可手动指定 `/ppt-make`。
+  PPT 生成器——将 PDF/DOCX/URL/Markdown 等多源文档转换为原生可编辑的 PPTX
+  （含真实 PowerPoint shape、文本框、图表，非图片）。
+  触发场景：当用户说"做 PPT"、"生成 PPT"、"做演示稿"、"做 PowerPoint"、
+  "把这份文档做成 PPT"、"生成PPT"、"制作演示文稿"、"generate PPT"、
+  "create slides"、"make presentation"、"create deck" 时自动调用。
   SVG 中间层 + 13 provider AI 配图，支持 16:9 / 4:3 / 小红书 / 朋友圈 / Story 多版式。
+allowed-tools: Read, Write, Bash, Glob, Grep
 ---
 
 # PPT Master Skill
+
+> **跨平台兼容性 checklist**（Windows / macOS / Linux）：
+> 1. **Python 命令名**：示例用 `python3`。Windows 不可识别时改 `python` 或 `py -3`。
+> 2. **路径自定位**：本文档所有脚本路径用下方 §路径自定位 一节的 bootstrap 解析（替代 `$SKILL_DIR`）。
+> 3. **可执行检测**：用 `which`/`where`/`Get-Command`，不用 `command -v`。
+> 4. **Bash heredoc / `&&` / `||`**：Windows cmd 不支持，建议在 Git Bash / WSL2 中运行。
+> 5. **路径分隔符**：用正斜杠 `/`，避免硬编码反斜杠 `\`。
+
+<SUBAGENT-STOP>
+此技能是给协调者读的。**判定你是否子智能体**：如果你的当前角色定义来自 Task prompt 而非 SKILL.md 自然加载（即调用方在 Task 工具的 prompt 字段里塞了 agents/<role>.md 的内容），你就是子智能体；跳过本 SKILL.md 的工作流编排部分，只执行 Task prompt 给你的具体任务。
+</SUBAGENT-STOP>
+
+## 路径自定位
+
+**首次调用本 skill 的脚本前，先跑一次以下 bootstrap 解析 SKILL_DIR**（后续命令用 `$SKILL_DIR/scripts/...`、`$SKILL_DIR/templates/...`）：
+
+```bash
+SKILL_DIR=$(python3 -c "
+import json, os, sys
+p = os.path.expanduser('~/.claude/plugins/installed_plugins.json')
+if os.path.exists(p):
+    d = json.load(open(p))
+    for entries in d.get('plugins', {}).values():
+        for e in (entries if isinstance(entries, list) else [entries]):
+            if isinstance(e, dict) and '/ppt-master/' in e.get('installPath', ''):
+                print(e['installPath'] + '/skills/ppt-master'); sys.exit(0)
+" 2>/dev/null)
+
+# vercel CLI fallback
+[ -z "$SKILL_DIR" ] && for d in ~/.cursor/skills ~/.agents/skills .cursor/skills .agents/skills; do
+    [ -d "$d/ppt-master/skills/ppt-master" ] && SKILL_DIR="$d/ppt-master/skills/ppt-master" && break
+    [ -d "$d/ppt-master" ] && SKILL_DIR="$d/ppt-master" && break
+done
+
+# 用户预设环境变量
+[ -z "$SKILL_DIR" ] && [ -n "${PPT_MASTER_PLUGIN_PATH:-}" ] && SKILL_DIR="$PPT_MASTER_PLUGIN_PATH/skills/ppt-master"
+
+# dev 态
+[ -z "$SKILL_DIR" ] && [ -d "./ppt-master/skills/ppt-master" ] && SKILL_DIR="$(pwd)/ppt-master/skills/ppt-master"
+
+if [ -z "$SKILL_DIR" ]; then
+    echo "[ERROR] 找不到 ppt-master skill 安装位置。" >&2
+    echo "请设置：export PPT_MASTER_PLUGIN_PATH=/path/to/ppt-master" >&2
+    exit 1
+fi
+```
+
+**错误恢复 protocol**：bootstrap 退出 1 时不要重试，把 stderr 转述给用户并请求 `/plugin install ppt-master@presales-skills` 或手工 export 环境变量。
 
 > AI-driven multi-format SVG content generation system. Converts source documents into high-quality SVG pages through multi-role collaboration and exports to PPTX.
 
@@ -44,29 +96,29 @@ description: >
 
 | Script | Purpose |
 |--------|---------|
-| `${CLAUDE_SKILL_DIR}/scripts/source_to_md/pdf_to_md.py` | PDF to Markdown |
-| `${CLAUDE_SKILL_DIR}/scripts/source_to_md/doc_to_md.py` | Documents to Markdown — native Python for DOCX/HTML/EPUB/IPYNB, pandoc fallback for legacy formats (.doc/.odt/.rtf/.tex/.rst/.org/.typ) |
-| `${CLAUDE_SKILL_DIR}/scripts/source_to_md/ppt_to_md.py` | PowerPoint to Markdown |
-| `${CLAUDE_SKILL_DIR}/scripts/source_to_md/web_to_md.py` | Web page to Markdown |
-| `${CLAUDE_SKILL_DIR}/scripts/source_to_md/web_to_md.cjs` | Node.js fallback for WeChat / TLS-blocked sites (use only if `curl_cffi` is unavailable; `web_to_md.py` now handles WeChat when `curl_cffi` is installed) |
-| `${CLAUDE_SKILL_DIR}/scripts/project_manager.py` | Project init / validate / manage |
-| `${CLAUDE_SKILL_DIR}/scripts/analyze_images.py` | Image analysis |
+| `$SKILL_DIR/scripts/source_to_md/pdf_to_md.py` | PDF to Markdown |
+| `$SKILL_DIR/scripts/source_to_md/doc_to_md.py` | Documents to Markdown — native Python for DOCX/HTML/EPUB/IPYNB, pandoc fallback for legacy formats (.doc/.odt/.rtf/.tex/.rst/.org/.typ) |
+| `$SKILL_DIR/scripts/source_to_md/ppt_to_md.py` | PowerPoint to Markdown |
+| `$SKILL_DIR/scripts/source_to_md/web_to_md.py` | Web page to Markdown |
+| `$SKILL_DIR/scripts/source_to_md/web_to_md.cjs` | Node.js fallback for WeChat / TLS-blocked sites (use only if `curl_cffi` is unavailable; `web_to_md.py` now handles WeChat when `curl_cffi` is installed) |
+| `$SKILL_DIR/scripts/project_manager.py` | Project init / validate / manage |
+| `$SKILL_DIR/scripts/analyze_images.py` | Image analysis |
 | `image-gen` | AI image generation (multi-provider) |
-| `${CLAUDE_SKILL_DIR}/scripts/svg_quality_checker.py` | SVG quality check |
-| `${CLAUDE_SKILL_DIR}/scripts/total_md_split.py` | Speaker notes splitting |
-| `${CLAUDE_SKILL_DIR}/scripts/finalize_svg.py` | SVG post-processing (unified entry) |
-| `${CLAUDE_SKILL_DIR}/scripts/svg_to_pptx.py` | Export to PPTX |
-| `${CLAUDE_SKILL_DIR}/scripts/update_spec.py` | Propagate a `spec_lock.md` color / font_family change across all generated SVGs |
+| `$SKILL_DIR/scripts/svg_quality_checker.py` | SVG quality check |
+| `$SKILL_DIR/scripts/total_md_split.py` | Speaker notes splitting |
+| `$SKILL_DIR/scripts/finalize_svg.py` | SVG post-processing (unified entry) |
+| `$SKILL_DIR/scripts/svg_to_pptx.py` | Export to PPTX |
+| `$SKILL_DIR/scripts/update_spec.py` | Propagate a `spec_lock.md` color / font_family change across all generated SVGs |
 
-For complete tool documentation, see `${CLAUDE_SKILL_DIR}/scripts/README.md`.
+For complete tool documentation, see `$SKILL_DIR/scripts/README.md`.
 
 ## Template Index
 
 | Index | Path | Purpose |
 |-------|------|---------|
-| Layout templates | `${CLAUDE_SKILL_DIR}/templates/layouts/layouts_index.json` | Query available page layout templates |
-| Visualization templates | `${CLAUDE_SKILL_DIR}/templates/charts/charts_index.json` | Query available visualization SVG templates (charts, infographics, diagrams, frameworks) |
-| Icon library | `${CLAUDE_SKILL_DIR}/templates/icons/` | Search icons on demand: `ls templates/icons/<library>/ \| grep <keyword>` (libraries: `chunk/`, `tabler-filled/`, `tabler-outline/`) |
+| Layout templates | `$SKILL_DIR/templates/layouts/layouts_index.json` | Query available page layout templates |
+| Visualization templates | `$SKILL_DIR/templates/charts/charts_index.json` | Query available visualization SVG templates (charts, infographics, diagrams, frameworks) |
+| Icon library | `$SKILL_DIR/templates/icons/` | Search icons on demand: `ls templates/icons/<library>/ \| grep <keyword>` (libraries: `chunk/`, `tabler-filled/`, `tabler-outline/`) |
 
 ## Standalone Workflows
 
@@ -86,12 +138,12 @@ When the user provides non-Markdown content, convert immediately:
 
 | User Provides | Command |
 |---------------|---------|
-| PDF file | `python3 ${CLAUDE_SKILL_DIR}/scripts/source_to_md/pdf_to_md.py <file>` |
-| DOCX / Word / Office document | `python3 ${CLAUDE_SKILL_DIR}/scripts/source_to_md/doc_to_md.py <file>` |
-| PPTX / PowerPoint deck | `python3 ${CLAUDE_SKILL_DIR}/scripts/source_to_md/ppt_to_md.py <file>` |
-| EPUB / HTML / LaTeX / RST / other | `python3 ${CLAUDE_SKILL_DIR}/scripts/source_to_md/doc_to_md.py <file>` |
-| Web link | `python3 ${CLAUDE_SKILL_DIR}/scripts/source_to_md/web_to_md.py <URL>` |
-| WeChat / high-security site | `python3 ${CLAUDE_SKILL_DIR}/scripts/source_to_md/web_to_md.py <URL>` (requires `curl_cffi`; falls back to `node web_to_md.cjs <URL>` only if that package is unavailable) |
+| PDF file | `python3 $SKILL_DIR/scripts/source_to_md/pdf_to_md.py <file>` |
+| DOCX / Word / Office document | `python3 $SKILL_DIR/scripts/source_to_md/doc_to_md.py <file>` |
+| PPTX / PowerPoint deck | `python3 $SKILL_DIR/scripts/source_to_md/ppt_to_md.py <file>` |
+| EPUB / HTML / LaTeX / RST / other | `python3 $SKILL_DIR/scripts/source_to_md/doc_to_md.py <file>` |
+| Web link | `python3 $SKILL_DIR/scripts/source_to_md/web_to_md.py <URL>` |
+| WeChat / high-security site | `python3 $SKILL_DIR/scripts/source_to_md/web_to_md.py <URL>` (requires `curl_cffi`; falls back to `node web_to_md.cjs <URL>` only if that package is unavailable) |
 | Markdown | Read directly |
 
 **✅ Checkpoint — Confirm source content is ready, proceed to Step 2.**
@@ -103,7 +155,7 @@ When the user provides non-Markdown content, convert immediately:
 🚧 **GATE**: Step 1 complete; source content is ready (Markdown file, user-provided text, or requirements described in conversation are all valid).
 
 ```bash
-python3 ${CLAUDE_SKILL_DIR}/scripts/project_manager.py init <project_name> --format <format>
+python3 $SKILL_DIR/scripts/project_manager.py init <project_name> --format <format>
 ```
 
 Format options: `ppt169` (default), `ppt43`, `xhs`, `story`, etc. For the full format list, see `references/canvas-formats.md`.
@@ -112,7 +164,7 @@ Import source content (choose based on the situation):
 
 | Situation | Action |
 |-----------|--------|
-| Has source files (PDF/MD/etc.) | `python3 ${CLAUDE_SKILL_DIR}/scripts/project_manager.py import-sources <project_path> <source_files...> --move` |
+| Has source files (PDF/MD/etc.) | `python3 $SKILL_DIR/scripts/project_manager.py import-sources <project_path> <source_files...> --move` |
 | User provided text directly in conversation | No import needed — content is already in conversation context; subsequent steps can reference it directly |
 
 > ⚠️ **MUST use `--move`**: All source files (original PDF / MD / images) MUST be **moved** (not copied) into `sources/` for archiving.
@@ -136,13 +188,13 @@ Import source content (choose based on the situation):
 2. User names a style / brand reference that maps to a template (e.g., "McKinsey 那种" / "Google style" / "学术答辩样式")
 3. User explicitly asks what templates exist (e.g., "有哪些模板可以用")
 
-Only when a trigger fires: read `${CLAUDE_SKILL_DIR}/templates/layouts/layouts_index.json`, resolve the match (or list available options for trigger 3), and copy template files to the project directory:
+Only when a trigger fires: read `$SKILL_DIR/templates/layouts/layouts_index.json`, resolve the match (or list available options for trigger 3), and copy template files to the project directory:
 
 ```bash
-cp ${CLAUDE_SKILL_DIR}/templates/layouts/<template_name>/*.svg <project_path>/templates/
-cp ${CLAUDE_SKILL_DIR}/templates/layouts/<template_name>/design_spec.md <project_path>/templates/
-cp ${CLAUDE_SKILL_DIR}/templates/layouts/<template_name>/*.png <project_path>/images/ 2>/dev/null || true
-cp ${CLAUDE_SKILL_DIR}/templates/layouts/<template_name>/*.jpg <project_path>/images/ 2>/dev/null || true
+cp $SKILL_DIR/templates/layouts/<template_name>/*.svg <project_path>/templates/
+cp $SKILL_DIR/templates/layouts/<template_name>/design_spec.md <project_path>/templates/
+cp $SKILL_DIR/templates/layouts/<template_name>/*.png <project_path>/images/ 2>/dev/null || true
+cp $SKILL_DIR/templates/layouts/<template_name>/*.jpg <project_path>/images/ 2>/dev/null || true
 ```
 
 **Soft hint (non-blocking, optional).** Before Step 4, if the user's content is an obvious strong match for an existing template (e.g., clearly an academic defense, a government report, a McKinsey-style consulting deck) AND the user has given no template signal, the AI MAY emit a single-sentence notice and continue without waiting:
@@ -183,7 +235,7 @@ Read references/strategist.md
 
 If the user has provided images, run the analysis script **before outputting the design spec** (do NOT directly read/open image files — use the script output only):
 ```bash
-python3 ${CLAUDE_SKILL_DIR}/scripts/analyze_images.py <project_path>/images
+python3 $SKILL_DIR/scripts/analyze_images.py <project_path>/images
 ```
 
 > ⚠️ **Image handling rule**: The AI must NEVER directly read, open, or view image files (`.jpg`, `.png`, etc.). All image information must come from the `analyze_images.py` script output or the Design Specification's Image Resource List.
@@ -253,7 +305,7 @@ Read references/executor-consultant-top.md # Top consulting style (MBB level)
 
 **Quality Check Gate (Mandatory)** — after all SVGs are generated and BEFORE speaker notes:
 ```bash
-python3 ${CLAUDE_SKILL_DIR}/scripts/svg_quality_checker.py <project_path>
+python3 $SKILL_DIR/scripts/svg_quality_checker.py <project_path>
 ```
 - Any `error` (banned SVG features, viewBox mismatch, spec_lock drift, etc.) MUST be fixed on the offending page before proceeding — go back to Visual Construction, re-generate that page, re-run the check.
 - `warning` entries (e.g., low-resolution image, non-PPT-safe font tail) should be reviewed and fixed when straightforward; may be acknowledged and released otherwise.
@@ -281,17 +333,17 @@ python3 ${CLAUDE_SKILL_DIR}/scripts/svg_quality_checker.py <project_path>
 
 **Step 7.1** — Split speaker notes:
 ```bash
-python3 ${CLAUDE_SKILL_DIR}/scripts/total_md_split.py <project_path>
+python3 $SKILL_DIR/scripts/total_md_split.py <project_path>
 ```
 
 **Step 7.2** — SVG post-processing (icon embedding / image crop & embed / text flattening / rounded rect to path):
 ```bash
-python3 ${CLAUDE_SKILL_DIR}/scripts/finalize_svg.py <project_path>
+python3 $SKILL_DIR/scripts/finalize_svg.py <project_path>
 ```
 
 **Step 7.3** — Export PPTX (embeds speaker notes by default):
 ```bash
-python3 ${CLAUDE_SKILL_DIR}/scripts/svg_to_pptx.py <project_path> -s final
+python3 $SKILL_DIR/scripts/svg_to_pptx.py <project_path> -s final
 # Output: exports/<project_name>_<timestamp>.pptx + exports/<project_name>_<timestamp>_svg.pptx
 # Use --only native  to skip SVG reference version
 # Use --only legacy  to only generate SVG image version

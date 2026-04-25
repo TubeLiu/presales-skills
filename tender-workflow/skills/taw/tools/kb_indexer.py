@@ -16,10 +16,10 @@
   - headings: 前 5 个 H2 标题（用于消歧相似文档）
   - summary: 正文前 100 字（用于消歧相似内容）
 
-用法：
-  python ${CLAUDE_SKILL_DIR}/tools/kb_indexer.py --scan
-  python ${CLAUDE_SKILL_DIR}/tools/kb_indexer.py --scan --kb-path /path/to/Local-KnowledgeBase
-  python ${CLAUDE_SKILL_DIR}/tools/kb_indexer.py --scan --output /path/to/output.yaml
+用法（先按 SKILL.md §路径自定位 解析 SKILL_DIR，然后）：
+  python "$SKILL_DIR/tools/kb_indexer.py" --scan
+  python "$SKILL_DIR/tools/kb_indexer.py" --scan --kb-path /path/to/Local-KnowledgeBase
+  python "$SKILL_DIR/tools/kb_indexer.py" --scan --output /path/to/output.yaml
 
 输出：Local-KnowledgeBase/.index/kb_catalog.yaml（默认）
 """

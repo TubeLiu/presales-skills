@@ -1,13 +1,62 @@
 ---
 name: taa
 description: >
-  当用户上传招标文件（招标公告、招标文件、采购文件、磋商文件、询价文件），或用户指令为"分析标书"、"评估招标文件"、"评估招标"、"看看这份招标文件"等要求分析招标内容时，自动调用此 skill。也可通过 /taa 手动触发。深度分析招标文件并生成招标分析报告（.md）和投标文件大纲（.docx）。
+  当用户上传招标文件（招标公告、招标文件、采购文件、磋商文件、询价文件），或用户指令为"分析标书"、"评估招标文件"、"评估招标"、"看看这份招标文件"等要求分析招标内容时，自动调用此 skill。。深度分析招标文件并生成招标分析报告（.md）和投标文件大纲（.docx）。
   支持 --product 参数指定产品能力说明书（Excel/Markdown），用于精确评估产品与招标要求的匹配情况。
   支持 --vendor 参数指定厂商名称（默认"灵雀云"）。
   支持 --build-index 构建产品能力索引，--save-index 保存索引到默认位置。
 disable-model-invocation: false
 allowed-tools: Read, Write, Bash, Glob, mcp__plugin_anythingllm-mcp_anythingllm__anythingllm_search, mcp__plugin_anythingllm-mcp_anythingllm__anythingllm_list_workspaces
 ---
+
+> **跨平台兼容性 checklist**（Windows / macOS / Linux）：
+> 1. **Python 命令名**：示例用 `python3`。Windows 不可识别时改 `python` 或 `py -3`。
+> 2. **路径自定位**：本文档所有脚本路径用下方 §路径自定位 一节的 bootstrap 解析（替代 `$SKILL_DIR`）。
+> 3. **可执行检测**：用 `which`/`where`/`Get-Command`，不用 `command -v`。
+> 4. **Bash heredoc / `&&` / `||`**：Windows cmd 不支持，建议在 Git Bash / WSL2 中运行。
+> 5. **路径分隔符**：用正斜杠 `/`，避免硬编码反斜杠 `\`。
+
+<SUBAGENT-STOP>
+此技能是给协调者读的。**判定你是否子智能体**：如果你的当前角色定义来自 Task prompt 而非 SKILL.md 自然加载（即调用方在 Task 工具的 prompt 字段里塞了 agents/<role>.md 的内容），你就是子智能体；跳过本 SKILL.md 的工作流编排部分，只执行 Task prompt 给你的具体任务。
+</SUBAGENT-STOP>
+
+## 路径自定位
+
+**首次调用本 skill 的脚本/工具前，先跑一次以下 bootstrap 解析 SKILL_DIR**（后续命令用 `$SKILL_DIR/tools/...`、`$SKILL_DIR/prompts/...`、`$SKILL_DIR/templates/...`）：
+
+```bash
+SKILL_DIR=$(python3 -c "
+import json, os, sys
+p = os.path.expanduser('~/.claude/plugins/installed_plugins.json')
+if os.path.exists(p):
+    d = json.load(open(p))
+    for entries in d.get('plugins', {}).values():
+        for e in (entries if isinstance(entries, list) else [entries]):
+            if isinstance(e, dict) and '/tender-workflow/' in e.get('installPath', ''):
+                print(e['installPath'] + '/skills/taa'); sys.exit(0)
+" 2>/dev/null)
+
+# vercel CLI fallback
+[ -z "$SKILL_DIR" ] && for d in ~/.cursor/skills ~/.agents/skills .cursor/skills .agents/skills; do
+    [ -d "$d/tender-workflow/skills/taa" ] && SKILL_DIR="$d/tender-workflow/skills/taa" && break
+    [ -d "$d/taa" ] && SKILL_DIR="$d/taa" && break
+done
+
+# 用户预设环境变量
+[ -z "$SKILL_DIR" ] && [ -n "${TENDER_WORKFLOW_PLUGIN_PATH:-}" ] && SKILL_DIR="$TENDER_WORKFLOW_PLUGIN_PATH/skills/taa"
+
+# dev 态
+[ -z "$SKILL_DIR" ] && [ -d "./tender-workflow/skills/taa" ] && SKILL_DIR="$(pwd)/tender-workflow/skills/taa"
+
+if [ -z "$SKILL_DIR" ]; then
+    echo "[ERROR] 找不到 tender-workflow / taa skill 安装位置。" >&2
+    echo "请设置：export TENDER_WORKFLOW_PLUGIN_PATH=/path/to/tender-workflow" >&2
+    exit 1
+fi
+```
+
+**错误恢复 protocol**：bootstrap 退出 1 时不要重试，把 stderr 转述给用户并请求 `/plugin install tender-workflow@presales-skills` 或手工 export 环境变量。
+
 
 # 招标分析助手 — 主编排 Prompt
 
@@ -471,7 +520,7 @@ Phase 1 完成后（包括 Phase 1.5 验证，如需要），使用 Agent 工具
 5. 读取 tools/docx_outline_template.py 并生成 DOCX 文件
 6. 输出完成确认
 
-注意：所有文件路径相对于 skill 根目录 ${CLAUDE_SKILL_DIR}/
+注意：所有文件路径相对于 skill 根目录 $SKILL_DIR/
 ```
 
 **关键要求**：

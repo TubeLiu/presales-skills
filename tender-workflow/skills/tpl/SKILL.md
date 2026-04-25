@@ -2,11 +2,60 @@
 name: tpl
 description: >
   当用户提供产品功能清单或描述，要求生成招标技术规格与要求时自动调用。
-  也可通过 /tpl 手动触发。将产品功能清单转换为无控标痕迹的招标技术规格与评标办法，
+  。将产品功能清单转换为无控标痕迹的招标技术规格与评标办法，
   输出 DOCX 格式。支持 --template 指定行业模板，--level 控制细致程度。
 disable-model-invocation: false
 allowed-tools: Read, Write, Bash, Glob
 ---
+
+> **跨平台兼容性 checklist**（Windows / macOS / Linux）：
+> 1. **Python 命令名**：示例用 `python3`。Windows 不可识别时改 `python` 或 `py -3`。
+> 2. **路径自定位**：本文档所有脚本路径用下方 §路径自定位 一节的 bootstrap 解析（替代 `$SKILL_DIR`）。
+> 3. **可执行检测**：用 `which`/`where`/`Get-Command`，不用 `command -v`。
+> 4. **Bash heredoc / `&&` / `||`**：Windows cmd 不支持，建议在 Git Bash / WSL2 中运行。
+> 5. **路径分隔符**：用正斜杠 `/`，避免硬编码反斜杠 `\`。
+
+<SUBAGENT-STOP>
+此技能是给协调者读的。**判定你是否子智能体**：如果你的当前角色定义来自 Task prompt 而非 SKILL.md 自然加载（即调用方在 Task 工具的 prompt 字段里塞了 agents/<role>.md 的内容），你就是子智能体；跳过本 SKILL.md 的工作流编排部分，只执行 Task prompt 给你的具体任务。
+</SUBAGENT-STOP>
+
+## 路径自定位
+
+**首次调用本 skill 的脚本/工具前，先跑一次以下 bootstrap 解析 SKILL_DIR**（后续命令用 `$SKILL_DIR/tools/...`、`$SKILL_DIR/prompts/...`、`$SKILL_DIR/templates/...`）：
+
+```bash
+SKILL_DIR=$(python3 -c "
+import json, os, sys
+p = os.path.expanduser('~/.claude/plugins/installed_plugins.json')
+if os.path.exists(p):
+    d = json.load(open(p))
+    for entries in d.get('plugins', {}).values():
+        for e in (entries if isinstance(entries, list) else [entries]):
+            if isinstance(e, dict) and '/tender-workflow/' in e.get('installPath', ''):
+                print(e['installPath'] + '/skills/tpl'); sys.exit(0)
+" 2>/dev/null)
+
+# vercel CLI fallback
+[ -z "$SKILL_DIR" ] && for d in ~/.cursor/skills ~/.agents/skills .cursor/skills .agents/skills; do
+    [ -d "$d/tender-workflow/skills/tpl" ] && SKILL_DIR="$d/tender-workflow/skills/tpl" && break
+    [ -d "$d/tpl" ] && SKILL_DIR="$d/tpl" && break
+done
+
+# 用户预设环境变量
+[ -z "$SKILL_DIR" ] && [ -n "${TENDER_WORKFLOW_PLUGIN_PATH:-}" ] && SKILL_DIR="$TENDER_WORKFLOW_PLUGIN_PATH/skills/tpl"
+
+# dev 态
+[ -z "$SKILL_DIR" ] && [ -d "./tender-workflow/skills/tpl" ] && SKILL_DIR="$(pwd)/tender-workflow/skills/tpl"
+
+if [ -z "$SKILL_DIR" ]; then
+    echo "[ERROR] 找不到 tender-workflow / tpl skill 安装位置。" >&2
+    echo "请设置：export TENDER_WORKFLOW_PLUGIN_PATH=/path/to/tender-workflow" >&2
+    exit 1
+fi
+```
+
+**错误恢复 protocol**：bootstrap 退出 1 时不要重试，把 stderr 转述给用户并请求 `/plugin install tender-workflow@presales-skills` 或手工 export 环境变量。
+
 
 # 策划者 (TPL) v2.0 - Tender Planner
 
@@ -216,8 +265,8 @@ tpl v2.0 - 招标技术规格与评标办法生成工具
 
 读取统一配置文件获取默认值（可被命令行参数覆盖）：
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/tools/tw_config.py get tpl default_template
-python3 ${CLAUDE_PLUGIN_ROOT}/tools/tw_config.py get tpl default_level
+python3 $SKILL_DIR/../tools/tw_config.py get tpl default_template
+python3 $SKILL_DIR/../tools/tw_config.py get tpl default_level
 ```
 
 - 若未指定 `--template` 且配置中 `tpl.default_template` 有值 → 使用配置值作为默认模板
@@ -491,7 +540,7 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/tw_config.py get tpl default_level
 **步骤二：调用渲染工具**
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/tools/tpl_docx_writer.py <content.json> <output.docx>
+python3 $SKILL_DIR/../tools/tpl_docx_writer.py <content.json> <output.docx>
 ```
 
 渲染工具会自动清理 JSON 中因 Write 传输产生的 U+FFFD 字符碎片，确保 DOCX 内容干净。
@@ -499,7 +548,7 @@ python3 ${CLAUDE_PLUGIN_ROOT}/tools/tpl_docx_writer.py <content.json> <output.do
 **步骤三：编码完整性校验**
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/tools/docx_encoding_check.py --fix <output.docx> --max-retries 3
+python3 $SKILL_DIR/../tools/docx_encoding_check.py --fix <output.docx> --max-retries 3
 ```
 
 - `ENCODING_OK` 或 `FIX_OK` → 通过，继续交付

@@ -1,9 +1,28 @@
 ---
 name: draw-diagram
-description: Always use when user asks to create, generate, draw, or design a diagram, flowchart, architecture diagram, ER diagram, sequence diagram, class diagram, network diagram, mockup, wireframe, or UI sketch, or mentions draw.io, drawio, drawoi, .drawio files, or diagram export to PNG/SVG/PDF. Slash invocation: /draw-diagram.
+description: >
+  当用户要求"画图 / 画一张图 / 生成流程图 / 架构图 / 拓扑图 / 时序图 / ER 图 / 类图 /
+  网络图 / 线框图 / 原型图"或英文 "create / generate / draw / design diagram /
+  flowchart / architecture / sequence / class / network / mockup / wireframe /
+  UI sketch" 时触发，也包括用户提到 draw.io / drawio / drawoi / .drawio 文件、
+  或要求把图导出 PNG / SVG / PDF / JPG 时。
+  生成原生 .drawio 文件（mxGraphModel XML），可选导出为 PNG / SVG / PDF / JPG。
+  始终保留源 .drawio 文件以便后续编辑。
+allowed-tools: Read, Write, Bash, Glob
 ---
 
 # Draw.io Diagram Skill
+
+> **跨平台兼容性 checklist**（Windows / macOS / Linux）：
+> 1. **Python 命令名**：示例用 `python3`。Windows 原生若不可识别（python.org installer 未勾"Add to PATH"、Conda / WinPython 等），改用 `python` 或 `py -3`。
+> 2. **路径自定位**：本文档脚本路径用 Python `Path(__file__).resolve().parent` 自定位，不依赖 Bash `realpath`（macOS 默认无、Windows cmd 无）。
+> 3. **可执行检测**：检测 draw.io CLI 时优先 `which drawio` / `where drawio`（PowerShell 用 `Get-Command`），不要用 `command -v`（Windows cmd 无）。
+> 4. **Bash heredoc / 单行多命令**：`<<'EOF'` heredoc 和 `&&` / `||` 短路在 Windows cmd 不支持；Windows 用户优先在 Git Bash / WSL2 中运行。
+> 5. **路径分隔符**：写路径用正斜杠 `/`（多数 Windows API 接受），避免硬编码反斜杠 `\`。
+
+<SUBAGENT-STOP>
+此技能是给协调者读的。**判定你是否子智能体**：如果你的当前角色定义来自 Task prompt 而非 SKILL.md 自然加载（即调用方在 Task 工具的 prompt 字段里塞了 agents/<role>.md 的内容），你就是子智能体；跳过本 SKILL.md 的工作流编排部分，只执行 Task prompt 给你的具体任务。
+</SUBAGENT-STOP>
 
 Generate draw.io diagrams as native `.drawio` files. Optionally export to PNG, SVG, or PDF. Keep the source `.drawio` file alongside the exported file — it is the only way to edit the diagram later.
 
@@ -19,10 +38,10 @@ Generate draw.io diagrams as native `.drawio` files. Optionally export to PNG, S
 
 Check the user's request for a format preference. Examples:
 
-- `/drawio create a flowchart` → `flowchart.drawio`
-- `/drawio png flowchart for login` → `login-flow.drawio.png`
-- `/drawio svg: ER diagram` → `er-diagram.drawio.svg`
-- `/drawio pdf architecture overview` → `architecture-overview.drawio.pdf`
+- "create a flowchart" → `flowchart.drawio`
+- "png flowchart for login" → `login-flow.drawio.png`
+- "svg ER diagram" → `er-diagram.drawio.svg`
+- "pdf architecture overview" → `architecture-overview.drawio.pdf`
 
 If no format is mentioned, just write the `.drawio` file and open it in draw.io. The user can always ask to export later.
 
@@ -168,6 +187,24 @@ Every diagram must have this structure:
 For the complete draw.io XML reference — common styles, edge routing, containers, layers, tags, metadata, dark mode colors, and XML well-formedness rules — use your Read tool to open `xml-reference.md` in this skill's directory (sibling to this `SKILL.md`). Consult it before generating non-trivial diagrams.
 
 The file is bundled with the plugin, so no network fetch is required — this keeps the skill usable in enterprise environments that block `raw.githubusercontent.com`.
+
+## Optional: Python helper script
+
+This plugin ships an optional Python helper at `scripts/drawio_generator.py` (sibling to this SKILL.md, in the plugin's `scripts/` directory). It wraps common patterns. Most callers can generate XML directly via the Write tool and skip the helper. If you want to invoke it, use the standard installed_plugins.json fallback to find the plugin path:
+
+```bash
+DRAWIO_PATH=$(python3 -c "
+import json, os, sys
+p = os.path.expanduser('~/.claude/plugins/installed_plugins.json')
+if os.path.exists(p):
+    d = json.load(open(p))
+    for entries in d.get('plugins', {}).values():
+        for e in (entries if isinstance(entries, list) else [entries]):
+            if isinstance(e, dict) and '/drawio/' in e.get('installPath', ''):
+                print(e['installPath']); sys.exit(0)
+" 2>/dev/null)
+[ -n "$DRAWIO_PATH" ] && python3 "$DRAWIO_PATH/scripts/drawio_generator.py" --help
+```
 
 ## Troubleshooting
 

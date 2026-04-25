@@ -202,11 +202,50 @@ def get(key_path: str, default: Any = None) -> Any:
 
 # ── 子命令实现 ──────────────────────────────────────────
 def cmd_setup() -> int:
-    """交互式向导。最简版本：若 config 不存在则写一份 default 骨架，提示用户后续怎么填。"""
+    """交互式向导。
+    - 若新 config 不存在但旧 config（solution-master / tender-workflow）含 api_keys：自动 migrate。
+    - 若新 config 存在但 api_keys 为空 + 旧 config 有 api_keys：自动 migrate（避免用户手工 setup 写空骨架后 ark key 永远丢）。
+    - 否则若新 config 不存在：写 default 骨架。
+    - 否则：展示当前配置摘要。
+    """
     _ensure_config_dir()
+
+    # ===== auto-migrate 兜底（v2.9 PASS 修订）=====
+    new_keys_empty = True
+    if CONFIG_PATH.exists():
+        try:
+            existing = _load_yaml(CONFIG_PATH)
+            new_keys_empty = not (existing.get("api_keys") or {})
+        except yaml.YAMLError:
+            new_keys_empty = True  # 坏 yaml 视作空，让 migrate 处理
+    legacy_with_keys = []
+    for name, path in LEGACY_CONFIGS.items():
+        if not path.exists():
+            continue
+        try:
+            sibling = _load_yaml(path)
+        except yaml.YAMLError:
+            continue
+        if (sibling.get("api_keys") or {}) or (sibling.get("ai_image") or {}) or (sibling.get("ai_keys") or {}):
+            legacy_with_keys.append((name, path))
+    if (not CONFIG_PATH.exists() or new_keys_empty) and legacy_with_keys:
+        print("[setup] 检测到旧版本 config 含可迁移内容（或新 config api_keys 为空）：")
+        for name, path in legacy_with_keys:
+            print(f"    • {name}: {path}")
+        print("[setup] 自动调用 migrate 合并到统一路径...")
+        print()
+        rc = cmd_migrate()
+        if rc == 0:
+            print()
+            print(f"[setup] 迁移完成。已合并到 {CONFIG_PATH}")
+            print("[setup] 检查配置：python3 ai_image_config.py show")
+            print("[setup] 验证 API keys：python3 ai_image_config.py validate")
+        return rc
+    # ===== auto-migrate 兜底结束 =====
+
     if CONFIG_PATH.exists():
         print(f"配置文件已存在：{CONFIG_PATH}")
-        print("如需重新配置，请直接编辑该文件或使用 /ai-image:set <key> <value>")
+        print("如需重新配置，请直接编辑该文件或运行：python3 ai_image_config.py set <key> <value>")
         print()
         print("当前配置摘要：")
         cmd_show(section=None)
@@ -217,28 +256,12 @@ def cmd_setup() -> int:
     print(f"✓ 已创建配置文件：{CONFIG_PATH}")
     print()
     print("下一步：填入 API keys。最常用的 3 个 provider：")
-    print("  /ai-image:set api_keys.ark        sk-xxx     # 火山方舟")
-    print("  /ai-image:set api_keys.dashscope  sk-xxx     # 阿里云")
-    print("  /ai-image:set api_keys.gemini     xxx        # Google Gemini")
+    print("  python3 ai_image_config.py set api_keys.ark        sk-xxx     # 火山方舟")
+    print("  python3 ai_image_config.py set api_keys.dashscope  sk-xxx     # 阿里云")
+    print("  python3 ai_image_config.py set api_keys.gemini     xxx        # Google Gemini")
     print()
-    print("查看全部可选 provider：  /ai-image:models")
-    print("验证配置：              /ai-image:validate")
-    sibling_with_legacy = []
-    for name, path in LEGACY_CONFIGS.items():
-        if not path.exists():
-            continue
-        try:
-            sibling = _load_yaml(path)
-        except yaml.YAMLError:
-            continue  # 坏 yaml 时跳过，不阻塞 setup 主流程
-        if "api_keys" in sibling or "ai_image" in sibling:
-            sibling_with_legacy.append((name, path))
-    if sibling_with_legacy:
-        print()
-        print("⚠ 以下 config 仍包含 api_keys / ai_image 块（由 ai-image plugin 管理）：")
-        for name, path in sibling_with_legacy:
-            print(f"    • {name}: {path}")
-        print("  运行 /ai-image:migrate 把这两个块整理到 presales-skills/config.yaml。")
+    print("查看全部可选 provider：  python3 ai_image_config.py models")
+    print("验证配置：              python3 ai_image_config.py validate")
     return 0
 
 

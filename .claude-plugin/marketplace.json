@@ -3,7 +3,7 @@
   "owner": { "name": "LiuZiJiao", "email": "tubeliu1@gmail.com", "homepage": "https://github.com/Alauda-io/presales-skills" },
   "metadata": {
     "description": "Presales skills monorepo — solution-master / ppt-master / tender-workflow + shared plugins (drawio, ai-image, anythingllm-mcp, web-access).",
-    "version": "0.2.3"
+    "version": "0.3.0"
   },
   "plugins": [
     {

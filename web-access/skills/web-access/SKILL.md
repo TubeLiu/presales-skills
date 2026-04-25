@@ -1,22 +1,70 @@
 ---
 name: web-access
-description:
-  所有联网操作必须通过此 skill 处理，包括：搜索、网页抓取、登录后操作、网络交互等。
-  触发场景：用户要求搜索信息、查看网页内容、访问需要登录的网站、操作网页界面、抓取社交媒体内容（小红书、微博、推特等）、读取动态渲染页面、以及任何需要真实浏览器环境的网络任务。
+description: >
+  所有联网操作必须通过此 skill 处理，包括：搜索、网页抓取、登录后操作、网络交互、
+  浏览器自动化、CDP 远程调试。
+  触发场景：用户要求搜索信息 / web search / 查看网页内容 / 抓取网页 / 访问需要登录的网站 /
+  操作网页界面 / browser automation / 抓取社交媒体内容（小红书、微博、推特、知乎等）/
+  读取动态渲染页面 / dynamic page / 以及任何需要真实浏览器环境的网络任务。
+allowed-tools: Read, Write, Bash, Glob, WebSearch, WebFetch
 ---
-<!-- F-049: 删除非 Claude Code 标准的 license/github/metadata frontmatter 字段。
-     vendored 来源信息保留在 web-access/.claude-plugin/plugin.json 的 homepage/license/repository 字段
-     （指向上游 eze-is/web-access@v2.5.0），不在 SKILL frontmatter 重复存储。 -->
-
 
 # web-access Skill
+
+> **跨平台兼容性 checklist**（Windows / macOS / Linux）：
+> 1. **Python 命令名**：示例用 `python3`。Windows 不可识别时改 `python` 或 `py -3`。
+> 2. **路径自定位**：本文档所有脚本路径用 §路径自定位 一节的 bootstrap 解析。
+> 3. **可执行检测**：用 `which node` / `where node`（PowerShell 用 `Get-Command`），不用 `command -v`。
+> 4. **Bash heredoc / `&&` / `||`**：Windows cmd 不支持，建议在 Git Bash / WSL2 中运行。
+> 5. **CDP 在 Windows 原生（cmd / PowerShell）best-effort**：依赖 Node 22+ 和 Chrome remote-debugging，Windows 原生设置链路较长。**Windows 用户优先在 Git Bash / WSL2 中运行。**
+
+<SUBAGENT-STOP>
+此技能是给协调者读的。**判定你是否子智能体**：如果你的当前角色定义来自 Task prompt 而非 SKILL.md 自然加载（即调用方在 Task 工具的 prompt 字段里塞了 agents/<role>.md 的内容），你就是子智能体；跳过本 SKILL.md 的工作流编排部分，只执行 Task prompt 给你的具体任务。
+</SUBAGENT-STOP>
+
+## 路径自定位
+
+**首次调用本 skill 的脚本前，先跑一次以下 bootstrap 解析 SKILL_DIR**（后续命令用 `$SKILL_DIR/scripts/...`）：
+
+```bash
+SKILL_DIR=$(python3 -c "
+import json, os, sys
+p = os.path.expanduser('~/.claude/plugins/installed_plugins.json')
+if os.path.exists(p):
+    d = json.load(open(p))
+    for entries in d.get('plugins', {}).values():
+        for e in (entries if isinstance(entries, list) else [entries]):
+            if isinstance(e, dict) and '/web-access/' in e.get('installPath', ''):
+                print(e['installPath'] + '/skills/web-access'); sys.exit(0)
+" 2>/dev/null)
+
+# vercel CLI fallback
+[ -z "$SKILL_DIR" ] && for d in ~/.cursor/skills ~/.agents/skills .cursor/skills .agents/skills; do
+    [ -d "$d/web-access/skills/web-access" ] && SKILL_DIR="$d/web-access/skills/web-access" && break
+    [ -d "$d/web-access" ] && SKILL_DIR="$d/web-access" && break
+done
+
+# 用户预设环境变量
+[ -z "$SKILL_DIR" ] && [ -n "${WEB_ACCESS_PLUGIN_PATH:-}" ] && SKILL_DIR="$WEB_ACCESS_PLUGIN_PATH/skills/web-access"
+
+# dev 态
+[ -z "$SKILL_DIR" ] && [ -d "./web-access/skills/web-access" ] && SKILL_DIR="$(pwd)/web-access/skills/web-access"
+
+if [ -z "$SKILL_DIR" ]; then
+    echo "[ERROR] 找不到 web-access skill 安装位置。" >&2
+    echo "请设置：export WEB_ACCESS_PLUGIN_PATH=/path/to/web-access" >&2
+    exit 1
+fi
+```
+
+**错误恢复 protocol**：bootstrap 退出 1 时不要重试，把 stderr 转述给用户并请求 `/plugin install web-access@presales-skills` 或手工 export 环境变量。
 
 ## 前置检查
 
 在开始联网操作前，先检查 CDP 模式可用性：
 
 ```bash
-node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs"
+node "$SKILL_DIR/scripts/check-deps.mjs"
 ```
 
 未通过时引导用户完成设置：
@@ -72,7 +120,7 @@ node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs"
 用户指向**本人访问过的页面**（"我之前看的那个讲 X 的文章"、"上次打开过的 XX 面板"）或**组织内部系统**（"我们的 XX 平台"、"公司那个 YY 系统"等公网搜不到的目标）时，检索本地 Chrome 书签/历史：
 
 ```bash
-node "${CLAUDE_SKILL_DIR}/scripts/find-url.mjs" [关键词...] [--only bookmarks|history] [--limit N] [--since 1d|7h|YYYY-MM-DD] [--sort recent|visits]
+node "$SKILL_DIR/scripts/find-url.mjs" [关键词...] [--only bookmarks|history] [--limit N] [--since 1d|7h|YYYY-MM-DD] [--sort recent|visits]
 ```
 
 关键词空格分词、多词 AND，匹配 title + url（可省略）；`--since` / `--sort` 仅作用于历史；默认按最近访问倒序，`--sort visits` 按访问次数排序（适合"高频访问的网站"这类场景）。
@@ -96,7 +144,7 @@ node "${CLAUDE_SKILL_DIR}/scripts/find-url.mjs" [关键词...] [--only bookmarks
 ### 启动
 
 ```bash
-node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs"
+node "$SKILL_DIR/scripts/check-deps.mjs"
 ```
 
 脚本会依次检查 Node.js、Chrome 端口，并确保 Proxy 已连接（未运行则自动启动并等待）。Proxy 启动后持续运行。
