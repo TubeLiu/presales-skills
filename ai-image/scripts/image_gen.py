@@ -291,7 +291,17 @@ def _load_unified_config_into_env() -> None:
             config = yaml.safe_load(fh) or {}
         with registry_path.open("r", encoding="utf-8") as fh:
             registry = yaml.safe_load(fh) or {}
-    except yaml.YAMLError:
+    except yaml.YAMLError as e:
+        # F-026: 不静默吞错 — 让用户知道为什么 backend 突然 401（config 没桥接到 env）
+        print(
+            f"[ai-image] WARN: 无法解析 {config_path} 或 {registry_path}: {e}. "
+            f"跳过 config → env 桥接；API key 必须通过 env var 直接提供。",
+            file=sys.stderr,
+        )
+        return
+    except OSError as e:
+        # 读权限异常等
+        print(f"[ai-image] WARN: 读取 config/registry 失败: {e}", file=sys.stderr)
         return
 
     api_keys = config.get("api_keys") or {}

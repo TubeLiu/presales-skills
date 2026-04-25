@@ -11,6 +11,10 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
+// F-025: keepalive agents 复用 TCP 连接，避免每次请求新建（4 个 maxSockets 足够 MCP 单客户端用量）
+const httpAgent = new http.Agent({ keepAlive: true, maxSockets: 4 });
+const httpsAgent = new https.Agent({ keepAlive: true, maxSockets: 4 });
+
 // Read unified config as fallback to env vars.
 // Precedence: env var > first-found config file (presales-skills / tender-workflow / solution-master) > default.
 // Multi-source: users who already configured via /twc or /solution-config don't need to re-enter keys.
@@ -75,26 +79,39 @@ function sendError(id, code, message) {
 function apiRequest(method, path, body) {
   return new Promise((resolve, reject) => {
     const url = new URL(BASE_URL + path);
+    const lib = url.protocol === 'https:' ? https : http;
     const options = {
       hostname: url.hostname,
       port: url.port || (url.protocol === 'https:' ? 443 : 80),
       path: url.pathname + url.search,
       method,
+      timeout: 30000,  // F-025: socket-level timeout (30s)
       headers: {
         'Authorization': `Bearer ${API_KEY}`,
         'Content-Type': 'application/json',
       },
+      agent: url.protocol === 'https:' ? httpsAgent : httpAgent,  // F-025: keepalive
     };
-    const lib = url.protocol === 'https:' ? https : http;
     const req = lib.request(options, (res) => {
       let data = '';
       res.on('data', chunk => data += chunk);
       res.on('end', () => {
+        // F-010: 4xx/5xx 状态码必须分类报错，避免 Claude 拿到 HTML 错误页当 JSON 解
+        if (res.statusCode >= 400) {
+          const hint =
+            res.statusCode === 401 ? '认证失败 — ANYTHINGLLM_API_KEY 错误或已过期' :
+            res.statusCode === 404 ? '端点不存在 — 检查 ANYTHINGLLM_BASE_URL / workspace slug' :
+            res.statusCode >= 500  ? 'AnythingLLM 服务异常 — 检查服务状态' :
+            `HTTP ${res.statusCode}`;
+          reject(new Error(`[AnythingLLM ${res.statusCode}] ${hint}: ${data.substring(0, 200)}`));
+          return;
+        }
         try { resolve(JSON.parse(data)); }
         catch (e) { resolve(data); }
       });
     });
-    req.on('error', reject);
+    req.on('error', err => reject(new Error(`Request failed: ${err.message}`)));
+    req.on('timeout', () => req.destroy(new Error('Request timeout after 30s')));
     if (body) req.write(JSON.stringify(body));
     req.end();
   });

@@ -23,6 +23,7 @@ from image_backends.backend_common import (
     require_api_key,
     resolve_output_path,
     retry_delay,
+    sanitize_error,
     save_image_bytes,
 )
 
@@ -200,8 +201,8 @@ def generate(prompt: str, negative_prompt: str = None,
                 break
             limited = is_rate_limit_error(exc)
             delay = retry_delay(attempt, rate_limited=limited)
-            label = "Rate limit hit" if limited else f"Error: {exc}"
+            label = "Rate limit hit" if limited else f"Error: {sanitize_error(exc)}"
             print(f"\n  [WARN] {label}. Retrying in {delay}s...")
             time.sleep(delay)
 
-    raise RuntimeError(f"Failed after {max_retries + 1} attempts. Last error: {last_error}")
+    raise RuntimeError(f"Failed after {max_retries + 1} attempts. Last error: {sanitize_error(last_error)}")

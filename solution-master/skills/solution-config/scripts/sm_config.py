@@ -84,6 +84,11 @@ def _write_yaml(path: Path, data: Dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+    # F-011: API key 明文存盘的最低权限保护（同机多用户可见性）；非 POSIX FS 失败时 silent 忽略
+    try:
+        os.chmod(path, 0o600)
+    except OSError:
+        pass
 
 
 def _deep_get(d: Dict, dotted_key: str, default: Any = None) -> Any:

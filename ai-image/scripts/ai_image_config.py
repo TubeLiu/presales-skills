@@ -116,12 +116,26 @@ def _save_yaml(path: Path, data: dict[str, Any]) -> None:
     for attempt in range(2):
         try:
             tmp_path.replace(path)
-            return
+            break
         except PermissionError:
             if attempt == 0:
                 time.sleep(0.1)
             else:
                 raise
+    # F-011: API key 明文存盘的最低权限保护（同机多用户可见性）；非 POSIX FS（Windows/FAT）失败时 silent 忽略
+    try:
+        os.chmod(path, 0o600)
+    except OSError:
+        pass
+
+
+def _mask_api_key(value: str) -> str:
+    """Industry-standard 4+4 mask. Used by cmd_show / cmd_migrate (F-014) / cmd_set."""
+    if not isinstance(value, str) or not value:
+        return value
+    if len(value) >= 8:
+        return value[:4] + "***" + value[-4:]
+    return "***"
 
 
 def _deep_get(d: dict, key_path: str) -> Any:
@@ -203,10 +217,9 @@ def cmd_show(section: Optional[str]) -> int:
         return 1
 
     def _mask_api_keys_inplace(d: dict) -> None:
-        """对 dict 顶层的 api_keys 子树做 mask。在原 dict 上 mutate。"""
+        """对 dict 顶层的 api_keys 子树做 mask（复用 module-level _mask_api_key，F-014）。"""
         for k, v in (d.get("api_keys") or {}).items():
-            if v and isinstance(v, str):
-                d["api_keys"][k] = v[:6] + "…(masked)…" + v[-4:] if len(v) > 10 else "●●●●"
+            d["api_keys"][k] = _mask_api_key(v)
 
     if section:
         data = cfg.get(section)
@@ -441,7 +454,15 @@ def cmd_migrate() -> int:
             conflicts[k]["tender-workflow (retained)"] = merged["api_keys"][k]
         elif k not in merged["api_keys"]:
             merged["api_keys"][k] = v
+    # F-014: conflicts 的 key 名是固定字符串 "tender-workflow (retained)" 与 "solution-master"；
+    #        与上方 L440-441 的 dict 写入对齐。不要简写为 "tw" / "sm"，否则 v.get(...) 拿不到值。
     if conflicts:
+        print(f"⚠  检测到 {len(conflicts)} 个 API key 冲突（保留 tw 值，丢弃 sm 值）：", file=sys.stderr)
+        for k, v in conflicts.items():
+            tw_val = _mask_api_key(v.get("tender-workflow (retained)", ""))
+            sm_val = _mask_api_key(v.get("solution-master", ""))
+            print(f"  - api_keys.{k}: tw={tw_val} (使用), sm={sm_val} (丢弃)", file=sys.stderr)
+        print(f"  如需使用 sm 值，请手工编辑 {CONFIG_PATH} 后跑 /ai-image-config-validate", file=sys.stderr)
         merged["api_keys_conflicts"] = conflicts
 
     # 2. 字段映射迁移

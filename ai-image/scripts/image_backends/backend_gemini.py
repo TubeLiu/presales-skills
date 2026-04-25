@@ -25,6 +25,7 @@ from image_backends.backend_common import (
     normalize_image_size,
     resolve_output_path,
     retry_delay,
+    sanitize_error,
     save_image_bytes,
 )
 
@@ -219,10 +220,10 @@ def generate(prompt: str, negative_prompt: str = None,
                 time.sleep(delay)
             elif attempt < max_retries:
                 delay = retry_delay(attempt, rate_limited=False)
-                print(f"\n  [WARN] Error (attempt {attempt + 1}/{max_retries + 1}): {e}. "
+                print(f"\n  [WARN] Error (attempt {attempt + 1}/{max_retries + 1}): {sanitize_error(e)}. "
                       f"Retrying in {delay}s...")
                 time.sleep(delay)
             else:
                 break
 
-    raise RuntimeError(f"Failed after {max_retries + 1} attempts. Last error: {last_error}")
+    raise RuntimeError(f"Failed after {max_retries + 1} attempts. Last error: {sanitize_error(last_error)}")

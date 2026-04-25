@@ -9,17 +9,25 @@ ai-image 是 presales-skills marketplace 的共享 plugin，为 solution-master 
 
 ## 如何调用
 
-### 直接调用（需已 `/ai-image-config-setup` 配好 API key）
+### 跨 plugin 调用方推荐用法（solution-master / ppt-master / tender-workflow 跨 plugin 调用走此风格）
 
 ```bash
-# YAML 注册表风格（solution-master / tender-workflow 惯用）
-python3 ${CLAUDE_SKILL_DIR}/../../scripts/image_gen.py "用户提示词" --aspect_ratio 16:9 --image_size 1K -o /path/to/output/
+# YAML 注册表风格（默认 provider 来自 ~/.config/presales-skills/config.yaml）
+image-gen "用户提示词" --aspect_ratio 16:9 --image_size 1K -o /path/to/output/
 
-# env-var 风格（ppt-master 惯用，image_gen.py 原生支持）
-IMAGE_BACKEND=ark python3 ${CLAUDE_SKILL_DIR}/../../scripts/image_gen.py "用户提示词" -o /path/to/output/
+# env-var 风格（显式指定 backend）
+IMAGE_BACKEND=ark image-gen "用户提示词" -o /path/to/output/
 ```
 
-**推荐**：通过 unified config 指定 `IMAGE_BACKEND`，或用 `--backend <name>` 显式指定。
+`image-gen` 是 ai-image plugin 的 `bin/` 入口（`/reload-plugins` 后自动上 PATH），跨 plugin 必须走此命令——参见下方 §跨 plugin 调用说明。
+
+### 插件内部直接调用（仅 ai-image 自家维护脚本时使用，不推荐外部消费方）
+
+```bash
+python3 ${CLAUDE_SKILL_DIR}/../../scripts/image_gen.py "用户提示词" --aspect_ratio 16:9 --image_size 1K -o /path/to/output/
+```
+
+> ⚠ 外部 plugin 不能复制此风格——`${CLAUDE_SKILL_DIR}` 在它们的 SKILL 里指向各自的 skill 目录而非 ai-image。跨 plugin 必须走 `image-gen` bin 命令。
 
 ### Provider 选择策略
 
@@ -70,6 +78,8 @@ image-gen "<prompt>" --aspect_ratio 16:9 --image_size 1K -o /path/to/output/
 ai-image-config models
 ai-image-config set api_keys.ark <key>
 ```
+
+**详见上方 §跨 plugin 调用方推荐用法 vs §插件内部直接调用 的对比。**
 
 **为什么用 bin/ 而不是 `${CLAUDE_PLUGIN_ROOT}/../ai-image/scripts/...` 相对路径**：
 

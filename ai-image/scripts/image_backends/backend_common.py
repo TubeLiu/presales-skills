@@ -5,6 +5,7 @@ Shared helpers for image generation backends.
 
 import io
 import os
+import re
 import time
 
 import requests
@@ -201,6 +202,31 @@ def http_error(response: requests.Response, label: str) -> RuntimeError:
     if len(body) > 500:
         body = body[:500] + "..."
     return RuntimeError(f"{label} failed ({response.status_code}): {body}")
+
+
+_SANITIZE_PATTERNS = [
+    # `Bearer <token>` (auth header value): keep prefix, mask token (≥6 chars to avoid HTTP date tokens)
+    (re.compile(r'(?i)(bearer\s+)[A-Za-z0-9._\-]{6,}'), r'\1***'),
+    # API key shapes with common prefixes (≥16 chars to avoid false positives like "sk-1")
+    (re.compile(r'\b(sk|ak|sf|rk|gsk|pk)[-_][A-Za-z0-9._\-]{16,}\b'), '***'),
+    # Header lines / kv pairs: `Authorization: ...`, `X-API-Key: ...`, `api_key=...`, `apikey: ...`
+    (re.compile(r'(?i)(authorization|x-api-key|api[-_]?key)\s*[:=]\s*[^\s,"\']+'), r'\1=***'),
+    # Query string: `?api_key=foo` / `&token=bar` / `&auth=baz`
+    (re.compile(r'(?i)([?&](api[-_]?key|key|token|auth)=)[^&\s]+'), r'\1***'),
+]
+
+
+def sanitize_error(exc_or_msg) -> str:
+    """Mask common API key / bearer token shapes from exception strings before logging.
+
+    Conservative over-mask is acceptable here (security > debug UX); HTTP libraries
+    routinely leak the request URL + Authorization header into exception strings,
+    and retry/error logs go straight to user-visible stderr.
+    """
+    s = str(exc_or_msg)
+    for pat, repl in _SANITIZE_PATTERNS:
+        s = pat.sub(repl, s)
+    return s
 
 
 def poll_json(
