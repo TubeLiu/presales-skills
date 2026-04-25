@@ -144,7 +144,7 @@ digraph planning {
 计划获批后，按以下方式执行：
 
 1. 按任务顺序（考虑依赖关系）逐个执行
-2. 每个任务：knowledge-retrieval → image-generation → solution-writing → spec-reviewing → quality-reviewing
+2. 每个任务：knowledge-retrieval → ai-image (image-gen) → solution-writing → spec-reviewing → quality-reviewing
 3. 所有任务完成后最终组装
 
 ## 红线

@@ -53,7 +53,7 @@ digraph solution_master {
             label="knowledge-retrieval\n三层并行检索\n(本地KB + AnythingLLM + Web)\n+ 智能融合评分"];
 
         image_planning [shape=box, style=filled, fillcolor="#E2D9F3",
-            label="image-generation\n上下文感知选图\n(draw.io / AI / 本地 / Web / 占位符)"];
+            label="ai-image\n上下文感知选图\n(draw.io / AI / 本地 / Web / 占位符)"];
 
         writing [shape=box, style=filled, fillcolor="#FFF3CD",
             label="solution-writing\n分派 writer 子智能体\n撰写章节内容"];

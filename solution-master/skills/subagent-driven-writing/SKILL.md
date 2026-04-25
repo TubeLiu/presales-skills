@@ -55,7 +55,7 @@ digraph process {
     subgraph cluster_per_task {
         label="每个章节任务";
         "前置：knowledge-retrieval" [shape=box];
-        "前置：image-generation（如需配图）" [shape=box];
+        "前置：ai-image image-gen（如需配图）" [shape=box];
         "分派撰写子智能体 (./writer-prompt.md)" [shape=box];
         "撰写子智能体有疑问?" [shape=diamond];
         "回答问题，提供上下文" [shape=box];
@@ -74,8 +74,8 @@ digraph process {
     "最终组装 + docx-formatting (如需)" [shape=box style=filled fillcolor=lightgreen];
 
     "读取计划，提取所有任务的完整文本，记录上下文，创建 TodoWrite" -> "前置：knowledge-retrieval";
-    "前置：knowledge-retrieval" -> "前置：image-generation（如需配图）";
-    "前置：image-generation（如需配图）" -> "分派撰写子智能体 (./writer-prompt.md)";
+    "前置：knowledge-retrieval" -> "前置：ai-image image-gen（如需配图）";
+    "前置：ai-image image-gen（如需配图）" -> "分派撰写子智能体 (./writer-prompt.md)";
     "分派撰写子智能体 (./writer-prompt.md)" -> "撰写子智能体有疑问?";
     "撰写子智能体有疑问?" -> "回答问题，提供上下文" [label="是"];
     "回答问题，提供上下文" -> "分派撰写子智能体 (./writer-prompt.md)";
@@ -132,7 +132,7 @@ digraph process {
 ## 红线
 
 **绝不：**
-- 跳过 knowledge-retrieval（或在配图需求非空时跳过 image-generation）直接撰写
+- 跳过 knowledge-retrieval（或在配图需求非空时跳过 ai-image plugin 的 `image-gen` 命令）直接撰写
 - 跳过审查（spec-reviewing 或 quality-reviewing）
 - 带着未修复的问题继续
 - 并行分派多个撰写子智能体写同一章节（会冲突）
@@ -167,7 +167,7 @@ digraph process {
 - **solution-brainstorming** - 需求提取
 - **solution-planning** - 任务分解与验收标准
 - **knowledge-retrieval** - 每个任务撰写前的素材检索
-- **image-generation** - 每个任务撰写前的配图规划
+- **ai-image (image-gen)** - 每个任务撰写前的配图规划（独立 plugin，通过 bin 命令调用）
 
 **并行使用：**
 - **solution-writing** - 领域特有执行流程（draw.io 检查、Phase 1/2/3、最终组装），本技能提供其子智能体驱动骨架

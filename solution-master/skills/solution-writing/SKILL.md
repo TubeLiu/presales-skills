@@ -23,7 +23,7 @@ digraph solution_writing {
         style=dashed;
 
         "分派知识检索" [shape=box, label="knowledge-retrieval\n多源检索+智能融合"];
-        "分派配图规划" [shape=box, label="image-generation\n上下文感知选图"];
+        "分派配图规划" [shape=box, label="ai-image\n上下文感知选图"];
         "分派撰写子智能体" [shape=box, label="分派 writer 子智能体\n(agents/writer.md)"];
         "撰写子智能体有疑问?" [shape=diamond];
         "回答问题" [shape=box];
@@ -102,14 +102,14 @@ digraph solution_writing {
 
 1. 调用 knowledge-retrieval 技能，传入任务的 KB 检索关键词
 2. **检查任务的"配图需求"字段**：
-   - 如果配图需求明确表示需要图片（即字段值不是"无"、"无需配图"、"无配图需求"、"N/A"等否定性表述），**必须**调用 image-generation 技能
-   - image-generation 产出一个"配图方案"（每张图的描述 + 图片路径或占位符）
-   - 如果 image-generation 调用失败（如 API 不可用），配图方案中使用标准占位符格式，不阻塞撰写流程
+   - 如果配图需求明确表示需要图片（即字段值不是"无"、"无需配图"、"无配图需求"、"N/A"等否定性表述），**必须**调用 ai-image plugin 的 `image-gen` 命令
+   - `image-gen` 产出一个"配图方案"（每张图的描述 + 图片路径或占位符）
+   - 如果 `image-gen` 调用失败（如 API 不可用），配图方案中使用标准占位符格式，不阻塞撰写流程
    - 如果配图需求明确为"无"或等价否定表述，跳过此步骤
 3. 收集检索结果和配图方案（如有）
 
 <HARD-GATE>
-如果任务的"配图需求"字段表示需要图片（非"无"、"无需配图"、"无配图需求"、"N/A"），且未调用 image-generation，则不得进入 Phase 2（分派撰写子智能体）。
+如果任务的"配图需求"字段表示需要图片（非"无"、"无需配图"、"无配图需求"、"N/A"），且未调用 ai-image plugin 的 `image-gen` 命令，则不得进入 Phase 2（分派撰写子智能体）。
 </HARD-GATE>
 
 **配图方案产出格式**（传给 writer 子智能体）：
@@ -198,7 +198,7 @@ writer 子智能体必须将上述每个图片引用/占位符插入到对应段
 
 ## 配图方案
 
-[image-generation 的配图方案，如本任务无配图需求则写"本任务无配图需求"]
+[ai-image (image-gen) 的配图方案，如本任务无配图需求则写"本任务无配图需求"]
 
 ## 输出要求
 

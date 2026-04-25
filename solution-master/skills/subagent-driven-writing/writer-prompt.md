@@ -32,7 +32,7 @@ Task tool (writer):
 
     ## 配图方案
 
-    [image-generation 的配图方案；若本任务无配图需求则写"本任务无配图需求"]
+    [ai-image (image-gen) 的配图方案；若本任务无配图需求则写"本任务无配图需求"]
 
     工作目录：[project_root]
 

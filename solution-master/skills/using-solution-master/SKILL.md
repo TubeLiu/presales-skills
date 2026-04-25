@@ -98,7 +98,7 @@ digraph skill_flow {
 | 章节撰写完成，需要内容正确性审查 | **spec-reviewing** |
 | 内容审查通过，需要写作质量审查 | **quality-reviewing** |
 | 头脑风暴时获取领域知识、撰写前检索相关内容 | **knowledge-retrieval** |
-| 章节需要配图 | **image-generation** |
+| 章节需要配图 | **ai-image plugin 的 `image-gen` 命令**（独立 plugin） |
 | 需要输出 DOCX 格式文件 | **docx-formatting** |
 | 执行多章节撰写任务并想要子智能体隔离、双阶段审查的工作流 | **subagent-driven-writing** |
 | 需要浏览器/搜索等联网操作 | **web-access**（独立 plugin） |
@@ -122,7 +122,7 @@ digraph skill_flow {
 4. **未修复不可继续** — 审查发现的问题必须修复并重新通过审查后，才能进入下一个任务
 5. **不可跳过头脑风暴** — 任何方案撰写前必须经过 solution-brainstorming 提取需求，无论需求看起来多明确
 6. **不可跳过知识检索** — 撰写前必须执行 knowledge-retrieval，检索结果必须反映在撰写子智能体拿到的素材中
-7. **不可跳过配图规划** — 撰写前必须检查计划中的配图需求字段，若需要配图则必须执行 image-generation 技能生成配图方案并传给撰写子智能体（配图需求明确为"无"的任务除外）。ASCII 文本图表不能替代正式配图
+7. **不可跳过配图规划** — 撰写前必须检查计划中的配图需求字段，若需要配图则必须调用 ai-image plugin 的 `image-gen` 命令生成配图方案并传给撰写子智能体（配图需求明确为"无"的任务除外）。ASCII 文本图表不能替代正式配图
 
 不要以"太简单"、"已经很清楚"、"自己检查过"、"先写完再说"等借口绕过任何规则。
 </EXTREMELY-IMPORTANT>
