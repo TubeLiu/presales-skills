@@ -11,6 +11,7 @@ CLI 用法：
     python3 sm_config.py set <key> <value>
     python3 sm_config.py validate
     python3 sm_config.py models [provider]
+    python3 sm_config.py migrate              # F-048: 转发到 /ai-image-config-migrate
 """
 
 import json
@@ -506,6 +507,16 @@ def main():
     elif cmd == "models":
         provider_filter = sys.argv[2] if len(sys.argv) > 2 else None
         print(_render_models(provider_filter))
+
+    elif cmd == "migrate":
+        # F-048: 转发到 ai-image 统一 migrate（避免重复实现合并逻辑；保 /solution-config migrate 命令空间对称）
+        import subprocess
+        print("solution-config migrate 已委托给 /ai-image-config-migrate（统一合并入口）", file=sys.stderr)
+        ai_image_config = shutil.which("ai-image-config")
+        if not ai_image_config:
+            print("错误：ai-image-config 命令未找到。请确保 ai-image plugin 已安装。", file=sys.stderr)
+            sys.exit(1)
+        sys.exit(subprocess.call([ai_image_config, "migrate"]))
 
     else:
         print(f"未知命令: {cmd}", file=sys.stderr)

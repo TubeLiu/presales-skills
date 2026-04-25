@@ -238,8 +238,11 @@ def cmd_show(section: Optional[str]) -> int:
     return 0
 
 
-def cmd_set(key_path: str, value: str) -> int:
-    """按 dotted path 设值。简单类型推断：true/false/null/数字/字符串"""
+def cmd_set(key_path: str, value: str, force: bool = False) -> int:
+    """按 dotted path 设值。简单类型推断：true/false/null/数字/字符串
+
+    F-052: api_keys.* 长度 < 4 警告（仍写入，warn-only；--force 跳过警告）
+    """
     typed = value
     if value.lower() == "true":
         typed = True
@@ -256,10 +259,23 @@ def cmd_set(key_path: str, value: str) -> int:
             except ValueError:
                 pass  # keep string
 
+    # F-052: API key 长度校验（warn-only，不阻塞写入）
+    if (
+        key_path.startswith("api_keys.")
+        and isinstance(typed, str)
+        and len(typed) < 4
+        and not force
+    ):
+        print(
+            f"⚠  {key_path} 的值长度 {len(typed)} 字符，看起来不像合法 API key。"
+            f"已写入；下次加 --force 可消除此提示。",
+            file=sys.stderr,
+        )
+
     cfg = load_config() or dict(DEFAULT_CONFIG)
     _deep_set(cfg, key_path, typed)
     save_config(cfg)
-    display_val = "●●●●●●" if key_path.startswith("api_keys.") and typed else typed
+    display_val = _mask_api_key(typed) if key_path.startswith("api_keys.") and isinstance(typed, str) and typed else typed
     print(f"✓ {key_path} = {display_val}")
     return 0
 
@@ -537,6 +553,7 @@ def main() -> int:
     p_set = sub.add_parser("set", help="设置配置项")
     p_set.add_argument("key")
     p_set.add_argument("value")
+    p_set.add_argument("--force", action="store_true", help="F-052: 跳过 API key 长度校验警告")
     p_models = sub.add_parser("models", help="展示模型注册表")
     p_models.add_argument("provider", nargs="?", default=None)
     p_models.add_argument("--refresh", action="store_true")
@@ -554,7 +571,7 @@ def main() -> int:
     if args.cmd == "show":
         return cmd_show(args.section)
     if args.cmd == "set":
-        return cmd_set(args.key, args.value)
+        return cmd_set(args.key, args.value, force=args.force)
     if args.cmd == "models":
         return cmd_models(args.provider, refresh=args.refresh)
     if args.cmd == "add-model":

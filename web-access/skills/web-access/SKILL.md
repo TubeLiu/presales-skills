@@ -1,14 +1,13 @@
 ---
 name: web-access
-license: MIT
-github: https://github.com/eze-is/web-access
 description:
   所有联网操作必须通过此 skill 处理，包括：搜索、网页抓取、登录后操作、网络交互等。
   触发场景：用户要求搜索信息、查看网页内容、访问需要登录的网站、操作网页界面、抓取社交媒体内容（小红书、微博、推特等）、读取动态渲染页面、以及任何需要真实浏览器环境的网络任务。
-metadata:
-  author: 一泽Eze
-  version: "2.5.0"
 ---
+<!-- F-049: 删除非 Claude Code 标准的 license/github/metadata frontmatter 字段。
+     vendored 来源信息保留在 web-access/.claude-plugin/plugin.json 的 homepage/license/repository 字段
+     （指向上游 eze-is/web-access@v2.5.0），不在 SKILL frontmatter 重复存储。 -->
+
 
 # web-access Skill
 

@@ -174,3 +174,11 @@ Solution Master 的防脱轨依赖两层相互加强的机制：
 - 知识库检索结果写入检索报告（展示给用户），**方案正文中禁止出现任何括号形式的来源标注**
 - 全中文工作语言（SKILL.md、提示词、产出物均为中文）
 - 输出格式：Markdown（默认）或 DOCX（遵循上述字体规范）
+
+## HARD-GATE 约定（F-050）
+
+部分 SKILL（如 `solution-brainstorming`）使用 `<HARD-GATE>` 标记不可绕过的检查点。该约定 vendored from upstream superpowers-zh，语义为 "硬性闸门 — 不能合理化绕过"。Claude 在解析这些标记时应严格遵守，不得 short-circuit。
+
+例如 `solution-brainstorming/SKILL.md` 用 `<HARD-GATE>` 框住"在你展示设计方案并获得用户批准之前，不要调用任何撰写技能"——即使用户表达了"赶紧开始写"的意愿，Claude 也不能跳过头脑风暴阶段。
+
+`<HARD-GATE>` 标签**不是** Claude Code 的官方机制；它依赖 SKILL.md 自身的 prompt engineering 强制约束 + 子智能体上下文隔离。如要强化，可在 `subagent-driven-writing/SKILL.md` 的子智能体 prompt 模板中重复同样段落。
