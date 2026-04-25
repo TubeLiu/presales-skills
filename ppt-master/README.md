@@ -5,7 +5,7 @@ PPT Master 是 [presales-skills](https://github.com/Alauda-io/presales-skills) m
 [English](./README.md) | [中文](./README_CN.md)
 
 <p align="center">
-  <img src="https://placeholder/hero-liziqi-colors.gif" alt="Demo: 12-page PPT generated end-to-end" width="860" />
+  <img src="https://github.com/Alauda-io/presales-skills/releases/download/ppt-master-assets-v1/hero-liziqi-colors.gif" alt="Demo: 12-page PPT generated end-to-end" width="860" />
 </p>
 
 <p align="center">
@@ -76,16 +76,16 @@ If the AI loses context mid-flow, ask it to read `skills/ppt-master/SKILL.md`.
 
 <table>
   <tr>
-    <td align="center"><img src="https://placeholder/preview_magazine_garden.png" alt="Magazine style" width="400"/><br/><sub><b>Magazine</b> — warm earthy tones, photo-rich layout</sub></td>
-    <td align="center"><img src="https://placeholder/preview_academic_medical.png" alt="Academic style" width="400"/><br/><sub><b>Academic</b> — structured research format, data-driven</sub></td>
+    <td align="center"><img src="https://github.com/Alauda-io/presales-skills/releases/download/ppt-master-assets-v1/preview_magazine_garden.png" alt="Magazine style" width="400"/><br/><sub><b>Magazine</b> — warm earthy tones, photo-rich layout</sub></td>
+    <td align="center"><img src="https://github.com/Alauda-io/presales-skills/releases/download/ppt-master-assets-v1/preview_academic_medical.png" alt="Academic style" width="400"/><br/><sub><b>Academic</b> — structured research format, data-driven</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="https://placeholder/preview_dark_art_mv.png" alt="Dark art style" width="400"/><br/><sub><b>Dark Art</b> — cinematic dark background, gallery aesthetic</sub></td>
-    <td align="center"><img src="https://placeholder/preview_nature_wildlife.png" alt="Nature style" width="400"/><br/><sub><b>Nature Documentary</b> — immersive photography, minimal UI</sub></td>
+    <td align="center"><img src="https://github.com/Alauda-io/presales-skills/releases/download/ppt-master-assets-v1/preview_dark_art_mv.png" alt="Dark art style" width="400"/><br/><sub><b>Dark Art</b> — cinematic dark background, gallery aesthetic</sub></td>
+    <td align="center"><img src="https://github.com/Alauda-io/presales-skills/releases/download/ppt-master-assets-v1/preview_nature_wildlife.png" alt="Nature style" width="400"/><br/><sub><b>Nature Documentary</b> — immersive photography, minimal UI</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="https://placeholder/preview_tech_claude_plans.png" alt="Tech / SaaS style" width="400"/><br/><sub><b>Tech / SaaS</b> — clean white cards, pricing table layout</sub></td>
-    <td align="center"><img src="https://placeholder/preview_launch_xiaomi.png" alt="Product launch style" width="400"/><br/><sub><b>Product Launch</b> — high contrast, bold specs highlight</sub></td>
+    <td align="center"><img src="https://github.com/Alauda-io/presales-skills/releases/download/ppt-master-assets-v1/preview_tech_claude_plans.png" alt="Tech / SaaS style" width="400"/><br/><sub><b>Tech / SaaS</b> — clean white cards, pricing table layout</sub></td>
+    <td align="center"><img src="https://github.com/Alauda-io/presales-skills/releases/download/ppt-master-assets-v1/preview_launch_xiaomi.png" alt="Product launch style" width="400"/><br/><sub><b>Product Launch</b> — high contrast, bold specs highlight</sub></td>
   </tr>
 </table>
 

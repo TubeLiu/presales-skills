@@ -5,7 +5,7 @@ PPT Master 是 [presales-skills](https://github.com/Alauda-io/presales-skills) m
 [English](./README.md) | [中文](./README_CN.md)
 
 <p align="center">
-  <img src="https://placeholder/hero-liziqi-colors.gif" alt="演示：端到端生成 12 页 PPT" width="860" />
+  <img src="https://github.com/Alauda-io/presales-skills/releases/download/ppt-master-assets-v1/hero-liziqi-colors.gif" alt="演示：端到端生成 12 页 PPT" width="860" />
 </p>
 
 <p align="center">
@@ -76,16 +76,16 @@ AI：好的，先确认设计规范：
 
 <table>
   <tr>
-    <td align="center"><img src="https://placeholder/preview_magazine_garden.png" alt="杂志风" width="400"/><br/><sub><b>杂志风</b> — 暖色调，大图排版，生活方式感</sub></td>
-    <td align="center"><img src="https://placeholder/preview_academic_medical.png" alt="学术风" width="400"/><br/><sub><b>学术风</b> — 严谨结构，数据图表，论文答辩场景</sub></td>
+    <td align="center"><img src="https://github.com/Alauda-io/presales-skills/releases/download/ppt-master-assets-v1/preview_magazine_garden.png" alt="杂志风" width="400"/><br/><sub><b>杂志风</b> — 暖色调，大图排版，生活方式感</sub></td>
+    <td align="center"><img src="https://github.com/Alauda-io/presales-skills/releases/download/ppt-master-assets-v1/preview_academic_medical.png" alt="学术风" width="400"/><br/><sub><b>学术风</b> — 严谨结构，数据图表，论文答辩场景</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="https://placeholder/preview_dark_art_mv.png" alt="暗色艺术风" width="400"/><br/><sub><b>暗色艺术风</b> — 电影感深色背景，美术馆陈列感</sub></td>
-    <td align="center"><img src="https://placeholder/preview_nature_wildlife.png" alt="自然风" width="400"/><br/><sub><b>自然纪录风</b> — 沉浸式摄影，简洁信息层级</sub></td>
+    <td align="center"><img src="https://github.com/Alauda-io/presales-skills/releases/download/ppt-master-assets-v1/preview_dark_art_mv.png" alt="暗色艺术风" width="400"/><br/><sub><b>暗色艺术风</b> — 电影感深色背景，美术馆陈列感</sub></td>
+    <td align="center"><img src="https://github.com/Alauda-io/presales-skills/releases/download/ppt-master-assets-v1/preview_nature_wildlife.png" alt="自然风" width="400"/><br/><sub><b>自然纪录风</b> — 沉浸式摄影，简洁信息层级</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="https://placeholder/preview_tech_claude_plans.png" alt="科技 / SaaS 风" width="400"/><br/><sub><b>科技 / SaaS 风</b> — 白底卡片，定价表格，产品说明书</sub></td>
-    <td align="center"><img src="https://placeholder/preview_launch_xiaomi.png" alt="发布会风" width="400"/><br/><sub><b>发布会风</b> — 高对比度，参数突出，发布会感</sub></td>
+    <td align="center"><img src="https://github.com/Alauda-io/presales-skills/releases/download/ppt-master-assets-v1/preview_tech_claude_plans.png" alt="科技 / SaaS 风" width="400"/><br/><sub><b>科技 / SaaS 风</b> — 白底卡片，定价表格，产品说明书</sub></td>
+    <td align="center"><img src="https://github.com/Alauda-io/presales-skills/releases/download/ppt-master-assets-v1/preview_launch_xiaomi.png" alt="发布会风" width="400"/><br/><sub><b>发布会风</b> — 高对比度，参数突出，发布会感</sub></td>
   </tr>
 </table>
 
