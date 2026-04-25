@@ -90,14 +90,19 @@ vercel-labs/skills CLI 会扫描本仓库的所有 SKILL.md 并 symlink/copy 到
 
 ### Step 4：配置（v0.3.0+ 自然语言一键配置）
 
-**每个 plugin 自带交互式配置向导**——在 Claude Code 会话里直接说：
+**3 个 plugin 自带交互式配置向导**——在 Claude Code 会话里直接说：
 
 | 你说什么 | Claude 做什么 |
 |---|---|
 | `帮我配置 ai-image` | 加载 ai-image SKILL，引导你完成 setup → API keys → 默认 provider → validate 全流程 |
 | `帮我配置 solution-master` | 加载 solution-master SKILL，引导你完成 localkb / anythingllm / cdp_sites / drawio / mcp_search 配置 |
 | `帮我配置 tender-workflow` 或 `配置工作流` | 加载 tender-workflow 的 twc SKILL，引导 6 步配置 |
-| `帮我配置 ppt-master` / `配置 ppt-master` | 加载 ppt-master SKILL，按需引导（ppt-master 配置较少） |
+
+**其它 plugin 不需要专属配置**：
+- `ppt-master`：API keys 来自 ai-image（共享配置），画布尺寸 / 配色方案 / 行业模板内置——直接说"做 PPT"即可
+- `drawio`：仅需 draw.io CLI 路径（在配置 solution-master 时一并问），无独立配置文件
+- `web-access`：CDP 启用流程在 SKILL.md 内置前置检查中引导（启动 Chrome remote debug + 提示用户授权），无独立配置文件
+- `anythingllm-mcp`：MCP server 自身在 plugin.json 里注册，无用户配置；要不要启用 anythingllm 检索是 solution-master 配置里的字段
 
 每个向导都会：
 - 一步步问你需要的字段（不批量收集）
