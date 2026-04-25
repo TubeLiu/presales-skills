@@ -159,7 +159,6 @@ Solution Master 的防脱轨依赖两层相互加强的机制：
 /solution-config set <key> <value>  # 设置配置项
 /solution-config validate           # 健康检查
 /solution-config models [provider]  # 列出 AI 生图模型
-/solution-config models --refresh   # 联网刷新模型注册表
 ```
 
 **配置工具**：`skills/solution-config/scripts/sm_config.py`

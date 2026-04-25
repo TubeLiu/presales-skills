@@ -43,21 +43,11 @@ LEGACY_PATHS = {
 }
 
 # 规范 schema：所有 skill 和全局节的默认值
+# api_keys / ai_image 由 ai-image plugin 管理（~/.config/presales-skills/config.yaml），
+# 此处不再持有。
 DEFAULTS = {
     "localkb": {"path": None},
     "anythingllm": {"enabled": False, "base_url": "http://localhost:3001", "workspace": None},
-    "api_keys": {"ark": None, "dashscope": None, "gemini": None},
-    "ai_image": {
-        "default_provider": "ark",
-        "default_size": "2048x2048",  # F-027: 与 ai-image plugin 的 default_size 字段对齐
-        "max_retries": 2,
-        "timeout": 60,
-        "models": {
-            "ark": "doubao-seedream-5-0-260128",
-            "dashscope": "qwen-image-2.0-pro",
-            "gemini": "gemini-2.5-flash-image",
-        },
-    },
     "mcp_search": {"priority": ["tavily_search", "exa_search"]},
     "drawio": {"cli_path": None},
     "taa": {"vendor": "灵雀云", "kb_source": "auto", "anythingllm_workspace": None},
@@ -70,13 +60,17 @@ SKILLS = ("taa", "taw", "tpl", "trv")
 
 
 def _read_yaml(path: Path) -> Dict:
+    """读 yaml：文件不存在返 {}；YAML 解析失败 → 打印友好错误并 sys.exit(1)
+    （避免 setup 在坏文件上覆盖丢数据）；其他 OSError 抛出不吞。"""
     if not path.exists():
         return {}
     try:
         with open(path, "r", encoding="utf-8") as f:
             return yaml.safe_load(f) or {}
-    except Exception:
-        return {}
+    except yaml.YAMLError as e:
+        print(f"错误：tender-workflow config YAML 解析失败 ({path}): {e}", file=sys.stderr)
+        print(f"  请修复 {path} 后重试（避免 setup 在坏文件上覆盖丢数据）。", file=sys.stderr)
+        sys.exit(1)
 
 
 def _write_yaml(path: Path, data: Dict) -> None:
@@ -143,11 +137,11 @@ def normalize(cfg: Dict) -> Dict:
     将旧 schema 的 key 名映射到规范 schema。
 
     旧 schema 问题：
-    - ai_keys.ark_api_key -> api_keys.ark
-    - ai_keys.dashscope_api_key -> api_keys.dashscope
-    - ai_keys 下混合了 image 配置 -> 拆分到 api_keys + ai_image
     - anythingllm.taa_workspace / taw_workspace -> anythingllm.workspace + skill 覆盖
     - taa.kb_path -> localkb.path（如果 localkb.path 已设置则忽略）
+    - ai_keys.ark_api_key / dashscope_api_key 等老老字段 -> api_keys.* 透传
+      （api_keys / ai_image 块由 ai-image plugin 管理，但 normalize 仍把超老字段
+      映射成规范 api_keys，确保 /ai-image:migrate 能看到密钥不会丢）
     """
     result = {}
 
@@ -181,51 +175,28 @@ def normalize(cfg: Dict) -> Dict:
     allm.pop("connected", None)
     result["anythingllm"] = allm
 
-    # 4. api_keys — 从旧 ai_keys 拆出
-    old_ai_keys = cfg.get("ai_keys", {})
-    api_keys = dict(cfg.get("api_keys", {}))
-    # 旧 ark_api_key / dashscope_api_key
-    if not api_keys.get("ark"):
-        val = old_ai_keys.get("ark_api_key")
-        if val is None:
-            val = old_ai_keys.get("ark")
-        api_keys["ark"] = val
-    if not api_keys.get("dashscope"):
-        val = old_ai_keys.get("dashscope_api_key")
-        if val is None:
-            val = old_ai_keys.get("dashscope")
-        api_keys["dashscope"] = val
-    result["api_keys"] = api_keys
-
-    # 5. ai_image — 从旧 ai_keys 拆出 image 配置
-    ai_image = dict(cfg.get("ai_image", {}))
-    for img_key in ("default_provider", "size", "max_retries", "timeout"):
-        if img_key not in ai_image and img_key in old_ai_keys:
-            ai_image[img_key] = old_ai_keys[img_key]
-    # F-027: ai_image.size → ai_image.default_size rename，与 ai_image_config.py:380 FIELD_MAPPING 对齐
-    # 实测消费方真实存在（ai-image SKILL.md 读 default_size、DEFAULTS 含 default_size）
-    if "size" in ai_image and "default_size" not in ai_image:
-        ai_image["default_size"] = ai_image.pop("size")
-    # 迁移旧 provider_priority 列表 → default_provider 字符串
-    if "provider_priority" in ai_image and "default_provider" not in ai_image:
-        old_list = ai_image.pop("provider_priority")
-        if isinstance(old_list, list) and old_list:
-            ai_image["default_provider"] = old_list[0]
-    elif "provider_priority" in ai_image:
-        ai_image.pop("provider_priority")  # 清理旧字段
-    # 填充默认值
-    for k, v in DEFAULTS["ai_image"].items():
-        if k not in ai_image:
-            if isinstance(v, dict):
-                ai_image[k] = dict(v)
-            else:
-                ai_image[k] = v
-    # 确保 models 子字典完整（旧配置可能缺少 gemini）
-    if "models" in ai_image and isinstance(ai_image["models"], dict):
-        for provider, default_model in DEFAULTS["ai_image"]["models"].items():
-            if provider not in ai_image["models"]:
-                ai_image["models"][provider] = default_model
-    result["ai_image"] = ai_image
+    # 4. api_keys / ai_image 由 ai-image plugin 管理；normalize 不再持有 schema，
+    #    仅做两件事：
+    #    (a) 透传现有 api_keys / ai_image 块（让 /ai-image:migrate 看见）
+    #    (b) 把超老字段 ai_keys.ark_api_key / dashscope_api_key 映射成 api_keys.*，
+    #        防止从未跑过新 schema 的老用户密钥被静默丢
+    api_keys = dict(cfg.get("api_keys") or {})
+    legacy_ai_keys = cfg.get("ai_keys") or {}
+    if isinstance(legacy_ai_keys, dict):
+        for legacy_field, target in (
+            ("ark_api_key", "ark"),
+            ("dashscope_api_key", "dashscope"),
+            ("gemini_api_key", "gemini"),
+        ):
+            if not api_keys.get(target) and legacy_ai_keys.get(legacy_field):
+                api_keys[target] = legacy_ai_keys[legacy_field]
+    if api_keys:
+        result["api_keys"] = api_keys
+    if "ai_image" in cfg:
+        result["ai_image"] = cfg["ai_image"]
+    # 注意：故意不透传 cfg["ai_keys"]——只在上方做一次性 lift。
+    # 如果保留 ai_keys 顶层字段，会与 /ai-image:migrate 形成循环：
+    # migrate 抽走 api_keys，下次 normalize 又从 ai_keys 重新生成 api_keys。
 
     # 6. mcp_search
     result["mcp_search"] = cfg.get("mcp_search", dict(DEFAULTS["mcp_search"]))
@@ -279,6 +250,11 @@ def load(skill: Optional[str] = None) -> Dict:
     若指定 skill，返回合并后的 skill 视图：
     全局节作为基底，skill 专属节覆盖同名 key，
     同时将 skill 专属的 anythingllm_workspace（若非 null）覆盖 anythingllm.workspace。
+
+    注意：skill 视图**不包含** api_keys / ai_image 块（这两块由 ai-image plugin 管理）；
+    `get(skill, "api_keys.ark")` 走 deep_get 兜底，正常返回 default。如需访问这两块，
+    使用 `load_raw()` 拿透传后的原始字段（仅供 /ai-image:migrate 检测残留），
+    或调用 ai-image plugin 的入口。
     """
     raw = load_raw()
 
@@ -290,7 +266,7 @@ def load(skill: Optional[str] = None) -> Dict:
 
     # 构造 skill 视图
     result = {}
-    for section in ("localkb", "anythingllm", "api_keys", "ai_image", "mcp_search", "drawio"):
+    for section in ("localkb", "anythingllm", "mcp_search", "drawio"):
         val = raw.get(section, DEFAULTS.get(section, {}))
         if isinstance(val, dict):
             base = dict(DEFAULTS.get(section, {}))
@@ -331,6 +307,7 @@ def get(skill: str, key: str, default: Any = None) -> Any:
         return skill_section[key]
 
     # 特殊映射：skill 常用 key -> 全局节
+    # api_keys.* / ai_image.* 由 ai-image plugin 管理，不在此处暴露
     key_mapping = {
         "localkb.path": ("localkb", "path"),
         "kb_path": ("localkb", "path"),
@@ -338,14 +315,7 @@ def get(skill: str, key: str, default: Any = None) -> Any:
         "anythingllm.workspace": ("anythingllm", "workspace"),
         "anythingllm.base_url": ("anythingllm", "base_url"),
         "anythingllm.enabled": ("anythingllm", "enabled"),
-        "api_keys.ark": ("api_keys", "ark"),
-        "api_keys.dashscope": ("api_keys", "dashscope"),
-        "api_keys.gemini": ("api_keys", "gemini"),
         "mcp_search.priority": ("mcp_search", "priority"),
-        "ai_image.default_provider": ("ai_image", "default_provider"),
-        "ai_image.default_size": ("ai_image", "default_size"),  # F-027: 新规范字段
-        "ai_image.size": ("ai_image", "size"),  # F-027: 旧字段保留作向后兼容读
-        "ai_image.timeout": ("ai_image", "timeout"),
         "drawio.cli_path": ("drawio", "cli_path"),
     }
 
@@ -362,9 +332,6 @@ def get(skill: str, key: str, default: Any = None) -> Any:
 
     # 环境变量 fallback
     env_mapping = {
-        "api_keys.ark": "ARK_API_KEY",
-        "api_keys.dashscope": "DASHSCOPE_API_KEY",
-        "api_keys.gemini": "GEMINI_API_KEY",
         "anythingllm.workspace": "TAA_ANYTHINGLLM_WS" if skill == "taa" else "TAW_ANYTHINGLLM_WS",
     }
     env_key = env_mapping.get(key)
@@ -377,8 +344,18 @@ def get(skill: str, key: str, default: Any = None) -> Any:
 
 
 def set_value(key: str, value: Any) -> None:
-    """写入配置值到统一配置文件（支持 dot notation）"""
-    cfg = load_raw()
+    """写入配置值到统一配置文件（支持 dot notation）。
+
+    F-310：不走 load_raw / normalize，避免 normalize 副作用（清理 anythingllm 子字段、
+    lift ai_keys 等）混入只设一个 key 的简单操作；schema 整体规范化只在显式
+    `normalize` / `migrate` 命令时发生。
+    """
+    if key.startswith(("api_keys.", "ai_image.")) or key in ("api_keys", "ai_image"):
+        raise ValueError(
+            f"'{key}' 由 ai-image plugin 管理，不在 tender-workflow config 范围内。\n"
+            f"请改用：/ai-image:set {key} <value>"
+        )
+    cfg = _read_yaml(CONFIG_PATH)
     _deep_set(cfg, key, value)
     _write_yaml(CONFIG_PATH, cfg)
 
@@ -443,23 +420,18 @@ def validate() -> List[str]:
     else:
         issues.append("localkb.path 未设置")
 
-    # 检查 API keys
-    ark = _deep_get(cfg, "api_keys.ark")
-    dashscope = _deep_get(cfg, "api_keys.dashscope")
-    gemini = _deep_get(cfg, "api_keys.gemini")
-    if (not ark and not dashscope and not gemini
-            and not os.environ.get("ARK_API_KEY")
-            and not os.environ.get("DASHSCOPE_API_KEY")
-            and not os.environ.get("GEMINI_API_KEY")):
-        issues.append("未配置任何 AI 生图 API Key（api_keys.ark / api_keys.dashscope / api_keys.gemini）")
-
-    # 检查默认供应商对应的 API Key 是否已配置
-    default_provider = _deep_get(cfg, "ai_image.default_provider")
-    if default_provider:
-        env_map = {"ark": "ARK_API_KEY", "dashscope": "DASHSCOPE_API_KEY", "gemini": "GEMINI_API_KEY"}
-        key_val = _deep_get(cfg, f"api_keys.{default_provider}") or os.environ.get(env_map.get(default_provider, ""))
-        if not key_val:
-            issues.append(f"默认 AI 生图供应商 '{default_provider}' 的 API Key 未配置")
+    # AI 生图配置由 ai-image plugin 管理；轻量检查 ~/.config/presales-skills/config.yaml 是否存在
+    ai_image_cfg = Path.home() / ".config" / "presales-skills" / "config.yaml"
+    if not ai_image_cfg.exists():
+        issues.append(
+            "AI 生图配置文件不存在（~/.config/presales-skills/config.yaml）。"
+            "如需配图请运行 /ai-image:setup"
+        )
+    elif "api_keys" in cfg or "ai_image" in cfg:
+        issues.append(
+            "~/.config/tender-workflow/config.yaml 仍包含 api_keys / ai_image 块（由 ai-image plugin 管理）。"
+            "请运行 /ai-image:migrate 整理"
+        )
 
     # 检查 AnythingLLM
     allm = cfg.get("anythingllm", {})
@@ -493,7 +465,7 @@ def migrate() -> Dict[str, Any]:
     """
     # F-041: 推荐顺序提示
     print(
-        "提示：跑完此命令后，建议跑 /ai-image-config-migrate 把 tw 配置合并到统一的 presales-skills 路径。",
+        "提示：跑完此命令后，建议跑 /ai-image:migrate 把 tw 配置合并到统一的 presales-skills 路径。",
         file=sys.stderr,
     )
     result = {"migrated_keys": [], "deleted_files": [], "skipped": [], "normalized": False}
@@ -526,24 +498,6 @@ def migrate() -> Dict[str, Any]:
                     _deep_set(cfg, "anythingllm.workspace", value)
                     result["migrated_keys"].append(f"{skill_name}.anythingllm_workspace -> anythingllm.workspace")
 
-            elif key == "ark_api_key":
-                if not _deep_get(cfg, "api_keys.ark"):
-                    _deep_set(cfg, "api_keys.ark", value)
-                    result["migrated_keys"].append(f"{skill_name}.ark_api_key -> api_keys.ark")
-
-            elif key == "dashscope_api_key":
-                if not _deep_get(cfg, "api_keys.dashscope"):
-                    _deep_set(cfg, "api_keys.dashscope", value)
-                    result["migrated_keys"].append(f"{skill_name}.dashscope_api_key -> api_keys.dashscope")
-
-            elif key == "ai_image_config":
-                if isinstance(value, dict):
-                    for sub_k, sub_v in value.items():
-                        target_key = f"ai_image.{sub_k}"
-                        if not _deep_get(cfg, target_key):
-                            _deep_set(cfg, target_key, sub_v)
-                            result["migrated_keys"].append(f"{skill_name}.ai_image_config.{sub_k} -> {target_key}")
-
             elif key == "mcp_search":
                 if isinstance(value, dict) and "priority" in value:
                     if not _deep_get(cfg, "mcp_search.priority"):
@@ -565,128 +519,6 @@ def migrate() -> Dict[str, Any]:
     _write_yaml(CONFIG_PATH, normalized)
 
     return result
-
-
-# ── 模型注册表 ──────────────────────────────────────
-
-def _find_models_yaml() -> Optional[Path]:
-    """定位 ai_image_models.yaml 文件。
-
-    Milestone D 起，注册表由独立的 ai-image plugin 维护，tender-workflow 不再
-    自带 yaml。候选路径按优先级（覆盖 local / 远程 marketplace 两种布局）：
-
-      1. 本地 marketplace sibling：<monorepo>/ai-image/prompts/ai_image_models.yaml
-         （tw_config.py 在 tender-workflow/tools/，两层 parent 到 monorepo 根）
-      2. 远程 marketplace cache：~/.claude/plugins/cache/*/ai-image/*/prompts/ai_image_models.yaml
-         （版本号在路径里，用 glob 匹配）
-      3. 用户级覆盖：~/.config/presales-skills/ai_image_models.yaml
-      4. 全局 skill fallback：~/.claude/skills/ai-image/prompts/ai_image_models.yaml
-    """
-    # 方式1：本地 marketplace（tools/tw_config.py -> tender-workflow -> monorepo root）
-    monorepo_root = Path(__file__).resolve().parent.parent.parent
-    candidates = [
-        monorepo_root / "ai-image" / "prompts" / "ai_image_models.yaml",
-    ]
-    # 方式2：远程 marketplace cache（版本号在路径里，glob 匹配）
-    cache_glob = Path.home() / ".claude" / "plugins" / "cache"
-    if cache_glob.exists():
-        candidates.extend(cache_glob.glob("*/ai-image/*/prompts/ai_image_models.yaml"))
-    # 方式3：用户级覆盖
-    candidates.append(Path.home() / ".config" / "presales-skills" / "ai_image_models.yaml")
-    # 方式4：全局 skill fallback
-    candidates.append(Path.home() / ".claude" / "skills" / "ai-image" / "prompts" / "ai_image_models.yaml")
-
-    for p in candidates:
-        if p.exists():
-            return p
-    # 方式5：git 根兜底（开发者模式，在 tender-workflow 内直接跑时）
-    try:
-        import subprocess
-        root = subprocess.check_output(
-            ["git", "rev-parse", "--show-toplevel"],
-            stderr=subprocess.DEVNULL, text=True
-        ).strip()
-        p = Path(root) / "ai-image" / "prompts" / "ai_image_models.yaml"
-        if p.exists():
-            return p
-    except Exception:
-        pass
-    return None
-
-
-def _render_models(provider_filter: Optional[str] = None) -> str:
-    """读取模型注册表 YAML，渲染固定格式表格"""
-    yaml_path = _find_models_yaml()
-    if not yaml_path:
-        return "错误：未找到模型注册表文件 ai_image_models.yaml"
-
-    registry = _read_yaml(yaml_path)
-    if not registry or "providers" not in registry:
-        return "错误：模型注册表文件格式异常"
-
-    # 读取当前用户配置的默认模型
-    cfg = load_raw()
-    user_models = _deep_get(cfg, "ai_image.models") or {}
-    user_default_provider = _deep_get(cfg, "ai_image.default_provider") or "ark"
-
-    display = registry.get("display", {})
-    status_map = display.get("status_map", {})
-
-    lines = []
-    lines.append(display.get("header", "## AI 图片生成模型列表\n").rstrip())
-    lines.append("")
-
-    # 默认供应商信息
-    lines.append(f"当前默认供应商：**{user_default_provider}**")
-    lines.append("")
-
-    lines.append(display.get("table_header", "| 提供商 | 模型 ID | 名称 | 最大分辨率 | 价格 | 特点 | 状态 |"))
-    lines.append(display.get("table_separator", "|--------|---------|------|-----------|------|------|------|"))
-
-    providers = registry.get("providers", {})
-    for pkey, pdata in providers.items():
-        if provider_filter and pkey != provider_filter:
-            continue
-
-        pname = pdata.get("name", pkey)
-        models = pdata.get("models", [])
-        user_default = user_models.get(pkey, "")
-
-        for i, m in enumerate(models):
-            mid = m.get("id", "")
-            mname = m.get("name", "")
-            res = m.get("max_resolution", "")
-            price = m.get("price", "")
-            features = m.get("features", "")
-            status_key = m.get("status", "available")
-            status_label = status_map.get(status_key, status_key)
-
-            # 用户配置的默认模型：覆盖注册表状态，显示为"● 当前默认"
-            user_default_marker = display.get("user_default_marker", "● 当前默认")
-            if mid == user_default:
-                status_label = user_default_marker
-
-            # 第一行显示供应商名，后续行留空
-            provider_col = pname if i == 0 else ""
-            lines.append(f"| {provider_col} | `{mid}` | {mname} | {res} | {price} | {features} | {status_label} |")
-
-    lines.append("")
-    lines.append(display.get("footer", "").rstrip())
-
-    # 过期检测：last_updated 超过 90 天时警告
-    last_updated = registry.get("last_updated")
-    if last_updated:
-        try:
-            from datetime import datetime, timedelta
-            updated_date = datetime.strptime(str(last_updated), "%Y-%m-%d")
-            days_ago = (datetime.now() - updated_date).days
-            if days_ago > 90:
-                lines.append("")
-                lines.append(f"> ⚠️ 模型列表最后更新于 {last_updated}（{days_ago} 天前），可能已过期。运行 `/twc models --refresh` 刷新。")
-        except (ValueError, TypeError):
-            pass
-
-    return "\n".join(lines)
 
 
 # ── CLI 入口 ─────────────────────────────────────────
@@ -730,7 +562,11 @@ def main():
             sys.exit(1)
         key = sys.argv[2]
         value = _parse_value(sys.argv[3])
-        set_value(key, value)
+        try:
+            set_value(key, value)
+        except ValueError as e:
+            print(f"错误：{e}", file=sys.stderr)
+            sys.exit(1)
         print(f"已设置 {key} = {value}")
         print(f"配置文件: {CONFIG_PATH}")
 
@@ -774,8 +610,13 @@ def main():
             print("无需迁移：未发现旧配置文件，schema 已规范。")
 
     elif cmd == "models":
-        provider_filter = sys.argv[2] if len(sys.argv) > 2 else None
-        print(_render_models(provider_filter))
+        # 转发到 ai-image 统一模型注册表入口；avoid duplicate registry resolution.
+        import subprocess
+        ai_image_config = shutil.which("ai-image-config")
+        if not ai_image_config:
+            print("错误：ai-image-config 命令未找到。请确保 ai-image plugin 已安装。", file=sys.stderr)
+            sys.exit(1)
+        sys.exit(subprocess.call([ai_image_config, "models", *sys.argv[2:]]))
 
     elif cmd == "normalize":
         changed = normalize_file()

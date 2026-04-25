@@ -45,13 +45,13 @@ ppt-master 作为 `presales-skills` umbrella marketplace 的成员 plugin 分发
 ### 配置 AI 图片生成
 
 ```
-/ai-image-config-setup                              # 交互式首次配置
-/ai-image-config-set api_keys.gemini <key>          # Google Gemini
-/ai-image-config-set api_keys.ark <key>             # 火山方舟
-/ai-image-config-validate                           # 健康检查
+/ai-image:setup                              # 交互式首次配置
+/ai-image:set api_keys.gemini <key>          # Google Gemini
+/ai-image:set api_keys.ark <key>             # 火山方舟
+/ai-image:validate                           # 健康检查
 ```
 
-支持 13 个后端（volcengine/ark、qwen/dashscope、gemini、openai、minimax、stability、bfl、ideogram、zhipu、siliconflow、fal、replicate、openrouter）。运行 `/ai-image-config-models` 查看完整注册表。
+支持 13 个后端（volcengine/ark、qwen/dashscope、gemini、openai、minimax、stability、bfl、ideogram、zhipu、siliconflow、fal、replicate、openrouter）。运行 `/ai-image:models` 查看完整注册表。
 
 ---
 

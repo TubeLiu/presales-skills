@@ -1,6 +1,6 @@
 # AI 图片生成模型统一注册表（ai-image plugin）
 # v1.1.0 | solution-master + tender-workflow + ppt-master 三方图生源合并而来
-# 此文件为静态数据源，/ai-image-config models 命令读取此文件渲染固定格式输出
+# 此文件为静态数据源，/ai-image:models 命令读取此文件渲染固定格式输出
 # 新增模型只需在对应 provider.models 列表中添加条目
 #
 # Provider naming:
@@ -9,10 +9,10 @@
 #   - gemini, openai, zhipu, siliconflow, minimax, stability, bfl, ideogram, fal, replicate, openrouter: 各自独立
 #
 # 命令示例：
-#   /ai-image-config models                列出所有
-#   /ai-image-config models ark            只看 ark
-#   /ai-image-config set ai_image.default_provider ark
-#   /ai-image-config set ai_image.models.ark doubao-seedream-5-0-260128
+#   /ai-image:models                列出所有
+#   /ai-image:models ark            只看 ark
+#   /ai-image:set ai_image.default_provider ark
+#   /ai-image:set ai_image.models.ark doubao-seedream-5-0-260128
 
 version: "1.1.0"
 last_updated: "2026-04-24"
@@ -276,7 +276,7 @@ providers:
         features: "OpenAI-compatible 接口访问 Gemini"
         status: current
 
-# /ai-image-config models 输出模板（确保弱模型也能固定格式输出）
+# /ai-image:models 输出模板（确保弱模型也能固定格式输出）
 display:
   header: "## AI 图片生成模型列表\n"
   table_header: "| 提供商 | 模型 ID | 名称 | 最大分辨率 | 价格 | 特点 | 状态 |"
@@ -286,4 +286,4 @@ display:
     available: "○ 可用"
     deprecated: "✗ 已弃用"
   user_default_marker: "● 当前默认"
-  footer: "\n> 状态说明：● 当前默认（用户配置）  ★ 推荐  ○ 可选  ✗ 已弃用\n> 更改默认模型：`/ai-image-config set ai_image.models.<provider> <model_id>`\n> 更改默认供应商：`/ai-image-config set ai_image.default_provider <provider>`\n> 提供商列表：ark / dashscope / gemini / openai / zhipu / siliconflow / minimax / stability / bfl / ideogram / fal / replicate / openrouter"
+  footer: "\n> 状态说明：● 当前默认（用户配置）  ★ 推荐  ○ 可选  ✗ 已弃用\n> 更改默认模型：`/ai-image:set ai_image.models.<provider> <model_id>`\n> 更改默认供应商：`/ai-image:set ai_image.default_provider <provider>`\n> 提供商列表：ark / dashscope / gemini / openai / zhipu / siliconflow / minimax / stability / bfl / ideogram / fal / replicate / openrouter"

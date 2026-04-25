@@ -42,9 +42,10 @@ tender-workflow/
 │   │   │   ├── writing_brief_template.yaml # 并行写作蓝图格式规范（含 image_plan）
 │   │   │   └── parallel_writer_agent.yaml  # 并行写作子智能体提示模板（含 image_plan）
 │   │   └── tools/
-│   │       ├── ai_image_generator.py       # AI 图片生成（火山方舟/阿里云/Gemini 三 API）
-│   │       ├── drawio_generator.py         # draw.io 图表生成
+│   │       ├── docx_writer.py              # DOCX 输出
 │   │       └── kb_indexer.py               # Local-KnowledgeBase 目录索引生成器
+│   │   # AI 生图通过 ai-image plugin 的 image-gen 命令调用
+│   │   # draw.io 图表通过 drawio plugin 的 drawio-gen 命令调用
 │   │
 │   ├── trv/                        # 审核者：多维度审核
 │   │   ├── SKILL.md
@@ -91,7 +92,6 @@ tender-workflow/
 /twc show [skill]       # 查看当前配置
 /twc set <key> <value>  # 设置配置项
 /twc models [provider]  # 列出 AI 生图模型（ark/dashscope/gemini）
-/twc models --refresh   # 联网搜索最新模型并更新注册表
 /twc validate           # 健康检查
 /twc migrate            # 迁移旧配置
 ```

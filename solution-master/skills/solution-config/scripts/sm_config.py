@@ -11,7 +11,7 @@ CLI 用法：
     python3 sm_config.py set <key> <value>
     python3 sm_config.py validate
     python3 sm_config.py models [provider]
-    python3 sm_config.py migrate              # F-048: 转发到 /ai-image-config-migrate
+    python3 sm_config.py migrate              # F-048: 转发到 /ai-image:migrate
 """
 
 import json
@@ -48,21 +48,11 @@ _SKILL_DIR = _SCRIPTS_DIR.parent                        # .../solution-config/
 _SKILLS_ROOT = _SKILL_DIR.parent                        # .../skills/
 
 # 规范 schema：所有配置段的默认值
+# api_keys / ai_image 由 ai-image plugin 管理（~/.config/presales-skills/config.yaml），
+# 此处不再持有。
 DEFAULTS = {
     "localkb": {"path": None},
     "anythingllm": {"enabled": False, "base_url": "http://localhost:3001", "workspace": None},
-    "api_keys": {"ark": None, "dashscope": None, "gemini": None},
-    "ai_image": {
-        "default_provider": "ark",
-        "size": "2048x2048",
-        "max_retries": 2,
-        "timeout": 60,
-        "models": {
-            "ark": "doubao-seedream-5-0-260128",
-            "dashscope": "qwen-image-2.0-pro",
-            "gemini": "gemini-2.5-flash-image",
-        },
-    },
     "mcp_search": {"priority": ["tavily_search", "exa_search"]},
     "cdp_sites": {"enabled": False, "sites": []},
     "drawio": {},  # F-035: cli_path 字段已废弃（drawio-gen 自定位 CLI），从 DEFAULTS 移除以避免 setup 写入旧字段
@@ -172,9 +162,6 @@ def get(key: str, default: Any = None) -> Any:
 
     # 环境变量 fallback
     env_mapping = {
-        "api_keys.ark": "ARK_API_KEY",
-        "api_keys.dashscope": "DASHSCOPE_API_KEY",
-        "api_keys.gemini": "GEMINI_API_KEY",
         "anythingllm.workspace": "SM_ANYTHINGLLM_WS",
     }
     env_key = env_mapping.get(key)
@@ -188,6 +175,11 @@ def get(key: str, default: Any = None) -> Any:
 
 def set_value(key: str, value: Any) -> None:
     """写入配置值到统一配置文件（支持 dot notation）"""
+    if key.startswith(("api_keys.", "ai_image.")) or key in ("api_keys", "ai_image"):
+        raise ValueError(
+            f"'{key}' 由 ai-image plugin 管理，不在 solution-master config 范围内。\n"
+            f"请改用：/ai-image:set {key} <value>"
+        )
     cfg = load()
     _deep_set(cfg, key, value)
     _write_yaml(CONFIG_PATH, cfg)
@@ -250,23 +242,18 @@ def validate() -> List[str]:
     else:
         issues.append("localkb.path 未设置（可选，但建议配置以启用本地知识库检索）")
 
-    # 检查 API keys
-    ark = _deep_get(cfg, "api_keys.ark")
-    dashscope = _deep_get(cfg, "api_keys.dashscope")
-    gemini = _deep_get(cfg, "api_keys.gemini")
-    if (not ark and not dashscope and not gemini
-            and not os.environ.get("ARK_API_KEY")
-            and not os.environ.get("DASHSCOPE_API_KEY")
-            and not os.environ.get("GEMINI_API_KEY")):
-        issues.append("未配置任何 AI 生图 API Key（api_keys.ark / dashscope / gemini）——可选，但建议至少配置一个")
-
-    # 检查默认供应商对应的 API Key
-    default_provider = _deep_get(cfg, "ai_image.default_provider")
-    if default_provider:
-        env_map = {"ark": "ARK_API_KEY", "dashscope": "DASHSCOPE_API_KEY", "gemini": "GEMINI_API_KEY"}
-        key_val = _deep_get(cfg, f"api_keys.{default_provider}") or os.environ.get(env_map.get(default_provider, ""))
-        if not key_val:
-            issues.append(f"默认 AI 生图供应商 '{default_provider}' 的 API Key 未配置")
+    # AI 生图配置由 ai-image plugin 管理；轻量检查 ~/.config/presales-skills/config.yaml 是否存在
+    ai_image_cfg = Path.home() / ".config" / "presales-skills" / "config.yaml"
+    if not ai_image_cfg.exists():
+        issues.append(
+            "AI 生图配置文件不存在（~/.config/presales-skills/config.yaml）。"
+            "如需配图请运行 /ai-image:setup"
+        )
+    elif "api_keys" in cfg or "ai_image" in cfg:
+        issues.append(
+            "~/.config/solution-master/config.yaml 仍包含 api_keys / ai_image 块（由 ai-image plugin 管理）。"
+            "请运行 /ai-image:migrate 整理"
+        )
 
     # 检查 AnythingLLM
     allm = cfg.get("anythingllm", {})
@@ -343,106 +330,6 @@ def validate() -> List[str]:
     return issues
 
 
-# ── 模型注册表 ──────────────────────────────────────
-
-def _find_models_yaml() -> Optional[Path]:
-    """定位 ai_image_models.yaml 文件。
-
-    Milestone D 起，注册表由独立的 ai-image plugin 维护。solution-master
-    不再自带 ai_image_models.yaml。候选路径覆盖本地/远程 marketplace 两种
-    布局（Milestone E bin-mode fix）：
-
-      1. 本地 marketplace sibling（monorepo 布局）：
-         <monorepo>/ai-image/prompts/ai_image_models.yaml
-         （_SKILLS_ROOT.parent.parent 在此布局下指 monorepo 根）
-      2. 远程 marketplace cache（带版本号）：
-         ~/.claude/plugins/cache/*/ai-image/*/prompts/ai_image_models.yaml
-         （用 glob 匹配版本目录）
-      3. 用户级 home 覆盖（/ai-image-config add-model 写入）：
-         ~/.config/presales-skills/ai_image_models.yaml
-      4. 全局 skill 目录 fallback（用户手动安装）：
-         ~/.claude/skills/ai-image/prompts/ai_image_models.yaml
-    """
-    candidates = [
-        _SKILLS_ROOT.parent.parent / "ai-image" / "prompts" / "ai_image_models.yaml",
-    ]
-    # 远程 marketplace cache：版本号在路径里
-    cache_dir = Path.home() / ".claude" / "plugins" / "cache"
-    if cache_dir.exists():
-        candidates.extend(cache_dir.glob("*/ai-image/*/prompts/ai_image_models.yaml"))
-    candidates.extend([
-        Path.home() / ".config" / "presales-skills" / "ai_image_models.yaml",
-        Path.home() / ".claude" / "skills" / "ai-image" / "prompts" / "ai_image_models.yaml",
-    ])
-    for p in candidates:
-        if p.exists():
-            return p
-    return None
-
-
-def _render_models(provider_filter: Optional[str] = None) -> str:
-    """读取模型注册表 YAML，渲染固定格式表格"""
-    yaml_path = _find_models_yaml()
-    if not yaml_path:
-        return "错误：未找到模型注册表文件 ai_image_models.yaml"
-
-    registry = _read_yaml(yaml_path)
-    if not registry or "providers" not in registry:
-        return "错误：模型注册表文件格式异常"
-
-    cfg = load()
-    user_models = _deep_get(cfg, "ai_image.models") or {}
-    user_default_provider = _deep_get(cfg, "ai_image.default_provider") or "ark"
-
-    display = registry.get("display", {})
-    status_map = display.get("status_map", {})
-
-    lines = []
-    lines.append(display.get("header", "## AI 图片生成模型列表\n").rstrip())
-    lines.append("")
-    lines.append(f"当前默认供应商：**{user_default_provider}**")
-    lines.append("")
-    lines.append(display.get("table_header", "| 提供商 | 模型 ID | 名称 | 最大分辨率 | 价格 | 特点 | 状态 |"))
-    lines.append(display.get("table_separator", "|--------|---------|------|-----------|------|------|------|"))
-
-    providers = registry.get("providers", {})
-    for pkey, pdata in providers.items():
-        if provider_filter and pkey != provider_filter:
-            continue
-        pname = pdata.get("name", pkey)
-        models = pdata.get("models", [])
-        user_default = user_models.get(pkey, "")
-        for i, m in enumerate(models):
-            mid = m.get("id", "")
-            mname = m.get("name", "")
-            res = m.get("max_resolution", "")
-            price = m.get("price", "")
-            features = m.get("features", "")
-            status_key = m.get("status", "available")
-            status_label = status_map.get(status_key, status_key)
-            if mid == user_default:
-                status_label = display.get("user_default_marker", "● 当前默认")
-            provider_col = pname if i == 0 else ""
-            lines.append(f"| {provider_col} | `{mid}` | {mname} | {res} | {price} | {features} | {status_label} |")
-
-    lines.append("")
-    lines.append(display.get("footer", "").rstrip())
-
-    last_updated = registry.get("last_updated")
-    if last_updated:
-        try:
-            from datetime import datetime
-            updated_date = datetime.strptime(str(last_updated), "%Y-%m-%d")
-            days_ago = (datetime.now() - updated_date).days
-            if days_ago > 90:
-                lines.append("")
-                lines.append(f"> 模型列表最后更新于 {last_updated}（{days_ago} 天前），可能已过期。运行 `/solution-config models --refresh` 刷新。")
-        except (ValueError, TypeError):
-            pass
-
-    return "\n".join(lines)
-
-
 # ── CLI 入口 ─────────────────────────────────────────
 
 def main():
@@ -480,7 +367,11 @@ def main():
             sys.exit(1)
         key = sys.argv[2]
         value = _parse_value(sys.argv[3])
-        set_value(key, value)
+        try:
+            set_value(key, value)
+        except ValueError as e:
+            print(f"错误：{e}", file=sys.stderr)
+            sys.exit(1)
         print(f"已设置 {key} = {value}")
         print(f"配置文件: {CONFIG_PATH}")
 
@@ -505,13 +396,17 @@ def main():
         )
 
     elif cmd == "models":
-        provider_filter = sys.argv[2] if len(sys.argv) > 2 else None
-        print(_render_models(provider_filter))
+        # 转发到 ai-image 统一模型注册表入口；avoid duplicate registry resolution.
+        import subprocess
+        ai_image_config = shutil.which("ai-image-config")
+        if not ai_image_config:
+            print("错误：ai-image-config 命令未找到。请确保 ai-image plugin 已安装。", file=sys.stderr)
+            sys.exit(1)
+        sys.exit(subprocess.call([ai_image_config, "models", *sys.argv[2:]]))
 
     elif cmd == "migrate":
         # F-048: 转发到 ai-image 统一 migrate（避免重复实现合并逻辑；保 /solution-config migrate 命令空间对称）
         import subprocess
-        print("solution-config migrate 已委托给 /ai-image-config-migrate（统一合并入口）", file=sys.stderr)
         ai_image_config = shutil.which("ai-image-config")
         if not ai_image_config:
             print("错误：ai-image-config 命令未找到。请确保 ai-image plugin 已安装。", file=sys.stderr)

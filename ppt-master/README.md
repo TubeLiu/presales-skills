@@ -45,13 +45,13 @@ For full marketplace install steps see the umbrella [README](https://github.com/
 ### Configure AI image generation
 
 ```
-/ai-image-config-setup                              # interactive first-time setup
-/ai-image-config-set api_keys.gemini <key>          # Google Gemini
-/ai-image-config-set api_keys.ark <key>             # Volcengine ARK
-/ai-image-config-validate                           # health check
+/ai-image:setup                              # interactive first-time setup
+/ai-image:set api_keys.gemini <key>          # Google Gemini
+/ai-image:set api_keys.ark <key>             # Volcengine ARK
+/ai-image:validate                           # health check
 ```
 
-13 backends supported (volcengine/ark, qwen/dashscope, gemini, openai, minimax, stability, bfl, ideogram, zhipu, siliconflow, fal, replicate, openrouter). See `/ai-image-config-models` for the full registry.
+13 backends supported (volcengine/ark, qwen/dashscope, gemini, openai, minimax, stability, bfl, ideogram, zhipu, siliconflow, fal, replicate, openrouter). See `/ai-image:models` for the full registry.
 
 ---
 

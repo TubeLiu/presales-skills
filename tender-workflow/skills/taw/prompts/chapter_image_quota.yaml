@@ -295,13 +295,13 @@ acquisition_workflow: |
         2. 若找到匹配图片 → 记录到 SECTION_IMAGES
 
     - drawio:
-        调用 drawio_generator.py
+        调用 drawio plugin 的 drawio-gen 命令
         参数：--type {图片类型} --topic "{章节主题}" --details "{关键组件/流程/结构}"
         若成功生成 → 记录到 SECTION_IMAGES
 
     - ai:
-        调用 ai_image_generator.py
-        参数: --type {图片类型} --topic "{章节主题}" --components "{关键组件}"
+        调用 ai-image plugin 的 image-gen 命令
+        参数: "{章节主题：包含关键组件}" --aspect_ratio 16:9 --image_size 2K -o {输出目录}
         若成功生成 → 记录到 SECTION_IMAGES
 
     - web:

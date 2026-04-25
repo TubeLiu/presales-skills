@@ -10,7 +10,7 @@
 | **ppt-master** | 主 plugin | 从 PDF / DOCX / URL / Markdown 等多源文档生成原生可编辑 PPTX（SVG 流水线） |
 | **tender-workflow** | 主 plugin | 四角色招投标工作流：`tpl`（招标策划）/ `taa`（招标分析）/ `taw`（标书撰稿）/ `trv`（审核）+ `twc`（配置） |
 | **drawio** | 共享 plugin | Draw.io 图表生成（`.drawio` XML + PNG/SVG/PDF 导出）。被 solution-master / tender-workflow 依赖 |
-| **ai-image** | 共享 plugin | 统一 AI 图片生成：13 个后端（volcengine/ark、qwen/dashscope、gemini、openai、minimax、stability、bfl、ideogram、zhipu、siliconflow、fal、replicate、openrouter）+ 共享 YAML 模型注册表 + `/ai-image-config-*` 配置管理。被三个主 plugin 依赖 |
+| **ai-image** | 共享 plugin | 统一 AI 图片生成：13 个后端（volcengine/ark、qwen/dashscope、gemini、openai、minimax、stability、bfl、ideogram、zhipu、siliconflow、fal、replicate、openrouter）+ 共享 YAML 模型注册表 + `/ai-image:*` 配置管理。被三个主 plugin 依赖 |
 | **anythingllm-mcp** | 共享 plugin | AnythingLLM MCP server：知识库语义搜索 + workspace 列举。被 solution-master / tender-workflow 可选依赖；不装则降级为本地 YAML 索引或联网检索 |
 | **web-access** | 独立 plugin | 联网操作 + CDP 浏览器自动化（vendored from [eze-is/web-access](https://github.com/eze-is/web-access)）。solution-master 可选依赖，仅在启用 `cdp_sites` 登录态站点检索时必需 |
 
@@ -56,17 +56,17 @@
 ### Step 4：配置 AI 图片生成（首次使用前一次性完成）
 
 ```
-/ai-image-config-setup                      # 创建 ~/.config/presales-skills/config.yaml 骨架
-/ai-image-config-set api_keys.ark <key>     # 火山方舟
-/ai-image-config-set api_keys.dashscope <key>   # 阿里云
-/ai-image-config-set api_keys.gemini <key>      # Google Gemini
-/ai-image-config-validate                   # 验证 key 已配置
+/ai-image:setup                      # 创建 ~/.config/presales-skills/config.yaml 骨架
+/ai-image:set api_keys.ark <key>     # 火山方舟
+/ai-image:set api_keys.dashscope <key>   # 阿里云
+/ai-image:set api_keys.gemini <key>      # Google Gemini
+/ai-image:validate                   # 验证 key 已配置
 ```
 
 若之前用过 solution-master / tender-workflow 的独立版本（`~/.config/solution-master/` 或 `~/.config/tender-workflow/`），可一次性迁移：
 
 ```
-/ai-image-config-migrate
+/ai-image:migrate
 ```
 
 ### Step 5：依赖（全自动）
@@ -181,16 +181,16 @@ npm install -g @drawio/drawio-desktop-cli   # 跨平台
 
 ### ai-image — 生图 + 配置中心
 
-直接触发："生成一张图"、"画一张某某主题的图"。根据 `~/.config/presales-skills/config.yaml` 的 `ai_image.default_provider` 选 provider，走 `ai_image_generator.py` 调用。
+直接触发："生成一张图"、"画一张某某主题的图"。根据 `~/.config/presales-skills/config.yaml` 的 `ai_image.default_provider` 选 provider，走 `image-gen` CLI 调用（ai-image plugin 的 bin 入口）。
 
 配置管理的 7 个命令：
-- `/ai-image-config-setup` — 交互式首次配置
-- `/ai-image-config-show [section]` — 展示当前配置（API keys 自动 mask）
-- `/ai-image-config-set <key> <value>` — 按 dotted path 设值
-- `/ai-image-config-models [provider]` — 展示 13 provider 的模型注册表
-- `/ai-image-config-add-model <provider> <yaml>` — 追加自定义模型到用户级 override 文件
-- `/ai-image-config-validate [provider]` — 验证 API key 是否可用
-- `/ai-image-config-migrate` — 合并旧的 solution-master / tender-workflow 配置到统一位置
+- `/ai-image:setup` — 交互式首次配置
+- `/ai-image:show [section]` — 展示当前配置（API keys 自动 mask）
+- `/ai-image:set <key> <value>` — 按 dotted path 设值
+- `/ai-image:models [provider]` — 展示 13 provider 的模型注册表
+- `/ai-image:add-model <provider> <yaml>` — 追加自定义模型到用户级 override 文件
+- `/ai-image:validate [provider]` — 验证 API key 是否可用
+- `/ai-image:migrate` — 把 `~/.config/{solution-master,tender-workflow}/config.yaml` 中的 `api_keys` 与 `ai_image` 两个块抽取到 ai-image plugin 管理的统一位置；其余 plugin 专属字段（cdp_sites / taa-taw / localkb 等）保留在原文件不动
 
 ---
 

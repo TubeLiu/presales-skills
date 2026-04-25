@@ -18,7 +18,7 @@ API key 查找优先级：
     1. CLI --api-key 参数
     2. 环境变量（ARK_API_KEY / GEMINI_API_KEY / ...）
     3. ~/.config/presales-skills/config.yaml 的 api_keys.<provider>
-    4. 以上都空 → 报错，提示 /ai-image-config setup
+    4. 以上都空 → 报错，提示 /ai-image:setup
 
 本模块通过 tmp 文件 + 原子 rename 保护配置写入；Windows 下 rename 遇到目标被占用时重试一次。
 """
@@ -26,8 +26,7 @@ API key 查找优先级：
 from __future__ import annotations
 
 import argparse
-import hashlib
-import json
+import copy
 import os
 import sys
 import time
@@ -107,6 +106,29 @@ def _load_yaml(path: Path) -> dict[str, Any]:
         return yaml.safe_load(fh) or {}
 
 
+def _safe_load(path: Path, ctx_name: str = "") -> dict[str, Any]:
+    """读 yaml 的统一入口：文件不存在返 {}；YAML 解析失败时给可读错误并 sys.exit(1)。
+    其他 OSError（权限/IO）抛出不吞——让调用方决定。
+    """
+    if not path.exists():
+        return {}
+    try:
+        return _load_yaml(path)
+    except yaml.YAMLError as e:
+        ctx = f"{ctx_name} " if ctx_name else ""
+        print(f"错误：{ctx}config YAML 解析失败 ({path}): {e}", file=sys.stderr)
+        print(f"  请修复 {path} 后重试。", file=sys.stderr)
+        sys.exit(1)
+
+
+def _chmod_600(path: Path) -> None:
+    """API key 明文文件最低权限保护（F-011）；非 POSIX FS 失败时静默忽略。"""
+    try:
+        os.chmod(path, 0o600)
+    except OSError:
+        pass
+
+
 def _save_yaml(path: Path, data: dict[str, Any]) -> None:
     _ensure_config_dir()
     tmp_path = path.with_suffix(path.suffix + ".tmp")
@@ -163,8 +185,10 @@ def _deep_set(d: dict, key_path: str, value: Any) -> None:
 
 # ── 基础操作 ─────────────────────────────────────────────
 def load_config() -> dict[str, Any]:
-    """读取配置文件。若不存在返回空 dict（调用方决定是否用 DEFAULT_CONFIG 兜底）。"""
-    return _load_yaml(CONFIG_PATH)
+    """读取配置文件。若不存在返回空 dict（调用方决定是否用 DEFAULT_CONFIG 兜底）。
+    YAML 解析失败时给可读错误并 sys.exit(1)，避免 traceback 让 cmd_show/validate/set/setup 无法 debug。
+    """
+    return _safe_load(CONFIG_PATH, "presales-skills")
 
 
 def save_config(data: dict[str, Any]) -> None:
@@ -182,29 +206,39 @@ def cmd_setup() -> int:
     _ensure_config_dir()
     if CONFIG_PATH.exists():
         print(f"配置文件已存在：{CONFIG_PATH}")
-        print("如需重新配置，请直接编辑该文件或使用 /ai-image-config set <key> <value>")
+        print("如需重新配置，请直接编辑该文件或使用 /ai-image:set <key> <value>")
         print()
         print("当前配置摘要：")
         cmd_show(section=None)
         return 0
 
-    # 首次创建：写 default skeleton，引导用户填
-    save_config(DEFAULT_CONFIG)
+    # 首次创建：写 default skeleton，引导用户填（deepcopy 避免后续修改污染常量）
+    save_config(copy.deepcopy(DEFAULT_CONFIG))
     print(f"✓ 已创建配置文件：{CONFIG_PATH}")
     print()
     print("下一步：填入 API keys。最常用的 3 个 provider：")
-    print("  /ai-image-config set api_keys.ark        sk-xxx     # 火山方舟")
-    print("  /ai-image-config set api_keys.dashscope  sk-xxx     # 阿里云")
-    print("  /ai-image-config set api_keys.gemini     xxx        # Google Gemini")
+    print("  /ai-image:set api_keys.ark        sk-xxx     # 火山方舟")
+    print("  /ai-image:set api_keys.dashscope  sk-xxx     # 阿里云")
+    print("  /ai-image:set api_keys.gemini     xxx        # Google Gemini")
     print()
-    print("查看全部可选 provider：  /ai-image-config models")
-    print("验证配置：              /ai-image-config validate")
-    if any(path.exists() for path in LEGACY_CONFIGS.values()):
+    print("查看全部可选 provider：  /ai-image:models")
+    print("验证配置：              /ai-image:validate")
+    sibling_with_legacy = []
+    for name, path in LEGACY_CONFIGS.items():
+        if not path.exists():
+            continue
+        try:
+            sibling = _load_yaml(path)
+        except yaml.YAMLError:
+            continue  # 坏 yaml 时跳过，不阻塞 setup 主流程
+        if "api_keys" in sibling or "ai_image" in sibling:
+            sibling_with_legacy.append((name, path))
+    if sibling_with_legacy:
         print()
-        print("⚠ 检测到旧 config 文件，可运行 /ai-image-config migrate 自动合并：")
-        for name, path in LEGACY_CONFIGS.items():
-            if path.exists():
-                print(f"    • {name}: {path}")
+        print("⚠ 以下 config 仍包含 api_keys / ai_image 块（由 ai-image plugin 管理）：")
+        for name, path in sibling_with_legacy:
+            print(f"    • {name}: {path}")
+        print("  运行 /ai-image:migrate 把这两个块整理到 presales-skills/config.yaml。")
     return 0
 
 
@@ -213,13 +247,18 @@ def cmd_show(section: Optional[str]) -> int:
     cfg = load_config()
     if not cfg:
         print(f"配置文件不存在：{CONFIG_PATH}")
-        print("运行 /ai-image-config setup 创建")
+        print("运行 /ai-image:setup 创建")
         return 1
 
     def _mask_api_keys_inplace(d: dict) -> None:
-        """对 dict 顶层的 api_keys 子树做 mask（复用 module-level _mask_api_key，F-014）。"""
+        """对 dict 顶层的 api_keys 子树做 mask（复用 module-level _mask_api_key，F-014）。
+        同时 mask migrate 写入的 api_keys_conflicts 块，避免 cmd_show 打印明文密钥。"""
         for k, v in (d.get("api_keys") or {}).items():
             d["api_keys"][k] = _mask_api_key(v)
+        for prov, sources in (d.get("api_keys_conflicts") or {}).items():
+            if isinstance(sources, dict):
+                for src, val in sources.items():
+                    sources[src] = _mask_api_key(val)
 
     if section:
         data = cfg.get(section)
@@ -272,7 +311,7 @@ def cmd_set(key_path: str, value: str, force: bool = False) -> int:
             file=sys.stderr,
         )
 
-    cfg = load_config() or dict(DEFAULT_CONFIG)
+    cfg = load_config() or copy.deepcopy(DEFAULT_CONFIG)
     _deep_set(cfg, key_path, typed)
     save_config(cfg)
     display_val = _mask_api_key(typed) if key_path.startswith("api_keys.") and isinstance(typed, str) and typed else typed
@@ -306,8 +345,8 @@ def cmd_models(provider_filter: Optional[str], refresh: bool = False) -> int:
     # 渲染 markdown 表格
     display = registry.get("display", {})
     print(display.get("header", "## AI Image Models\n"))
-    print(display.get("table_header", "| provider | model | name | status |"))
-    print(display.get("table_separator", "|---|---|---|---|"))
+    print(display.get("table_header", "| provider | model | name | max_resolution | price | features | status |"))
+    print(display.get("table_separator", "|---|---|---|---|---|---|---|"))
 
     status_map = display.get("status_map", {})
     providers = registry.get("providers", {})
@@ -390,7 +429,7 @@ def cmd_validate(provider_filter: Optional[str]) -> int:
         for issue in issues:
             print(f"  • {issue}")
         print()
-        print("使用 /ai-image-config set api_keys.<provider> <key> 配置")
+        print("使用 /ai-image:set api_keys.<provider> <key> 配置")
         print(
             "注：本命令仅检查配置字段格式与必填项，不验证 API key 是否真实可用；"
             "如需测试 API 连通性，请触发实际生成（如 image-gen \"test\" -o /tmp/）",
@@ -405,140 +444,136 @@ def cmd_validate(provider_filter: Optional[str]) -> int:
     return 0
 
 
-def _hash_yaml_content(paths: list[Path]) -> str:
-    """对多个 yaml 文件的 parsed content 做 sha256，用于 migrate 幂等判断"""
-    combined: dict[str, Any] = {}
-    for p in paths:
-        if p.exists():
-            data = _load_yaml(p)
-            combined[str(p)] = data
-    normalized = json.dumps(combined, sort_keys=True, ensure_ascii=False)
-    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
-
-
-# migrate：字段映射表（旧 → 新）
-FIELD_MAPPING = {
-    # tender-workflow
-    "ai_image.size": "ai_image.default_size",
-    "ai_image.default_provider": "ai_image.default_provider",
-    "ai_image.max_retries": "ai_image.max_retries",
-    "ai_image.timeout": "ai_image.timeout",
-    "ai_image.models": "ai_image.models",
-    "localkb.path": "localkb.path",
-    "anythingllm.enabled": "anythingllm.enabled",
-    "anythingllm.base_url": "anythingllm.base_url",
-    "anythingllm.workspace": "anythingllm.workspace",
-    "mcp_search.priority": "mcp_search.priority",
-    "drawio.cli_path": "drawio.cli_path",
-    # solution-master
-    "solution_brainstorming": "solution_brainstorming",
-}
-
-
 def cmd_migrate() -> int:
-    """合并旧的 solution-master/tender-workflow config.yaml 到统一 config.yaml"""
-    # F-041: 推荐顺序提示
-    print("提示：推荐先跑 /twc migrate（tender-workflow 内部旧→新），再跑本命令（跨 plugin 合并）。", file=sys.stderr)
-    old_paths = [p for p in LEGACY_CONFIGS.values() if p.exists()]
-    if not old_paths:
-        print("未检测到旧 config 文件。无需迁移。")
-        print("使用 /ai-image-config setup 新建配置")
+    """从 ~/.config/{solution-master,tender-workflow}/config.yaml 抽取 api_keys 和
+    ai_image 两个块到 ~/.config/presales-skills/config.yaml；之后从源文件移除这两个
+    块（仅这两个块——cdp_sites / taa / taw / tpl / trv / localkb / anythingllm /
+    drawio 等 plugin 专属字段不动）。
+
+    AI 生图配置由 ai-image plugin 管理；solution-master 与 tender-workflow 不再持有
+    api_keys 和 ai_image，本命令负责一次性把这两个块的内容整理到 ai-image plugin 的
+    config 文件。
+    """
+    sm_path = LEGACY_CONFIGS["solution-master"]
+    tw_path = LEGACY_CONFIGS["tender-workflow"]
+    sm_cfg = _safe_load(sm_path, "solution-master")
+    tw_cfg = _safe_load(tw_path, "tender-workflow")
+
+    # Lift 超老字段 ai_keys.{ark,dashscope,gemini}_api_key → api_keys.*，避免与
+    # tw_config.normalize 形成循环（normalize 会 lift 后 validate 报"残留"，但
+    # 本命令若不识别 ai_keys 则原文件没 api_keys 即跳过——密钥静默丢）。
+    def _lift_legacy_ai_keys(cfg: dict) -> None:
+        legacy = cfg.get("ai_keys")
+        if not isinstance(legacy, dict):
+            return
+        cfg.setdefault("api_keys", {})
+        for legacy_field, target in (
+            ("ark_api_key", "ark"),
+            ("dashscope_api_key", "dashscope"),
+            ("gemini_api_key", "gemini"),
+        ):
+            v = legacy.get(legacy_field)
+            if v and not cfg["api_keys"].get(target):
+                cfg["api_keys"][target] = v
+
+    _lift_legacy_ai_keys(sm_cfg)
+    _lift_legacy_ai_keys(tw_cfg)
+
+    sm_has = any(k in sm_cfg for k in ("api_keys", "ai_image", "ai_keys"))
+    tw_has = any(k in tw_cfg for k in ("api_keys", "ai_image", "ai_keys"))
+    if not sm_has and not tw_has:
+        print("solution-master 与 tender-workflow 的 config 中均无 api_keys / ai_image / ai_keys 块；无需处理。")
         return 0
 
-    # 幂等检查
-    current_hash = _hash_yaml_content(old_paths)
-    existing_new = load_config()
-    if existing_new.get("_migrated_from_hash") == current_hash:
-        print(f"已迁移（hash 匹配：{current_hash[:12]}…），skip。")
-        print("若要重新合并，请先删除新 config.yaml 或手动调整字段。")
-        return 0
+    # 1. 加载 presales-skills/config.yaml
+    # - 已存在：保留所有现有值（包括用户主动设的字段）；只填补缺失字段
+    # - 不存在：以最小骨架起步，避免 DEFAULT_CONFIG 的占位值挡住 sm/tw 真实数据
+    new_cfg = load_config() or {}
+    # 每轮重新构造 api_keys_conflicts：避免上一轮残留与当前实际冲突状态不一致
+    new_cfg.pop("api_keys_conflicts", None)
+    new_cfg.setdefault("api_keys", {})
+    new_cfg.setdefault("ai_image", {})
+    new_cfg["ai_image"].setdefault("models", {})
 
-    # 加载旧 config
-    sm_cfg = _load_yaml(LEGACY_CONFIGS["solution-master"]) if LEGACY_CONFIGS["solution-master"].exists() else {}
-    tw_cfg = _load_yaml(LEGACY_CONFIGS["tender-workflow"]) if LEGACY_CONFIGS["tender-workflow"].exists() else {}
-
-    # 写前 backup（如果新 config 已存在）
-    if CONFIG_PATH.exists():
-        from datetime import datetime
-        ts = datetime.now().strftime("%Y%m%d-%H%M%S")
-        backup = CONFIG_PATH.with_suffix(f".yaml.backup-{ts}")
-        backup.write_text(CONFIG_PATH.read_text(encoding="utf-8"), encoding="utf-8")
-        print(f"已备份当前 config：{backup}")
-
-    # 基于 DEFAULT + 旧 config 合并
-    merged: dict[str, Any] = dict(DEFAULT_CONFIG)
-    merged["api_keys"] = {}  # fresh start
+    # 2. 合并 api_keys —— 优先级：presales-skills 现有值 > tw > sm
     conflicts: dict[str, dict[str, Any]] = {}
-    legacy_preserved: dict[str, dict[str, Any]] = {"solution-master": {}, "tender-workflow": {}}
 
-    # 1. api_keys 合并（tender-workflow 优先，冲突写入 api_keys_conflicts）
-    tw_keys = tw_cfg.get("api_keys") or {}
-    sm_keys = sm_cfg.get("api_keys") or {}
-    for k, v in tw_keys.items():
-        if v:
-            merged["api_keys"][k] = v
-    for k, v in sm_keys.items():
-        if not v:
+    def _absorb_keys(src_name: str, src_keys: dict) -> None:
+        for k, v in src_keys.items():
+            if not v:
+                continue
+            existing = new_cfg["api_keys"].get(k)
+            if existing and existing != v:
+                conflicts.setdefault(k, {"presales-skills (retained)": existing})[src_name] = v
+            elif not existing:
+                new_cfg["api_keys"][k] = v
+
+    _absorb_keys("tender-workflow", tw_cfg.get("api_keys") or {})
+    _absorb_keys("solution-master", sm_cfg.get("api_keys") or {})
+
+    if conflicts:
+        print(f"⚠ 检测到 {len(conflicts)} 个 api_keys 冲突（保留 presales-skills 已有值，差异写入 api_keys_conflicts）：", file=sys.stderr)
+        for k, sources in conflicts.items():
+            for src, val in sources.items():
+                print(f"  - api_keys.{k} from {src}: {_mask_api_key(val)}", file=sys.stderr)
+        print(f"  如需采用其他来源的值，请手工编辑 {CONFIG_PATH}", file=sys.stderr)
+        new_cfg["api_keys_conflicts"] = conflicts
+
+    # 3. 合并 ai_image —— 只填补 None / 缺失字段；绝不覆盖 presales-skills 已有非空值
+    def _absorb_ai_image(src_ai: dict) -> None:
+        for k, v in src_ai.items():
+            if v is None:
+                continue
+            target = "default_size" if k == "size" else k  # F-027 旧字段 rename
+            if target == "models" and isinstance(v, dict):
+                for prov, model_id in v.items():
+                    new_cfg["ai_image"]["models"].setdefault(prov, model_id)
+            elif new_cfg["ai_image"].get(target) is None:
+                new_cfg["ai_image"][target] = v
+
+    _absorb_ai_image(tw_cfg.get("ai_image") or {})
+    _absorb_ai_image(sm_cfg.get("ai_image") or {})
+
+    # 4. 备份并写回 presales-skills/config.yaml
+    from datetime import datetime
+    ts = datetime.now().strftime("%Y%m%d-%H%M%S")
+    if CONFIG_PATH.exists():
+        backup = CONFIG_PATH.parent / f"{CONFIG_PATH.name}.backup-{ts}"
+        backup.write_text(CONFIG_PATH.read_text(encoding="utf-8"), encoding="utf-8")
+        _chmod_600(backup)  # F-011: backup 含明文 API key，同步收 0o600
+        print(f"已备份 {CONFIG_PATH}：{backup.name}")
+    save_config(new_cfg)
+    print(f"✓ api_keys + ai_image 合并到 {CONFIG_PATH}")
+
+    # 5. prune 源 config 中的 api_keys / ai_image / ai_keys 三个顶层块（备份原文件，不删其他键）
+    #    ai_keys 也清掉，避免老用户 normalize 后再生 api_keys 形成循环
+    pruned_any = False
+    for name, path, cfg in (("solution-master", sm_path, sm_cfg), ("tender-workflow", tw_path, tw_cfg)):
+        if not path.exists():
             continue
-        if k in merged["api_keys"] and merged["api_keys"][k] != v:
-            conflicts.setdefault(k, {})["solution-master"] = v
-            conflicts[k]["tender-workflow (retained)"] = merged["api_keys"][k]
-        elif k not in merged["api_keys"]:
-            merged["api_keys"][k] = v
-    # F-014: conflicts 的 key 名是固定字符串 "tender-workflow (retained)" 与 "solution-master"；
-    #        与上方 L440-441 的 dict 写入对齐。不要简写为 "tw" / "sm"，否则 v.get(...) 拿不到值。
-    if conflicts:
-        print(f"⚠  检测到 {len(conflicts)} 个 API key 冲突（保留 tw 值，丢弃 sm 值）：", file=sys.stderr)
-        for k, v in conflicts.items():
-            tw_val = _mask_api_key(v.get("tender-workflow (retained)", ""))
-            sm_val = _mask_api_key(v.get("solution-master", ""))
-            print(f"  - api_keys.{k}: tw={tw_val} (使用), sm={sm_val} (丢弃)", file=sys.stderr)
-        print(f"  如需使用 sm 值，请手工编辑 {CONFIG_PATH} 后跑 /ai-image-config-validate", file=sys.stderr)
-        merged["api_keys_conflicts"] = conflicts
+        # 注意：cfg 此时已被 _lift_legacy_ai_keys 修改过（含 lifted api_keys），
+        # 但 backup 用的是 path 的原始磁盘内容（path.read_text），保留 lift 前状态
+        if not any(k in cfg for k in ("api_keys", "ai_image", "ai_keys")):
+            continue
+        backup = path.parent / f"{path.name}.backup-{ts}"
+        backup.write_text(path.read_text(encoding="utf-8"), encoding="utf-8")
+        _chmod_600(backup)
+        pruned = {k: v for k, v in cfg.items() if k not in ("api_keys", "ai_image", "ai_keys")}
+        _save_yaml(path, pruned)
+        print(f"  ✓ {name}: 备份到 {backup.name}，已从原文件移除 api_keys / ai_image / ai_keys 块")
+        pruned_any = True
 
-    # 2. 字段映射迁移
-    for src_path, dst_path in FIELD_MAPPING.items():
-        tw_val = _deep_get(tw_cfg, src_path)
-        sm_val = _deep_get(sm_cfg, src_path)
-        # tw wins
-        if tw_val is not None:
-            _deep_set(merged, dst_path, tw_val)
-        elif sm_val is not None:
-            _deep_set(merged, dst_path, sm_val)
-
-    # 3. 未识别字段进 _legacy section
-    recognized_top_keys = {"api_keys", "ai_image", "localkb", "anythingllm", "mcp_search", "drawio", "solution_brainstorming", "taa", "taw", "tpl", "trv"}
-    for src_name, src_cfg in (("solution-master", sm_cfg), ("tender-workflow", tw_cfg)):
-        for k, v in src_cfg.items():
-            if k not in recognized_top_keys and not k.startswith("_"):
-                legacy_preserved[src_name][k] = v
-    # 只保留有内容的
-    legacy_preserved = {k: v for k, v in legacy_preserved.items() if v}
-    if legacy_preserved:
-        merged["_legacy"] = legacy_preserved
-
-    # 4. 写 hash 标记
-    merged["_migrated_from_hash"] = current_hash
-
-    save_config(merged)
-    print(f"✓ migrate 完成：{CONFIG_PATH}")
-    print(f"  hash = {current_hash[:12]}…")
-    if conflicts:
-        print(f"  ⚠ {len(conflicts)} 个 api_keys 冲突，已写入 api_keys_conflicts 节供人工复核")
-    if legacy_preserved:
-        print(f"  保留 {sum(len(v) for v in legacy_preserved.values())} 个未识别字段到 _legacy section")
-
-    # 重命名旧文件
-    for name, path in LEGACY_CONFIGS.items():
-        if path.exists():
-            bak = path.with_suffix(".yaml.bak")
-            path.rename(bak)
-            print(f"  旧 {name} 重命名为 {bak}")
+    if pruned_any:
+        print(
+            "注：YAML 注释、字段顺序、multi-document 结构在 yaml.safe_load+safe_dump 处理后会丢失；"
+            "如需保留请手工对照 .backup-* 备份恢复。",
+            file=sys.stderr,
+        )
 
     print()
     print("后续操作：")
-    print("  /ai-image-config show     查看合并结果")
-    print("  /ai-image-config validate 验证 API key 可用性")
+    print("  /ai-image:show     查看合并结果")
+    print("  /ai-image:validate 验证 API key 配置完整性")
     return 0
 
 

@@ -1,5 +1,5 @@
 ---
-description: 按 dotted path 设置配置项。例如：/ai-image-config-set api_keys.ark sk-xxx
+description: 按 dotted path 设置配置项。例如：/ai-image:set api_keys.ark sk-xxx
 ---
 
 调用 ai-image plugin 的统一配置 CLI 的 `set` 子命令：

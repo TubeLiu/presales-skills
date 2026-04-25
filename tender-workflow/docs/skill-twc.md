@@ -138,18 +138,7 @@ python3 tools/tw_config.py get taw localkb.path
 3. 区分 `★ 推荐`（注册表静态属性）和 `● 当前默认`（用户配置 `ai_image.models.*`）
 4. 若 `last_updated` 距今超过 90 天，自动显示过期警告
 
-### 4.3 `/twc models --refresh`
-
-联网更新模型注册表：
-
-1. 读取当前注册表，记录现有模型列表
-2. **并行**搜索三个供应商的最新模型信息（Web 搜索）
-3. 对比差异：新增模型 / 已下线模型 / 信息变更
-4. 展示变更摘要表格，等待用户确认
-5. 用户确认后更新 `ai_image_models.yaml`，递增 patch 版本号
-6. **不自动变更**用户已配置的默认模型
-
-### 4.4 `/twc validate`
+### 4.3 `/twc validate`
 
 健康检查项：
 - 配置文件语法正确性
@@ -158,7 +147,7 @@ python3 tools/tw_config.py get taw localkb.path
 - AnythingLLM 连通性
 - draw.io CLI 可用性
 
-### 4.5 `/twc migrate`
+### 4.4 `/twc migrate`
 
 迁移旧的 per-skill 配置：
 1. 检查 `~/.config/taw/config.yaml` 和 `~/.config/taa/config.yaml`

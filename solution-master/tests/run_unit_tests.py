@@ -692,8 +692,15 @@ def test_u24_sm_config_validate_web_access_probe(base: Path) -> TestResult:
         fake_home = base / "u24-home"
         config_dir = fake_home / ".config" / "solution-master"
         config_dir.mkdir(parents=True, exist_ok=True)
+        # 用 fake_home 下一个真实存在的目录作为 localkb path（含 .index/ 子目录），
+        # 让 validate 的 localkb 检查通过——这样 issues 列表完全为空，rc=0，
+        # 测试的"crash detection"启发式（drawio in out）就不再受 issue list 内容影响
+        kb_dir = fake_home / "kb"
+        (kb_dir / ".index").mkdir(parents=True, exist_ok=True)
         config_path = config_dir / "config.yaml"
         config_path.write_text(
+            "localkb:\n"
+            f"  path: {kb_dir}\n"
             "cdp_sites:\n"
             "  enabled: true\n"
             "  sites:\n"
@@ -701,6 +708,11 @@ def test_u24_sm_config_validate_web_access_probe(base: Path) -> TestResult:
             "      search_url: https://example.com/search?q={query}\n",
             encoding="utf-8",
         )
+        # AI 生图配置由 ai-image plugin 管理；touch 一个空文件以满足 sm_config.validate
+        # 的轻量存在检查（绕开"AI 生图配置文件不存在"提示），让测试聚焦 web-access probe
+        ai_image_dir = fake_home / ".config" / "presales-skills"
+        ai_image_dir.mkdir(parents=True, exist_ok=True)
+        (ai_image_dir / "config.yaml").write_text("# placeholder for U24 fixture\n", encoding="utf-8")
 
         cp = subprocess.run(
             ["python3", str(sm_config), "validate"],

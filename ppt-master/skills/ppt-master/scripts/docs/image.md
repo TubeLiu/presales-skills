@@ -21,12 +21,12 @@ image-gen "<prompt>" ...
 ```
 
 Configuration is unified under `~/.config/presales-skills/config.yaml`.
-Manage via `/ai-image-config-*` slash commands:
+Manage via `/ai-image:*` slash commands:
 
-- `/ai-image-config-setup` — first-time setup wizard
-- `/ai-image-config-models` — show model registry (13 providers)
-- `/ai-image-config-set api_keys.<provider> <key>` — set API key
-- `/ai-image-config-validate` — health check
+- `/ai-image:setup` — first-time setup wizard
+- `/ai-image:models` — show model registry (13 providers)
+- `/ai-image:set api_keys.<provider> <key>` — set API key
+- `/ai-image:validate` — health check
 
 ## Source-mode invocation
 
@@ -48,4 +48,4 @@ Tiered:
 - **Extended**: bfl, ideogram, stability
 - **Experimental**: fal, minimax, openrouter, replicate, siliconflow
 
-See `ai-image/README.md` and `/ai-image-config-models` for details.
+See `ai-image/README.md` and `/ai-image:models` for details.

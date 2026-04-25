@@ -11,7 +11,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).parent.parent / 'tools'))
 from tw_config import (
     _deep_get, _deep_set, _parse_value, normalize, validate,
-    show, get, load, load_raw, CONFIG_PATH, DEFAULTS,
+    show, get, load, load_raw, set_value, CONFIG_PATH, DEFAULTS,
 )
 
 
@@ -96,21 +96,22 @@ class TestNormalize:
     def test_empty_config(self):
         result = normalize({})
         assert "localkb" in result
-        assert "api_keys" in result
-        assert "ai_image" in result
+        # api_keys / ai_image 由 ai-image plugin 管理，normalize 不再主动构造这两块。
 
-    def test_legacy_api_keys_migration(self):
-        old = {
-            "ai_keys": {
-                "ark_api_key": "sk-ark-123",
-                "dashscope_api_key": "sk-dash-456",
-            }
-        }
-        result = normalize(old)
-        assert result["api_keys"]["ark"] == "sk-ark-123"
-        assert result["api_keys"]["dashscope"] == "sk-dash-456"
+    def test_api_keys_passthrough(self):
+        # normalize 透传 api_keys 块（让 /ai-image:migrate 能看到它做后续整理）
+        cfg = {"api_keys": {"ark": "user-key"}}
+        result = normalize(cfg)
+        assert result["api_keys"]["ark"] == "user-key"
 
-    def test_new_api_keys_preserved(self):
+    def test_legacy_ai_keys_lifted_to_api_keys(self):
+        # 超老字段 ai_keys.ark_api_key 等 → 映射到 api_keys.* 防止 migrate 看不到
+        cfg = {"ai_keys": {"ark_api_key": "sk-old", "dashscope_api_key": "sk-dash"}}
+        result = normalize(cfg)
+        assert result["api_keys"]["ark"] == "sk-old"
+        assert result["api_keys"]["dashscope"] == "sk-dash"
+
+    def test_new_api_keys_takes_precedence_over_legacy(self):
         cfg = {
             "api_keys": {"ark": "new-key"},
             "ai_keys": {"ark_api_key": "old-key"},
@@ -136,11 +137,6 @@ class TestNormalize:
         result = normalize(cfg)
         assert result["anythingllm"]["workspace"] == "ws1"
         assert "taa_workspace" not in result["anythingllm"]
-
-    def test_ai_image_defaults_filled(self):
-        result = normalize({})
-        assert result["ai_image"]["default_provider"] == "ark"
-        assert result["ai_image"]["models"]["ark"] == "doubao-seedream-5-0-260128"
 
     def test_skill_sections_preserved(self):
         cfg = {"taa": {"vendor": "博云"}, "tpl": {"default_template": "government"}}
@@ -205,16 +201,61 @@ class TestGet:
         with patch('tw_config.load', return_value=cfg):
             assert get("taa", "localkb.path") == "/test/path"
 
-    def test_env_var_fallback(self):
-        cfg = {"api_keys": {}, "taw": {}}
-        with patch('tw_config.load', return_value=cfg), \
-             patch.dict(os.environ, {"ARK_API_KEY": "env-key"}):
-            assert get("taw", "api_keys.ark") == "env-key"
-
     def test_default_value(self):
         cfg = {"taa": {}}
         with patch('tw_config.load', return_value=cfg):
             assert get("taa", "nonexistent", "default") == "default"
+
+
+class TestSetValueGuard:
+    """守卫：api_keys.* / ai_image.* 由 ai-image plugin 管理，不允许从 tw 写入"""
+
+    def test_rejects_api_keys_dot_path(self):
+        with pytest.raises(ValueError, match="ai-image plugin 管理"):
+            set_value("api_keys.ark", "sk-test")
+
+    def test_rejects_ai_image_dot_path(self):
+        with pytest.raises(ValueError, match="ai-image plugin 管理"):
+            set_value("ai_image.default_provider", "gemini")
+
+    def test_rejects_top_level_keys(self):
+        for k in ("api_keys", "ai_image"):
+            with pytest.raises(ValueError):
+                set_value(k, {})
+
+    def test_normal_keys_pass_through(self, tmp_path, monkeypatch):
+        # 用 tmp_path 替代真实 CONFIG_PATH 避免污染用户配置
+        fake_config = tmp_path / "config.yaml"
+        monkeypatch.setattr("tw_config.CONFIG_PATH", fake_config)
+        set_value("tpl.default_template", "government")
+        # 写入成功不抛
+        assert fake_config.exists()
+
+
+class TestNormalizeAiImagePassthrough:
+    def test_ai_image_block_passthrough(self):
+        cfg = {"ai_image": {"default_provider": "gemini", "models": {"gemini": "x"}}}
+        result = normalize(cfg)
+        assert result["ai_image"]["default_provider"] == "gemini"
+        assert result["ai_image"]["models"]["gemini"] == "x"
+
+
+class TestLoadSkillView:
+    def test_skill_view_excludes_api_keys_and_ai_image(self):
+        # load(skill) 不应在视图里包含 api_keys / ai_image 块（这两块由 ai-image plugin 持有）
+        raw = {
+            "localkb": {"path": "/p"},
+            "anythingllm": {"workspace": "ws"},
+            "api_keys": {"ark": "sk-x"},
+            "ai_image": {"default_provider": "ark"},
+            "taw": {"image_source": "ai"},
+        }
+        with patch("tw_config.load_raw", return_value=raw):
+            view = load("taw")
+        assert "api_keys" not in view, "skill 视图不应暴露 api_keys（由 ai-image plugin 持有）"
+        assert "ai_image" not in view, "skill 视图不应暴露 ai_image（由 ai-image plugin 持有）"
+        assert view["localkb"]["path"] == "/p"
+        assert view["taw"]["image_source"] == "ai"
 
 
 if __name__ == '__main__':

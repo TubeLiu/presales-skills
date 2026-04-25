@@ -21,5 +21,5 @@ image-gen "<prompt>" \
 ## Configuration
 
 All API keys now unified at `~/.config/presales-skills/config.yaml`, managed
-via `/ai-image-config-*` slash commands. See ai-image plugin README for the
+via `/ai-image:*` slash commands. See ai-image plugin README for the
 full setup guide.

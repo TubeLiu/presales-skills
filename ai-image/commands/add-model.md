@@ -11,5 +11,5 @@ python3 ${CLAUDE_PLUGIN_ROOT}/scripts/ai_image_config.py add-model $ARGUMENTS
 $ARGUMENTS 需包含两个参数：`<provider> <yaml-fragment>`。yaml-fragment 必须含 `id` 字段。
 示例：
 ```
-/ai-image-config-add-model ark '{"id": "custom-model", "name": "Custom", "status": "available"}'
+/ai-image:add-model ark '{"id": "custom-model", "name": "Custom", "status": "available"}'
 ```
