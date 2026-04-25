@@ -1,8 +1,3 @@
----
-name: solution-brainstorming
-description: 在任何方案撰写工作之前必须使用此技能——用户描述项目需求、开始新方案、需要澄清设计思路时触发。通过苏格拉底式提问提取项目细节。
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep, AskUserQuestion, WebSearch, WebFetch, mcp__tavily__tavily_search, mcp__exa__web_search_exa
----
 
 # 头脑风暴：将项目需求转化为方案设计
 

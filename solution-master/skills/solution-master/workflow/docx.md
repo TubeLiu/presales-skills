@@ -1,14 +1,9 @@
----
-name: docx-formatting
-description: 当需要将方案内容输出为标准格式 DOCX 文件时使用——支持 Markdown 转 DOCX，遵循统一字体规范
-allowed-tools: Read, Write, Edit, Bash, Glob
----
 
 # DOCX 格式输出
 
 将方案内容从 Markdown 格式渲染为符合规范的 DOCX 文件。
 
-**工具：** `${CLAUDE_SKILL_DIR}/scripts/docx_writer.py`
+**工具：** `$SKILL_DIR/scripts/docx_writer.py`
 
 ## 字体规范
 
@@ -39,7 +34,7 @@ DOCX 输出时，Heading 1-5 自动关联多级列表编号，无需在 Markdown
 | `#### 四级标题` | **1.1.1.1** 四级标题 |
 | `##### 五级标题` | **1.1.1.1.1** 五级标题 |
 
-编号由 `${CLAUDE_SKILL_DIR}/scripts/docx_writer.py` 的 `setup_heading_numbering()` 函数自动生成。
+编号由 `$SKILL_DIR/scripts/docx_writer.py` 的 `setup_heading_numbering()` 函数自动生成。
 
 ## 页面设置
 
@@ -53,7 +48,7 @@ DOCX 输出时，Heading 1-5 自动关联多级列表编号，无需在 Markdown
 ### 方式一：命令行
 
 ```bash
-python3 "${CLAUDE_SKILL_DIR}/scripts/docx_writer.py" input.md --output output.docx --title "方案名称" --author "作者"
+python3 "$SKILL_DIR/scripts/docx_writer.py" input.md --output output.docx --title "方案名称" --author "作者"
 ```
 
 ### 方式二：Python API

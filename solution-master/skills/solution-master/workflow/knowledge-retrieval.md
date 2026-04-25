@@ -1,8 +1,3 @@
----
-name: knowledge-retrieval
-description: 当需要从知识库检索相关内容用于方案撰写或头脑风暴时使用——支持本地KB、AnythingLLM语义搜索、互联网多源检索、CDP登录态站点检索与智能融合
-allowed-tools: Read, Write, Bash, Glob, Grep, WebSearch, WebFetch, mcp__tavily__tavily_search, mcp__exa__web_search_exa, mcp__plugin_anythingllm-mcp_anythingllm__anythingllm_search, mcp__plugin_anythingllm-mcp_anythingllm__anythingllm_list_workspaces
----
 
 # 知识检索：多源检索与智能融合
 
@@ -82,15 +77,15 @@ digraph retrieval {
 
 ### 触发条件
 
-读取配置 `cdp_sites.enabled`（通过 `python3 "${CLAUDE_PLUGIN_ROOT:-${CLAUDE_SKILL_DIR}/..}/skills/solution-config/scripts/sm_config.py" get cdp_sites.enabled`）：
+读取配置 `cdp_sites.enabled`（通过 `python3 "${CLAUDE_PLUGIN_ROOT:-$SKILL_DIR/..}/skills/solution-config/scripts/sm_config.py" get cdp_sites.enabled`）：
 - `true` 且 `cdp_sites.sites` 非空 → 执行第四层
 - `false` 或未配置 → 跳过第四层（退化为三层检索）
 
-> **路径写法说明（F-022）**：`${CLAUDE_PLUGIN_ROOT}` 在 plugin 模式注入；`${CLAUDE_SKILL_DIR}/..` 是 npx 模式 fallback。两种模式都解析到 `<solution-master>/skills/solution-config/scripts/sm_config.py`。
+> **路径写法说明（F-022）**：`$SKILL_DIR/..` 在 plugin 模式注入；`$SKILL_DIR/..` 是 npx 模式 fallback。两种模式都解析到 `<solution-master>/skills/solution-config/scripts/sm_config.py`。
 
 ### 执行流程
 
-1. **读取站点配置：** `python3 "${CLAUDE_PLUGIN_ROOT:-${CLAUDE_SKILL_DIR}/..}/skills/solution-config/scripts/sm_config.py" get cdp_sites`，获取站点列表
+1. **读取站点配置：** `python3 "${CLAUDE_PLUGIN_ROOT:-$SKILL_DIR/..}/skills/solution-config/scripts/sm_config.py" get cdp_sites`，获取站点列表
 2. **启动 CDP Proxy**（前置依赖检查 — F-009）：
    ```bash
    command -v web-access-check

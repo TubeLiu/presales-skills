@@ -6,10 +6,10 @@
 #
 # Changes from upstream:
 #   - Variable rename: PLUGIN_ROOT -> SM_ROOT
-#   - Read skills/using-solution-master/SKILL.md (instead of using-superpowers)
+#   - Read skills/solution-master/SKILL.md (the unified main SKILL after M4 11→1 merge)
 #   - Injected text adapted to Solution Master context
 #   - Added project-gate: only fires in Solution Master projects
-#     (presence of drafts/, docs/specs/, or solution-writing skill marker)
+#     (presence of drafts/, docs/specs/, or solution-master skill marker)
 
 set -euo pipefail
 
@@ -24,13 +24,13 @@ SM_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$PWD}"
 if [ ! -d "${PROJECT_DIR}/drafts" ] && \
    [ ! -d "${PROJECT_DIR}/docs/specs" ] && \
-   [ ! -f "${PROJECT_DIR}/skills/solution-writing/SKILL.md" ] && \
-   [ ! -f "${PROJECT_DIR}/.claude/skills/solution-writing/SKILL.md" ]; then
+   [ ! -f "${PROJECT_DIR}/skills/solution-master/SKILL.md" ] && \
+   [ ! -f "${PROJECT_DIR}/.claude/skills/solution-master/SKILL.md" ]; then
   exit 0
 fi
 
-# Read using-solution-master content
-using_sm_content=$(cat "${SM_ROOT}/skills/using-solution-master/SKILL.md" 2>&1 || echo "Error reading using-solution-master skill")
+# Read main solution-master SKILL content (post M4 11→1 merge: iron rules now live here)
+using_sm_content=$(cat "${SM_ROOT}/skills/solution-master/SKILL.md" 2>&1 || echo "Error reading solution-master skill")
 
 # Escape string for JSON embedding using bash parameter substitution.
 # Each ${s//old/new} is a single C-level pass - orders of magnitude
@@ -54,7 +54,7 @@ escape_for_json() {
 }
 
 using_sm_escaped=$(escape_for_json "$using_sm_content")
-session_context="<EXTREMELY_IMPORTANT>\nYou are operating Solution Master — an AI 辅助通用解决方案撰写框架.\n\n**Below is the full content of your 'solution-master:using-solution-master' skill — your introduction to Solution Master's iron rules, red lines, and skill routing. For all other skills, use the 'Skill' tool:**\n\n${using_sm_escaped}\n</EXTREMELY_IMPORTANT>"
+session_context="<EXTREMELY_IMPORTANT>\nYou are operating Solution Master — an AI 辅助通用解决方案撰写框架.\n\n**Below is the full content of your 'solution-master:solution-master' skill — your introduction to Solution Master's iron rules, red lines, workflow navigation, and subagent dispatch. For other skills, use the 'Skill' tool:**\n\n${using_sm_escaped}\n</EXTREMELY_IMPORTANT>"
 
 # Output context injection as JSON.
 #

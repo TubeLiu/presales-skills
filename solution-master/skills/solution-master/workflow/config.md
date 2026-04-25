@@ -1,15 +1,10 @@
----
-name: solution-config
-description: 当用户说"配置"、"设置"或需要管理 Solution Master 配置时使用，也可通过 /solution-config 手动调用
-allowed-tools: Read, Edit, Bash, AskUserQuestion
----
 
 # 配置管理
 
 统一管理 Solution Master 的所有配置项。
 
 **配置文件：** `~/.config/solution-master/config.yaml`
-**配置工具：** `${CLAUDE_SKILL_DIR}/scripts/sm_config.py`
+**配置工具：** `$SKILL_DIR/scripts/sm_config.py`
 
 ## 命令
 
@@ -30,14 +25,14 @@ allowed-tools: Read, Edit, Bash, AskUserQuestion
 
 1. **知识库路径**（可选）
    ```bash
-   python3 "${CLAUDE_SKILL_DIR}/scripts/sm_config.py" set localkb.path /path/to/Local-KnowledgeBase
+   python3 "$SKILL_DIR/scripts/sm_config.py" set localkb.path /path/to/Local-KnowledgeBase
    ```
 
 2. **AnythingLLM**（可选）
    ```bash
-   python3 "${CLAUDE_SKILL_DIR}/scripts/sm_config.py" set anythingllm.enabled true
-   python3 "${CLAUDE_SKILL_DIR}/scripts/sm_config.py" set anythingllm.base_url http://localhost:3001
-   python3 "${CLAUDE_SKILL_DIR}/scripts/sm_config.py" set anythingllm.workspace <workspace-slug>
+   python3 "$SKILL_DIR/scripts/sm_config.py" set anythingllm.enabled true
+   python3 "$SKILL_DIR/scripts/sm_config.py" set anythingllm.base_url http://localhost:3001
+   python3 "$SKILL_DIR/scripts/sm_config.py" set anythingllm.workspace <workspace-slug>
    ```
 
 3. **draw.io Desktop CLI 路径检测**
@@ -69,7 +64,7 @@ allowed-tools: Read, Edit, Bash, AskUserQuestion
    b. 若用户选择跳过 → 继续下一步
    c. 若用户需要：
       ```bash
-      python3 "${CLAUDE_SKILL_DIR}/scripts/sm_config.py" set cdp_sites.enabled true
+      python3 "$SKILL_DIR/scripts/sm_config.py" set cdp_sites.enabled true
       ```
    d. 循环添加站点：
       - 询问站点名称（如"公司 Confluence"、"内部知识库"）
@@ -92,7 +87,7 @@ allowed-tools: Read, Edit, Bash, AskUserQuestion
 
 5. **验证配置**
    ```bash
-   python3 "${CLAUDE_SKILL_DIR}/scripts/sm_config.py" validate
+   python3 "$SKILL_DIR/scripts/sm_config.py" validate
    ```
 
 > **下一步**：完成本命令后，如尚未配置 AI 生图，运行 `/ai-image:setup` 填写 API keys 与默认 provider。
@@ -133,7 +128,7 @@ drawio:
 转发到 ai-image plugin 的统一模型注册表入口：
 
 ```bash
-python3 "${CLAUDE_SKILL_DIR}/scripts/sm_config.py" models [provider | --refresh]
+python3 "$SKILL_DIR/scripts/sm_config.py" models [provider | --refresh]
 ```
 
 `sm_config.py` 内部会调用 `ai-image-config models …`，由 ai-image plugin 提供注册表渲染与联网刷新逻辑。请确保 ai-image plugin 已安装（`/plugin install ai-image@presales-skills`）。

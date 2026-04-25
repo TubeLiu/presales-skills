@@ -1,8 +1,3 @@
----
-name: spec-reviewing
-description: 当一个方案章节撰写完成、需要验证内容是否正确完整地满足计划要求时使用
-allowed-tools: Read, Write, Glob, Grep, Bash
----
 
 # 内容正确性审查
 

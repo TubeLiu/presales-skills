@@ -1,8 +1,3 @@
----
-name: quality-reviewing
-description: 当方案章节已通过内容正确性审查（spec-reviewing）、需要检查写作质量时使用
-allowed-tools: Read, Write, Glob, Grep, Bash
----
 
 # 写作质量审查
 
