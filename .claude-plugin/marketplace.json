@@ -1,6 +1,10 @@
 {
   "name": "presales-skills",
-  "owner": { "name": "LiuZiJiao", "email": "tubeliu1@gmail.com", "homepage": "https://github.com/Alauda-io/presales-skills" },
+  "owner": {
+    "name": "LiuZiJiao",
+    "email": "tubeliu1@gmail.com",
+    "homepage": "https://github.com/Alauda-io/presales-skills"
+  },
   "metadata": {
     "description": "Presales skills monorepo — solution-master / ppt-master / tender-workflow + shared plugins (drawio, ai-image, anythingllm-mcp, web-access).",
     "version": "0.3.0"
@@ -9,65 +13,110 @@
     {
       "name": "drawio",
       "source": "./drawio",
-      "description": "Draw.io 图表生成（.drawio XML + PNG/SVG/PDF 导出）。独立共享 plugin，solution-master 与 tender-workflow 均依赖。Slash 入口：/drawio:draw。",
-      "version": "0.2.2",
-      "author": { "name": "LiuZiJiao" },
+      "description": "Draw.io 图表生成（.drawio XML + PNG/SVG/PDF 导出）。独立共享 plugin，solution-master 与 tender-workflow 均依赖。通过 SKILL description 自然语言触发。",
+      "version": "0.3.0",
+      "author": {
+        "name": "LiuZiJiao"
+      },
       "category": "productivity",
-      "tags": ["diagram", "drawio", "shared"]
+      "tags": [
+        "diagram",
+        "drawio",
+        "shared"
+      ]
     },
     {
       "name": "ai-image",
       "source": "./ai-image",
-      "description": "统一 AI 图片生成：13 个后端（volcengine/ark、qwen/dashscope、gemini、openai、minimax、stability、bfl、ideogram、zhipu、siliconflow、fal、replicate、openrouter）+ 共享 YAML 模型注册表 + 完整 slash 命令族（/ai-image:gen|setup|migrate|set|show|validate|models|add-model）。生图主入口 /ai-image:gen（PATH bin 同名 image-gen）。独立共享 plugin，三个主 plugin 都依赖。",
-      "version": "0.3.2",
-      "author": { "name": "LiuZiJiao" },
+      "description": "统一 AI 图片生成：13 个后端（volcengine/ark、qwen/dashscope、gemini、openai、minimax、stability、bfl、ideogram、zhipu、siliconflow、fal、replicate、openrouter）+ 共享 YAML 模型注册表。生图与配置管理通过 SKILL description 自然语言触发。独立共享 plugin，三个主 plugin 都依赖。",
+      "version": "0.4.0",
+      "author": {
+        "name": "LiuZiJiao"
+      },
       "category": "productivity",
-      "tags": ["ai-image", "image-generation", "gen-ai", "shared"]
+      "tags": [
+        "ai-image",
+        "image-generation",
+        "gen-ai",
+        "shared"
+      ]
     },
     {
       "name": "anythingllm-mcp",
       "source": "./anythingllm-mcp",
       "description": "AnythingLLM MCP server — 知识库语义搜索 + workspace 列举。独立共享 plugin，solution-master 和 tender-workflow 均可选依赖；不装也能降级为本地 YAML 索引或联网检索。",
       "version": "0.1.2",
-      "author": { "name": "LiuZiJiao" },
+      "author": {
+        "name": "LiuZiJiao"
+      },
       "category": "productivity",
-      "tags": ["mcp", "anythingllm", "knowledge-base", "shared"]
+      "tags": [
+        "mcp",
+        "anythingllm",
+        "knowledge-base",
+        "shared"
+      ]
     },
     {
       "name": "web-access",
       "source": "./web-access",
-      "description": "联网操作 + CDP 浏览器自动化 skill（vendored from eze-is/web-access v2.5.0）。独立 plugin，solution-master 可选依赖（cdp_sites.enabled=true 时必需）；暴露 web-access-check / web-access-match-site 两个 bin 入口供跨 plugin 调用。",
-      "version": "0.1.1",
-      "author": { "name": "LiuZiJiao" },
+      "description": "联网操作 + CDP 浏览器自动化 skill。独立 plugin，solution-master 可选依赖（cdp_sites.enabled=true 时必需）；其它 skill 通过 SKILL description 自然语言触发或 installed_plugins.json 自定位脚本调用。",
+      "version": "0.2.0",
+      "author": {
+        "name": "LiuZiJiao"
+      },
       "category": "productivity",
-      "tags": ["web", "cdp", "browser-automation", "claude-code"]
+      "tags": [
+        "web",
+        "cdp",
+        "browser-automation",
+        "claude-code"
+      ]
     },
     {
       "name": "solution-master",
       "source": "./solution-master",
-      "description": "AI 辅助通用解决方案撰写框架。依赖 drawio、ai-image plugin；anythingllm-mcp、web-access 可选。完整 slash 命令族：/solution-master:write|using|brainstorm|plan|write-section|subagent-write|spec-review|quality-review|docx|kb|config|skills。",
-      "version": "0.1.9",
-      "author": { "name": "LiuZiJiao" },
+      "description": "AI 辅助通用解决方案撰写框架。11 个原 sub-skill 合并为 1 个主 SKILL + workflow/ 子文件按需加载。依赖 drawio、ai-image plugin；anythingllm-mcp、web-access 可选。通过 SKILL description 自然语言触发；Claude Code + Cursor 用户额外有 SessionStart hook 自动注入铁律。",
+      "version": "0.2.0",
+      "author": {
+        "name": "LiuZiJiao"
+      },
       "category": "writing",
-      "tags": ["solution", "docx", "中文"]
+      "tags": [
+        "solution",
+        "docx",
+        "中文"
+      ]
     },
     {
       "name": "ppt-master",
       "source": "./ppt-master",
-      "description": "PPT 生成 (PDF/DOCX/URL/MD → SVG → PPTX)。依赖 ai-image plugin。Slash 入口：/ppt-master:make。",
-      "version": "0.3.2",
-      "author": { "name": "LiuZiJiao" },
+      "description": "PPT 生成 (PDF/DOCX/URL/MD → SVG → PPTX)。依赖 ai-image plugin。通过 SKILL description 自然语言触发。",
+      "version": "0.4.0",
+      "author": {
+        "name": "LiuZiJiao"
+      },
       "category": "productivity",
-      "tags": ["ppt", "svg", "中文"]
+      "tags": [
+        "ppt",
+        "svg",
+        "中文"
+      ]
     },
     {
       "name": "tender-workflow",
       "source": "./tender-workflow",
-      "description": "四角色招投标工作流（tpl/taa/taw/trv/twc）。依赖 drawio、ai-image plugin；anythingllm-mcp 可选（未装时降级为本地 KB + 联网检索）。",
-      "version": "0.1.7",
-      "author": { "name": "LiuZiJiao" },
+      "description": "四角色招投标工作流（tpl/taa/taw/trv/twc）。依赖 drawio、ai-image plugin；anythingllm-mcp 可选（未装时降级为本地 KB + 联网检索）。所有 sub-skill 通过 SKILL description 自然语言触发。",
+      "version": "0.2.0",
+      "author": {
+        "name": "LiuZiJiao"
+      },
       "category": "writing",
-      "tags": ["tender", "招投标", "中文"]
+      "tags": [
+        "tender",
+        "招投标",
+        "中文"
+      ]
     }
   ]
 }
