@@ -1,6 +1,6 @@
 {
   "name": "anythingllm-mcp",
-  "description": "AnythingLLM MCP server — 语义搜索 + workspace 列举。Shared plugin，被 solution-master 和 tender-workflow 依赖。",
+  "description": "AnythingLLM MCP server — 知识库语义搜索 + workspace 列举。独立共享 plugin，solution-master 和 tender-workflow 均可选依赖；不装也能降级为本地 YAML 索引或联网检索。",
   "version": "0.1.1",
   "author": {
     "name": "LiuZiJiao"

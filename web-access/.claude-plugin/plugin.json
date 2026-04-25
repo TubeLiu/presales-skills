@@ -1,6 +1,6 @@
 {
   "name": "web-access",
-  "description": "联网操作 + CDP 浏览器自动化 skill（vendored from eze-is/web-access v2.5.0）。独立 plugin，solution-master 可选依赖（cdp_sites.enabled=true 时必需）。",
+  "description": "联网操作 + CDP 浏览器自动化 skill（vendored from eze-is/web-access v2.5.0）。独立 plugin，solution-master 可选依赖（cdp_sites.enabled=true 时必需）；暴露 web-access-check / web-access-match-site 两个 bin 入口供跨 plugin 调用。",
   "version": "0.1.0",
   "author": {
     "name": "LiuZiJiao"

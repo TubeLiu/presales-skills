@@ -1,6 +1,6 @@
 {
   "name": "solution-master",
-  "description": "AI 辅助通用解决方案撰写框架 — 苏格拉底式需求提取、子智能体驱动撰写、双重审查、多源知识检索、上下文感知配图、Markdown/DOCX 双格式输出，内置防脱轨 hook 机制。Depends on drawio and ai-image plugins; optionally depends on anythingllm-mcp (knowledge base) and web-access (CDP login-state site retrieval) plugins.",
+  "description": "AI 辅助通用解决方案撰写框架。依赖 drawio、ai-image plugin；anythingllm-mcp、web-access 可选。",
   "version": "0.1.6",
   "author": {
     "name": "LiuZiJiao"

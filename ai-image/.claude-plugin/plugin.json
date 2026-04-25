@@ -1,6 +1,6 @@
 {
   "name": "ai-image",
-  "description": "Unified AI image generation — 13 backends (volcengine/ark, qwen/dashscope, gemini, openai, minimax, stability, bfl, ideogram, zhipu, siliconflow, fal, replicate, openrouter) + shared YAML registry + /ai-image-config for unified key mgmt. Dependency of ppt-master, solution-master, tender-workflow.",
+  "description": "统一 AI 图片生成：13 个后端（volcengine/ark、qwen/dashscope、gemini、openai、minimax、stability、bfl、ideogram、zhipu、siliconflow、fal、replicate、openrouter）+ 共享 YAML 模型注册表 + /ai-image-config-* 配置管理。独立共享 plugin，三个主 plugin 都依赖。",
   "version": "0.1.8",
   "author": {
     "name": "LiuZiJiao"

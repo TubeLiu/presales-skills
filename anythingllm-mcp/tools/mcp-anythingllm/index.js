@@ -16,7 +16,13 @@ const httpAgent = new http.Agent({ keepAlive: true, maxSockets: 4 });
 const httpsAgent = new https.Agent({ keepAlive: true, maxSockets: 4 });
 
 // Read unified config as fallback to env vars.
-// Precedence: env var > first-found config file (presales-skills / tender-workflow / solution-master) > default.
+// Priority order (higher overrides lower):
+//   1. env var (highest)
+//   2. unified presales-skills config (~/.config/presales-skills/config.yaml)
+//   3. tender-workflow config (~/.config/tender-workflow/config.yaml)
+//   4. solution-master config (~/.config/solution-master/config.yaml)
+//   5. defaults (lowest)
+// Implementation iterates CONFIG_CANDIDATES in reverse so later (higher-priority) sources overwrite.
 // Multi-source: users who already configured via /twc or /solution-config don't need to re-enter keys.
 const CONFIG_CANDIDATES = [
   path.join(os.homedir(), '.config', 'presales-skills', 'config.yaml'),

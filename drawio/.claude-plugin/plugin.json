@@ -1,6 +1,6 @@
 {
   "name": "drawio",
-  "description": "Draw.io diagram generation skill — create .drawio XML files and optionally export to PNG/SVG/PDF. Shared by solution-master (user-facing skill) and tender-workflow/taw (internal diagram generation via scripts/drawio_generator.py).",
+  "description": "Draw.io 图表生成（.drawio XML + PNG/SVG/PDF 导出）。独立共享 plugin，solution-master 与 tender-workflow 均依赖。",
   "version": "0.1.10",
   "author": {
     "name": "LiuZiJiao"
