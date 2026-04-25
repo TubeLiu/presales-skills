@@ -30,4 +30,6 @@ ppt-master/.deps-installing.lock
 
 # 用户本地 Claude Code settings（F-053）
 # 注：.claude/ 是用户本地 settings；.claude-plugin/ 是 plugin manifest，必须 tracked。两者不同。
-.claude/
+# 例外：.claude/commands/ 下是项目级 slash command（如 /plugin-review），值得 commit 给协作者用。
+.claude/*
+!.claude/commands/

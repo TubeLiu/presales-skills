@@ -378,7 +378,26 @@ Task(
 
 ### 版本号 bump 规则
 
-破坏性变更（删 SKILL / 改命令字符串 / 改公开入口）= **minor +1**。任一 plugin minor bump 后，**marketplace 顶层至少跟随子 plugin 最高级别**（取所有子 plugin 新 minor 的最大值作为顶层 minor）。
+每次改了某个 plugin 的代码，要在 **三个版本号** 上都 +1：
+
+1. **plugin 自己的版本号**（如 `ai-image/.claude-plugin/plugin.json` 的 `version`）—— 告诉客户端"这个 plugin 有新版了"
+2. **marketplace 目录里该 plugin 的版本号**（`.claude-plugin/marketplace.json` 里 `plugins[]` 数组中那一条的 `version`）—— 告诉商店"目录该更新啦"
+3. **marketplace 自己的版本号**（`.claude-plugin/marketplace.json` 的 `metadata.version`）—— 告诉客户端"商店目录有改动，来重新抓一下"
+
+打个比方：
+
+- **plugin** = 一本书的新版
+- **marketplace 目录里的 entry** = 书店的书单
+- **marketplace 顶层版本** = 书单的修订号
+
+书出了新版，你不光要把书本身换成新版，还得让书店在书单上把那本书标成新版本，更要告诉大家"书单我更新过了，来重新拿一份看看"。三步缺一步，客户那边就还以为是老版本，继续按老的买。
+
+**只改了哪个 plugin 就只 bump 那一个的 entry**，其他 plugin 版本号不动——这样别人升级时只会拿到你改的那个，不会被误更新到别的。
+
+**bump level 规则**：
+- 修 bug / 文档 / 内部重构 = **patch +1**（如 `0.3.0 → 0.3.1`）
+- 破坏性变更（删 SKILL / 改命令字符串 / 改公开入口）= **minor +1**（如 `0.3.0 → 0.4.0`）
+- marketplace 顶层 bump level **至少跟随子 plugin 最高级别**——任一 plugin minor bump 时，顶层也至少 minor。顶层 minor 数字取所有 plugin 当下新 minor 中的最大值
 
 施工日复核：
 
@@ -386,7 +405,7 @@ Task(
 grep '"version"' .claude-plugin/marketplace.json */.claude-plugin/plugin.json
 ```
 
-marketplace.json 顶层 `metadata.version` + 各 plugin entry 的 `version` 必须与各 plugin 自己的 `plugin.json` `version` 字段保持一致。
+三处版本号必须保持一致：marketplace.json 顶层 `metadata.version` + 各 plugin entry 的 `version` + 各 plugin 自己的 `plugin.json` 的 `version`。
 
 ### SessionStart hook（仅 solution-master）
 
@@ -405,3 +424,28 @@ python3 -m pytest tests/test_skill_format.py -v
 ```
 
 9 项断言：每个 SKILL.md 必须用 block scalar description / 含 Windows checklist / 含 `<SUBAGENT-STOP>` + Task prompt 判定 / 不引用已删 slash / 不含 `${CLAUDE_*}` 占位符（仅 anythingllm-mcp plugin.json 豁免）/ 不用 `command -v` / vercel CLI 实测识别 10 skills。
+
+### `/plugin-review`：发版前深度体检
+
+仓库内置一条针对本 monorepo 量身定制的深度 review slash command（`.claude/commands/plugin-review.md`），用于在发版或重构前对**待发布的某个 plugin 或全部 plugin** 做穷尽式体检，产出 `REVIEW_FINDINGS.md` 供后续 plan 模式直接消费。**只读不写**：不改代码、不改 marketplace.json、不 commit、不 `/reload-plugins`。
+
+**用法**（在 Claude Code 会话里）：
+- 全量审查：`/plugin-review`
+- 聚焦某个 plugin：`/plugin-review solution-master`（元数据一致性与跨 plugin 依赖两个维度仍会跨 plugin 扫，因为这两维度本身就跨插件）
+
+**触发后会发生什么**：
+1. **阶段 1 速写**（Bash/Read 串行）→ 15 行项目快照：从 `marketplace.json` 实际枚举的所有 plugin `name@version`、SKILL 总数、bin / hook / MCP 清单、最近 commit、可疑未跟踪物
+2. **阶段 2 并行 8 个 Explore agent**（单条消息并发 spawn）→ 每个维度独立深挖，主上下文只收摘要：
+   - A. 元数据一致性审计（marketplace.json ↔ plugin.json ↔ README 三处版本号）
+   - B. SKILL frontmatter 与触发质量（description 能否被 Claude 正确识别）
+   - C. Plugin runtime 陷阱（`$VAR` 不带花括号的静默失效 bug、bin 命名冲突、shebang）
+   - D. 跨 plugin 依赖健康度（可选依赖的降级分支是否真的实现）
+   - E. Bin 脚本质量（subprocess 安全、跨平台路径、密钥泄露、`_ensure_deps.py` 健壮性）
+   - F. Hook 安全与稳定性（SessionStart 注入失败阻塞会话风险）
+   - G. MCP server 与配置管理（`~/.config/` 多路径迁移覆盖度、密钥权限）
+   - H. 发布物卫生（避免 bundled 大体积资产复发）
+3. **阶段 3 交叉验证** → 把 `[推断]` 用 Read/Grep 核实或降级删除，跨 agent 去重
+4. **阶段 4 落盘** → 生成 `REVIEW_FINDINGS.md`（已在 `.gitignore` 中，不入库），含缺陷清单、按 plugin / 维度分组索引、修复批次建议（Batch A/B/C/D）
+5. **阶段 5 交接** → 6 行总结 + 建议进 plan 模式处理 Batch A
+
+**维护提醒**：下次插件拓扑变化（新增 plugin、调整依赖、引入新 hook 或 MCP）时，记得回头更新 `.claude/commands/plugin-review.md` 里的"项目知识底座"章节——它是给 agent 的事实基线，过时会误导审查。
