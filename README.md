@@ -215,14 +215,14 @@ presales-skills/                           # umbrella marketplace（本仓库）
 │   │   └── ai-image-config                # PATH 命令：ai-image-config
 │   ├── skills/
 │   │   └── ai-image/SKILL.md              # "生成图片"触发语
-│   ├── commands/                          # 7 个 slash command 文件
-│   │   ├── ai-image-config-setup.md
-│   │   ├── ai-image-config-show.md
-│   │   ├── ai-image-config-set.md
-│   │   ├── ai-image-config-models.md
-│   │   ├── ai-image-config-add-model.md
-│   │   ├── ai-image-config-validate.md
-│   │   └── ai-image-config-migrate.md
+│   ├── commands/                          # 7 个 slash command 文件（/ai-image:setup|show|set|models|add-model|validate|migrate）
+│   │   ├── setup.md
+│   │   ├── show.md
+│   │   ├── set.md
+│   │   ├── models.md
+│   │   ├── add-model.md
+│   │   ├── validate.md
+│   │   └── migrate.md
 │   ├── prompts/
 │   │   └── ai_image_models.yaml           # 13 provider 共享注册表
 │   ├── scripts/

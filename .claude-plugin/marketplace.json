@@ -3,7 +3,7 @@
   "owner": { "name": "LiuZiJiao", "email": "tubeliu1@gmail.com", "homepage": "https://github.com/Alauda-io/presales-skills" },
   "metadata": {
     "description": "Presales skills monorepo — solution-master / ppt-master / tender-workflow + shared plugins (drawio, ai-image, anythingllm-mcp, web-access).",
-    "version": "0.1.15"
+    "version": "0.1.16"
   },
   "plugins": [
     {
@@ -18,8 +18,8 @@
     {
       "name": "ai-image",
       "source": "./ai-image",
-      "description": "统一 AI 图片生成：13 个后端（volcengine/ark、qwen/dashscope、gemini、openai、minimax、stability、bfl、ideogram、zhipu、siliconflow、fal、replicate、openrouter）+ 共享 YAML 模型注册表 + /ai-image-config-* 配置管理。独立共享 plugin，三个主 plugin 都依赖。",
-      "version": "0.1.9",
+      "description": "统一 AI 图片生成：13 个后端（volcengine/ark、qwen/dashscope、gemini、openai、minimax、stability、bfl、ideogram、zhipu、siliconflow、fal、replicate、openrouter）+ 共享 YAML 模型注册表 + /ai-image:setup|migrate|set|show|validate|models|add-model 配置管理。独立共享 plugin，三个主 plugin 都依赖。",
+      "version": "0.2.0",
       "author": { "name": "LiuZiJiao" },
       "category": "productivity",
       "tags": ["ai-image", "image-generation", "gen-ai", "shared"]
