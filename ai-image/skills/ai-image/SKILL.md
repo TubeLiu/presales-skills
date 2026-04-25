@@ -117,6 +117,57 @@ IMAGE_BACKEND=ark python3 "$SKILL_DIR/scripts/image_gen.py" "用户提示词" -o
 | 验证 / validate | `python3 "$SKILL_DIR/scripts/ai_image_config.py" validate [provider]` |
 | 迁移配置 / migrate | `python3 "$SKILL_DIR/scripts/ai_image_config.py" migrate` |
 
+### 交互式配置向导（首次配置 / "帮我配置 ai-image" 触发）
+
+**当用户说「配置 ai-image / 帮我配置 ai-image / 初始化 ai-image / setup ai-image / 我刚装好需要配置」时，按以下流程引导用户**：
+
+```
+步骤 1：解析 SKILL_DIR（用本文件 §路径自定位 段）
+
+步骤 2：跑 setup 写默认骨架 + auto-migrate
+   bash: python3 "$SKILL_DIR/scripts/ai_image_config.py" setup
+   读取 stderr/stdout，告知用户结果（已迁移 / 已写骨架 / 配置已存在）
+
+步骤 3：跑 show 展示当前配置（API keys 自动 mask）
+   bash: python3 "$SKILL_DIR/scripts/ai_image_config.py" show api_keys
+
+步骤 4：问用户想配哪些 provider（一次最少 1 个）
+   询问用户："你想配置哪些 AI 图片 provider？我推荐先配以下几个常用的：
+     • ark（火山方舟，Seedream 4.5/5.0，真实感照片）
+     • dashscope（阿里云通义万相，中文场景 / 文字渲染）
+     • gemini（Google Gemini 2.5 Flash Image，通用画质）
+   你也可以选 13 个 provider 中的任意一个或多个：
+     openai / minimax / stability / bfl / ideogram / zhipu / siliconflow / fal / replicate / openrouter
+   请告诉我 provider 名 + 对应 API key（可分多次提供，每次一个 provider）。"
+
+步骤 5：用户每提供一个 key，立即调 set 写入：
+   bash: python3 "$SKILL_DIR/scripts/ai_image_config.py" set api_keys.<provider> <key>
+   写入后立即 validate 单个 provider：
+   bash: python3 "$SKILL_DIR/scripts/ai_image_config.py" validate <provider>
+
+步骤 6：问用户默认 provider（如已配置多个）
+   询问用户："默认用哪个 provider 作为生图后端？（默认 ark）"
+   bash: python3 "$SKILL_DIR/scripts/ai_image_config.py" set ai_image.default_provider <provider>
+
+步骤 7：问用户默认图片尺寸
+   询问用户："默认图片尺寸？（推荐 2048x2048，可选 1K / 1024x1024 / 16:9 等）"
+   bash: python3 "$SKILL_DIR/scripts/ai_image_config.py" set ai_image.default_size <size>
+
+步骤 8：跑 validate 全量健康检查
+   bash: python3 "$SKILL_DIR/scripts/ai_image_config.py" validate
+   告知用户每个 provider 的 API key 是否就绪 / 报错原因
+
+步骤 9：完成提示
+   "ai-image 配置完成！配置文件：~/.config/presales-skills/config.yaml
+    现在你可以说'生成一张 K8s 架构图'之类自然语言来生图。"
+```
+
+**关键纪律**：
+- 不要批量收 API keys 后才调 set——一个一个收 + 立即写 + 立即 validate，让用户随时看到错误
+- 只问用户"想配哪些 provider"，不要把 13 个全列然后挨个问（疲劳）
+- 用户提供 API key 后立即写入 yaml，不要让 key 在对话历史里停留
+- 用户跳过任何步骤都允许（"先这些就行"），SKILL 不强求填完所有字段
+
 ### setup 行为说明
 
 `setup` 不直接收集 API key，行为根据 `~/.config/presales-skills/config.yaml` 与旧路径 (`~/.config/{solution-master,tender-workflow}/config.yaml`) 状态分支：

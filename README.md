@@ -88,25 +88,39 @@ vercel-labs/skills CLI 会扫描本仓库的所有 SKILL.md 并 symlink/copy 到
 - MCP：`anythingllm`（由 anythingllm-mcp plugin 统一注册，solution-master 和 tender-workflow 共用；若未装 anythingllm-mcp 则无此 server）
 - v0.3.0 起**不再依赖 PATH bin wrapper**：跨 plugin 调用通过 `installed_plugins.json` 五段式 fallback 自定位（详见各 SKILL.md 顶部 §路径自定位）
 
-### Step 4：配置 AI 图片生成（首次使用前一次性完成）
+### Step 4：配置（v0.3.0+ 自然语言一键配置）
 
-**v0.3.0+ 推荐方式（自然语言）**：在 Claude Code 会话里说：
+**每个 plugin 自带交互式配置向导**——在 Claude Code 会话里直接说：
 
-> 帮我配置 ai-image，要支持 ark / dashscope / gemini 三个 provider。
+| 你说什么 | Claude 做什么 |
+|---|---|
+| `帮我配置 ai-image` | 加载 ai-image SKILL，引导你完成 setup → API keys → 默认 provider → validate 全流程 |
+| `帮我配置 solution-master` | 加载 solution-master SKILL，引导你完成 localkb / anythingllm / cdp_sites / drawio / mcp_search 配置 |
+| `帮我配置 tender-workflow` 或 `配置工作流` | 加载 tender-workflow 的 twc SKILL，引导 6 步配置 |
+| `帮我配置 ppt-master` / `配置 ppt-master` | 加载 ppt-master SKILL，按需引导（ppt-master 配置较少） |
 
-ai-image SKILL 会自动加载并引导你完成 setup → set api keys → validate 全流程。
+每个向导都会：
+- 一步步问你需要的字段（不批量收集）
+- 每答一个立即写入 yaml + 验证
+- 跳过任何"可选"字段都可以（"先这些就行"）
 
-**或直接调 CLI**（需要先解析 `AI_IMAGE_DIR`，见 ai-image SKILL.md §路径自定位）：
+**纯 CLI 方式（power user / 不想走 Claude）**：直接调脚本：
 
 ```bash
-python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" setup                       # 含 auto-migrate
-python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" set api_keys.ark <key>      # 火山方舟
-python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" set api_keys.dashscope <key>  # 阿里云
-python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" set api_keys.gemini <key>     # Google Gemini
-python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" validate                    # 验证 key 已配置
+# ai-image 共享配置（API keys / ai_image / ai_keys）
+python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" setup            # 含 auto-migrate
+python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" set api_keys.ark <key>
+python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" validate
+
+# solution-master 专属配置
+python3 "$SM_DIR/scripts/sm_config.py" set localkb.path <path>
+python3 "$SM_DIR/scripts/sm_config.py" set anythingllm.enabled true
+python3 "$SM_DIR/scripts/sm_config.py" validate
 ```
 
-升级用户：之前用过 `~/.config/{solution-master,tender-workflow}/config.yaml` 的话，**`setup` 第一次跑会自动 migrate**——无需手工调用单独的 migrate 命令。
+`$AI_IMAGE_DIR` 与 `$SM_DIR` 用各自 SKILL.md §路径自定位 段的 installed_plugins.json bootstrap 解析。
+
+**升级用户**：之前用过 `~/.config/{solution-master,tender-workflow}/config.yaml` 的话，**ai-image 的 `setup` 第一次跑会自动 migrate** API keys 到统一路径——无需手工调用单独的 migrate 命令。
 
 ### Step 5：依赖（全自动）
 
