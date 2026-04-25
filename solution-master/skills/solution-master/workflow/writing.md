@@ -213,7 +213,7 @@ writer 子智能体必须将上述每个图片引用/占位符插入到对应段
 cat "$SKILL_DIR/prompts/section_templates/technical.yaml"
 ```
 
-`$SKILL_DIR` 由 Claude Code 在调用本 skill 时自动设置，在 plugin/npx/全局三种安装模式下都正确指向 `<...>/skills/solution-writing/`。不要使用 `prompts/section_templates/...` 这样的 cwd-相对路径——Claude 的 cwd 是用户项目，不是 skill 所在目录。
+`$SKILL_DIR` 由主 SKILL.md 顶部的 §路径自定位 bootstrap 解析（installed_plugins.json 五段式 fallback），指向 `<plugin-install-path>/skills/solution-master/`。不要使用 `prompts/section_templates/...` 这样的 cwd-相对路径——Claude 的 cwd 是用户项目，不是 skill 所在目录。
 
 ## 红线
 

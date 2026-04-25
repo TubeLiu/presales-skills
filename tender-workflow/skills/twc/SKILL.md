@@ -73,7 +73,7 @@ fi
   setup              交互式首次配置向导（仅 tender-workflow 专属项）
   show [skill]       显示当前生效配置（可选指定 skill: taa/taw/tpl/trv）
   set <key> <value>  设置配置项（支持 dot notation，如 localkb.path）
-  models [provider]  列出 AI 生图模型（转发至 /ai-image:models）
+  models [provider]  列出 AI 生图模型（转发至 ai-image plugin 的 ai_image_config.py models）
   validate           健康检查（路径、API 连通性、工具安装）
   migrate            迁移旧 per-skill 配置（taw/taa）到统一 config
   reset              重置为默认值（确认后删除配置文件）
@@ -200,7 +200,7 @@ python3 $SKILL_DIR/../tools/tw_config.py models [provider | --refresh]
 
 ### /twc setup（交互式配置向导）
 
-> **AI 生图配置由 ai-image plugin 管理**：API keys、默认 provider、默认模型请通过 `/ai-image:setup` 配置。本命令仅引导 tender-workflow 专属项（localkb / anythingllm / drawio / mcp_search / skill 默认值）。
+> **AI 生图配置由 ai-image plugin 管理**：API keys、默认 provider、默认模型请通过 ai-image SKILL（自然语言"配置 ai-image / 我刚装新版需要初始化"）或直接 `python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" setup` 配置——`setup` 含 auto-migrate 兜底。本命令仅引导 tender-workflow 专属项（localkb / anythingllm / drawio / mcp_search / skill 默认值）。
 
 分 6 步交互式引导用户完成 tender-workflow 配置。每步完成后立即写入配置文件。
 
@@ -280,11 +280,19 @@ python3 -c "import shutil; n=shutil.which('node'); print(f'node: {n}') if n else
 
 drawio 现已从 tender-workflow 独立成 `presales-skills` marketplace 内的 shared plugin。用户通常与 tender-workflow 同时通过 umbrella marketplace 安装。
 
-1. 检查 drawio plugin 是否已随 umbrella marketplace 安装：
+1. 检查 drawio plugin 是否已随 umbrella marketplace 安装（v0.3.0+ 用 installed_plugins.json 自定位）：
    ```bash
-   # drawio plugin 安装后会往 PATH 注入 drawio-gen 包装脚本。
-   # 用 command -v 检测比尝试路径更可靠——对 local / remote marketplace 两种布局都有效
-   command -v drawio-gen >/dev/null 2>&1 && echo "INSTALLED: drawio plugin" || echo "NOT_INSTALLED"
+   DRAWIO_PATH=$(python3 -c "
+   import json, os, sys
+   p = os.path.expanduser('~/.claude/plugins/installed_plugins.json')
+   if os.path.exists(p):
+       d = json.load(open(p))
+       for entries in d.get('plugins', {}).values():
+           for e in (entries if isinstance(entries, list) else [entries]):
+               if isinstance(e, dict) and '/drawio/' in e.get('installPath', ''):
+                   print(e['installPath']); sys.exit(0)
+   " 2>/dev/null)
+   [ -n "$DRAWIO_PATH" ] && echo "INSTALLED: drawio plugin at $DRAWIO_PATH" || echo "NOT_INSTALLED"
    ```
 2. 若已安装：
    - 显示"drawio plugin 已随 presales-skills marketplace 安装"
@@ -413,4 +421,4 @@ taw 撰写章节时可通过 MCP 搜索工具（tavily_search、exa_search）从
    ```
    若未新增 MCP Server，则不显示重启提醒。
 
-5. **下一步**：如尚未配置 AI 生图，运行 `/ai-image:setup` 填写 API keys 与默认 provider；已配置过的可跳过。
+5. **下一步**：如尚未配置 AI 生图，对 ai-image SKILL 说"配置 ai-image"或直接跑 `python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" setup` 填写 API keys 与默认 provider；已配置过的可跳过。

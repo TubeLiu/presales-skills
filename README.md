@@ -1,6 +1,17 @@
 # presales-skills — 售前工作流 Claude Code plugin 集
 
-一个 umbrella marketplace，把售前场景下的 AI 辅助工作流按职责拆成 7 个独立的 Claude Code plugin，通过同一个 marketplace 统一分发。
+一个 umbrella marketplace，把售前场景下的 AI 辅助工作流按职责拆成 7 个独立的 Claude Code plugin，通过同一个 marketplace 统一分发。**v0.3.0 起同时兼容 Cursor / Codex / OpenCode 等其它 agent**（通过 vercel-labs/skills CLI 安装）。
+
+> ## ⚠ v0.3.0 BREAKING — 已删除全部 22 个 slash commands
+>
+> 为同时兼容 Claude Code 和其它 agent，本仓库 v0.3.0 删除了所有 `/ai-image:*` / `/solution-config` / `/solution-master:*` / `/twc` / `/taw` / `/taa` / `/tpl` / `/trv` / `/draw` 等 slash commands。**功能不变**，触发方式改为：
+>
+> - **自然语言**（推荐）：直接说"生成图片"、"画一张架构图"、"帮我写方案"、"分析招标文件"、"做 PPT"等，相应 SKILL 会自动加载（description 关键词匹配）
+> - **直接调脚本**：每个 SKILL.md 顶部有 §路径自定位 bootstrap 段，先解析 `SKILL_DIR` 再 `python3 "$SKILL_DIR/scripts/xxx.py" ...`
+>
+> 旧的 `/ai-image:setup` `/ai-image:migrate` 等子命令逻辑保留——通过 `python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" setup|migrate|set|show|validate|models|add-model` CLI 子命令，或对 ai-image SKILL 说自然语言（"配置 ai-image"、"我刚装新版需要初始化"、"迁移旧 ai-image 配置"）。
+>
+> 升级用户：`ai_image_config.py setup` 现在含 auto-migrate 兜底——首次运行会自动把旧 `~/.config/{solution-master,tender-workflow}/config.yaml` 中的 `api_keys` / `ai_image` / `ai_keys` 块合并到统一路径 `~/.config/presales-skills/config.yaml`。
 
 ## 包含的 7 个 plugin
 
@@ -17,6 +28,29 @@
 ---
 
 ## 安装
+
+### 跨 agent 安装（v0.3.0 新增 — Cursor / Codex / OpenCode 等）
+
+> ⚠ 本路径**已实现** SKILL 加载与跨 plugin 调用，但端到端流程在 Cursor / Codex / OpenCode 上**未经维护者完整验证**——欢迎社区反馈到 issue tracker。
+
+```bash
+# 一条命令装到任何支持 agent skills 规范的 agent
+npx --yes skills add Alauda-io/presales-skills -a <agent-name>
+# 例如：
+npx --yes skills add Alauda-io/presales-skills -a cursor
+npx --yes skills add Alauda-io/presales-skills -a codex
+```
+
+vercel-labs/skills CLI 会扫描本仓库的所有 SKILL.md 并 symlink/copy 到目标 agent 的标准目录（如 `.cursor/skills/` / `.agents/skills/`）。
+
+**与 Claude Code 安装的差异**：
+- 无 SessionStart hook（Codex / OpenCode 等暂无 hook 机制；Cursor 装时会用 `hooks-cursor.json`）
+- 无 anythingllm-mcp 自动注册（按目标 agent 各自的 MCP 注册方式手工配置；Cursor 在 `.cursor/mcp.json` 加 anythingllm 条目）
+- bin wrapper 不需要（v0.3.0 已删，全部走 `installed_plugins.json` 五段式 fallback 自定位）
+
+下面是 **Claude Code 用户的完整安装流程**（仍是首选 / 主要使用方式）。
+
+---
 
 ### Step 1：注册 marketplace
 
@@ -48,26 +82,31 @@
 /reload-plugins
 ```
 
-预期 reload 输出：`7 plugins · XX skills · 8 agents · 1 hook · 1 plugin MCP server`（数量含本 marketplace 的 7 个 plugin；若还装了其他 marketplace 的 plugin 或 baseline，总数会更多）
-- 1 hook：solution-master 的 SessionStart 铁律注入
+预期 reload 输出：`7 plugins · 10 skills · 1 hook · 1 plugin MCP server`（数量含本 marketplace 的 7 个 plugin；若还装了其他 marketplace 的 plugin 或 baseline，总数会更多）
+- 10 skills：image-gen / draw-diagram / web-access / ppt-make / solution-master / taa / taw / trv / tpl / twc（v0.3.0 起 solution-master 内部 11 → 1 合并，agents/scripts/workflow 都在 `skills/solution-master/` 子目录下，按需 Read）
+- 1 hook：solution-master 的 SessionStart 铁律注入（Cursor 用 `hooks-cursor.json` 同款机制；其它 agent 无 hook，靠 SKILL description 触发）
 - MCP：`anythingllm`（由 anythingllm-mcp plugin 统一注册，solution-master 和 tender-workflow 共用；若未装 anythingllm-mcp 则无此 server）
-- PATH：`drawio` 的 `drawio-gen`、`web-access` 的 `web-access-check` / `web-access-match-site` 入口会自动上 PATH，供 solution-master / tender-workflow 跨 plugin 调用
+- v0.3.0 起**不再依赖 PATH bin wrapper**：跨 plugin 调用通过 `installed_plugins.json` 五段式 fallback 自定位（详见各 SKILL.md 顶部 §路径自定位）
 
 ### Step 4：配置 AI 图片生成（首次使用前一次性完成）
 
-```
-/ai-image:setup                      # 创建 ~/.config/presales-skills/config.yaml 骨架
-/ai-image:set api_keys.ark <key>     # 火山方舟
-/ai-image:set api_keys.dashscope <key>   # 阿里云
-/ai-image:set api_keys.gemini <key>      # Google Gemini
-/ai-image:validate                   # 验证 key 已配置
+**v0.3.0+ 推荐方式（自然语言）**：在 Claude Code 会话里说：
+
+> 帮我配置 ai-image，要支持 ark / dashscope / gemini 三个 provider。
+
+ai-image SKILL 会自动加载并引导你完成 setup → set api keys → validate 全流程。
+
+**或直接调 CLI**（需要先解析 `AI_IMAGE_DIR`，见 ai-image SKILL.md §路径自定位）：
+
+```bash
+python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" setup                       # 含 auto-migrate
+python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" set api_keys.ark <key>      # 火山方舟
+python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" set api_keys.dashscope <key>  # 阿里云
+python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" set api_keys.gemini <key>     # Google Gemini
+python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" validate                    # 验证 key 已配置
 ```
 
-若之前用过 solution-master / tender-workflow 的独立版本（`~/.config/solution-master/` 或 `~/.config/tender-workflow/`），可一次性迁移：
-
-```
-/ai-image:migrate
-```
+升级用户：之前用过 `~/.config/{solution-master,tender-workflow}/config.yaml` 的话，**`setup` 第一次跑会自动 migrate**——无需手工调用单独的 migrate 命令。
 
 ### Step 5：依赖（全自动）
 
