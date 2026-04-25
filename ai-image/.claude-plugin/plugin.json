@@ -1,7 +1,7 @@
 {
   "name": "ai-image",
-  "description": "统一 AI 图片生成：13 个后端（volcengine/ark、qwen/dashscope、gemini、openai、minimax、stability、bfl、ideogram、zhipu、siliconflow、fal、replicate、openrouter）+ 共享 YAML 模型注册表 + /ai-image:setup|migrate|set|show|validate|models|add-model 配置管理。独立共享 plugin，三个主 plugin 都依赖。",
-  "version": "0.2.0",
+  "description": "统一 AI 图片生成：13 个后端（volcengine/ark、qwen/dashscope、gemini、openai、minimax、stability、bfl、ideogram、zhipu、siliconflow、fal、replicate、openrouter）+ 共享 YAML 模型注册表 + /ai-image:setup|migrate|set|show|validate|models|add-model 配置管理。生图主入口 /ai-image:gen。独立共享 plugin，三个主 plugin 都依赖。",
+  "version": "0.3.0",
   "author": {
     "name": "LiuZiJiao"
   },

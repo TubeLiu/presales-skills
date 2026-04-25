@@ -1,6 +1,6 @@
 ---
-name: ai-image
-description: AI 图片生成统一入口。当用户说"生成图片"、"AI 画图"、"generate image"、"做配图"、"生成一张插图"或明确指定某个 provider（ark/gemini/openai/...）时触发。支持 13 个后端（volcengine/ark、qwen/dashscope、gemini、openai、minimax、stability、bfl、ideogram、zhipu、siliconflow、fal、replicate、openrouter），统一读取 ~/.config/presales-skills/config.yaml 获取 API key。配置管理使用 /ai-image-config 子命令系列。
+name: gen
+description: AI 图片生成统一入口（命名空间 /ai-image:gen）。当用户说"生成图片"、"AI 画图"、"generate image"、"做配图"、"生成一张插图"或明确指定某个 provider（ark/gemini/openai/...）时触发。支持 13 个后端（volcengine/ark、qwen/dashscope、gemini、openai、minimax、stability、bfl、ideogram、zhipu、siliconflow、fal、replicate、openrouter），统一读取 ~/.config/presales-skills/config.yaml 获取 API key。配置管理使用 /ai-image:setup|migrate|set|show|validate|models|add-model 子命令系列。
 ---
 
 # ai-image Skill — 统一 AI 图片生成

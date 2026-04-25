@@ -1,8 +1,8 @@
 ---
-name: ppt-master
+name: make
 description: >
-  PPT 生成器——将 PDF/DOCX/URL/Markdown 等多源文档转换为原生可编辑的 PPTX（含真实 PowerPoint shape、文本框、图表，非图片）。
-  当用户说"做 PPT"、"生成 PPT"、"做演示稿"、"做 PowerPoint"、"把这份文档做成 PPT"、"生成PPT"、"制作演示文稿"、"generate PPT"、"create slides"、"make presentation"、"create deck"时触发，也可手动指定 `/ppt-master`。
+  PPT 生成器（命名空间 /ppt-master:make）——将 PDF/DOCX/URL/Markdown 等多源文档转换为原生可编辑的 PPTX（含真实 PowerPoint shape、文本框、图表，非图片）。
+  当用户说"做 PPT"、"生成 PPT"、"做演示稿"、"做 PowerPoint"、"把这份文档做成 PPT"、"生成PPT"、"制作演示文稿"、"generate PPT"、"create slides"、"make presentation"、"create deck"时触发，也可手动指定 `/ppt-master:make`。
   SVG 中间层 + 13 provider AI 配图，支持 16:9 / 4:3 / 小红书 / 朋友圈 / Story 多版式。
 ---
 
