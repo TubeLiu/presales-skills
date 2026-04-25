@@ -1,7 +1,7 @@
 {
   "name": "ppt-master",
-  "description": "PPT 生成 (PDF/DOCX/URL/MD → SVG → PPTX)。依赖 ai-image plugin。Slash 入口：/ppt-master:make。",
-  "version": "0.3.0",
+  "description": "PPT 生成 (PDF/DOCX/URL/MD → SVG → PPTX)。依赖 ai-image plugin。Slash 入口：/ppt-make。",
+  "version": "0.3.1",
   "author": {
     "name": "LiuZiJiao"
   },
