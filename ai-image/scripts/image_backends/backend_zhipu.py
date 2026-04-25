@@ -25,6 +25,8 @@ from image_backends.backend_common import (
     sanitize_error,
 )
 
+# TODO(F-030): apply get_timeout() and retry_delay_from_header() in 429/timeout paths
+
 
 DEFAULT_ENDPOINT = "https://open.bigmodel.cn/api/paas/v4/images/generations"
 DEFAULT_MODEL = "glm-image"

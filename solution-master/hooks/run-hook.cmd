@@ -37,8 +37,10 @@ if %ERRORLEVEL% equ 0 (
     exit /b %ERRORLEVEL%
 )
 
-REM No bash found - exit silently rather than error
-REM (plugin still works, just without SessionStart context injection)
+REM F-033: No bash found. Print hint to stderr but still exit 0
+REM (plugin core still works; SessionStart 铁律注入是优雅降级，不阻塞会话启动)
+echo [solution-master] No bash found on Windows. SessionStart context injection skipped. >&2
+echo [solution-master] To enable iron-rule injection, install Git for Windows from https://git-scm.com/downloads/win >&2
 exit /b 0
 CMDBLOCK
 

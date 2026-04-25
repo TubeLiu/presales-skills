@@ -49,7 +49,7 @@ DEFAULTS = {
     "api_keys": {"ark": None, "dashscope": None, "gemini": None},
     "ai_image": {
         "default_provider": "ark",
-        "size": "2048x2048",
+        "default_size": "2048x2048",  # F-027: 与 ai-image plugin 的 default_size 字段对齐
         "max_retries": 2,
         "timeout": 60,
         "models": {
@@ -202,6 +202,10 @@ def normalize(cfg: Dict) -> Dict:
     for img_key in ("default_provider", "size", "max_retries", "timeout"):
         if img_key not in ai_image and img_key in old_ai_keys:
             ai_image[img_key] = old_ai_keys[img_key]
+    # F-027: ai_image.size → ai_image.default_size rename，与 ai_image_config.py:380 FIELD_MAPPING 对齐
+    # 实测消费方真实存在（ai-image SKILL.md 读 default_size、DEFAULTS 含 default_size）
+    if "size" in ai_image and "default_size" not in ai_image:
+        ai_image["default_size"] = ai_image.pop("size")
     # 迁移旧 provider_priority 列表 → default_provider 字符串
     if "provider_priority" in ai_image and "default_provider" not in ai_image:
         old_list = ai_image.pop("provider_priority")
@@ -339,7 +343,8 @@ def get(skill: str, key: str, default: Any = None) -> Any:
         "api_keys.gemini": ("api_keys", "gemini"),
         "mcp_search.priority": ("mcp_search", "priority"),
         "ai_image.default_provider": ("ai_image", "default_provider"),
-        "ai_image.size": ("ai_image", "size"),
+        "ai_image.default_size": ("ai_image", "default_size"),  # F-027: 新规范字段
+        "ai_image.size": ("ai_image", "size"),  # F-027: 旧字段保留作向后兼容读
         "ai_image.timeout": ("ai_image", "timeout"),
         "drawio.cli_path": ("drawio", "cli_path"),
     }
@@ -486,6 +491,11 @@ def migrate() -> Dict[str, Any]:
     从旧 per-skill 配置迁移到统一配置文件，然后删除旧文件。
     同时规范化现有统一配置文件的 schema。
     """
+    # F-041: 推荐顺序提示
+    print(
+        "提示：跑完此命令后，建议跑 /ai-image-config-migrate 把 tw 配置合并到统一的 presales-skills 路径。",
+        file=sys.stderr,
+    )
     result = {"migrated_keys": [], "deleted_files": [], "skipped": [], "normalized": False}
 
     cfg = _read_yaml(CONFIG_PATH)
@@ -732,7 +742,17 @@ def main():
             print(f"发现 {len(issues)} 个问题：")
             for i, issue in enumerate(issues, 1):
                 print(f"  {i}. {issue}")
+            print(
+                "注：本命令仅检查配置字段格式与必填项，不验证 API key 是否真实可用；"
+                "如需测试 API 连通性，请触发实际生成（如 image-gen \"test\" -o /tmp/）",
+                file=sys.stderr,
+            )
             sys.exit(1)
+        print(
+            "注：本命令仅检查配置字段格式与必填项，不验证 API key 是否真实可用；"
+            "如需测试 API 连通性，请触发实际生成（如 image-gen \"test\" -o /tmp/）",
+            file=sys.stderr,
+        )
 
     elif cmd == "migrate":
         result = migrate()

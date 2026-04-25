@@ -9,3 +9,25 @@ venv/
 .env.local
 *.egg-info/
 .pytest_cache/
+
+# /plugin-review 产物（临时 review 报告，不入库）
+REVIEW_FINDINGS.md
+
+# === 工作流产物（F-038，不入库） ===
+solution-master/drafts/
+solution-master/output/
+tender-workflow/drafts/
+tender-workflow/output/
+ppt-master/projects/*/
+!ppt-master/projects/README.md
+ppt-master/exports/
+**/svg_output/
+**/svg_final/
+ai-image/.deps-installed
+ppt-master/.deps-installed
+ai-image/.deps-installing.lock
+ppt-master/.deps-installing.lock
+
+# 用户本地 Claude Code settings（F-053）
+# 注：.claude/ 是用户本地 settings；.claude-plugin/ 是 plugin manifest，必须 tracked。两者不同。
+.claude/

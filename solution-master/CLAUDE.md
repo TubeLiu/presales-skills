@@ -79,7 +79,11 @@ Solution Master 的防脱轨依赖两层相互加强的机制：
 ### 1. SessionStart hook — 注入铁律（唯一的 hook）
 - 匹配 `startup|clear|compact`
 - 执行 `hooks/session-start`，读取 `skills/using-solution-master/SKILL.md` 并作为 `additionalContext` 注入到 Claude 的上下文
-- **项目门禁**：仅在当前 cwd 有 `drafts/`、`docs/specs/` 或 `skills/solution-writing/SKILL.md` 时才触发；全局安装下不会污染非 Solution Master 项目
+- **项目门禁（4 条任一满足即触发，F-034）**：当前 cwd 含以下任一时触发，全局安装下不会污染非 Solution Master 项目：
+  1. `drafts/` 目录
+  2. `docs/specs/` 目录
+  3. `skills/solution-writing/SKILL.md`（plugin 模式 / 源码 clone 模式）
+  4. `.claude/skills/solution-writing/SKILL.md`（npx 安装模式下的检查路径，plugin 模式不触发此条）
 - 这样任何会话启动时（含 `/clear`、`/compact`），Solution Master 的 7 条铁律、技能路由表、红线清单、"不信任报告"原则都会被强制注入——无法被遗忘、无法被合理化绕过
 
 ### 2. 强化的子智能体 prompt（Layer 2）

@@ -94,11 +94,18 @@ class DrawioGenerator:
         self.output_dir = Path(output_dir) if output_dir else Path(tempfile.gettempdir()) / "drawio_output"
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.drawio_path = _find_drawio_cli()
+        self._init_warning: Optional[str] = None
 
         if self.drawio_path:
             logger.info(f"找到 draw.io CLI: {self.drawio_path}")
         else:
-            logger.warning("draw.io CLI 未找到，图表生成功能将不可用")
+            self._init_warning = (
+                "draw.io CLI 未找到，图表生成功能将不可用。"
+                "安装指引：macOS: brew install --cask drawio | "
+                "Linux: apt install drawio | "
+                "Windows: https://get.drawio.com/"
+            )
+            logger.warning(self._init_warning)
 
     def is_available(self) -> bool:
         """检查 draw.io 是否可用"""
@@ -120,8 +127,15 @@ class DrawioGenerator:
 
         Returns:
             本地 PNG 文件路径，失败返回 None
+
+        Raises:
+            FileNotFoundError: draw.io CLI 不可用且未设 DRAWIO_SKIP_CLI_CHECK=1（F-037）
         """
         if not self.is_available():
+            if not os.environ.get("DRAWIO_SKIP_CLI_CHECK"):
+                # F-037: fail-fast 让用户在 generate() 第一次调用就看到清晰错误，不必等到深层 subprocess 失败
+                # 设 DRAWIO_SKIP_CLI_CHECK=1 可恢复"仅生成 XML 不导出"的旧行为
+                raise FileNotFoundError(self._init_warning or "draw.io CLI not available")
             logger.error("draw.io CLI 不可用")
             return None
 

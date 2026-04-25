@@ -24,6 +24,8 @@ from image_backends.backend_common import (
     save_image_bytes,
 )
 
+# TODO(F-030): apply get_timeout() and retry_delay_from_header() in 429/timeout paths
+
 
 # ╔══════════════════════════════════════════════════════════════════╗
 # ║  Constants                                                      ║

@@ -33,6 +33,10 @@ const CONFIG_CANDIDATES = [
 function parseAnythingllmBlock(text) {
   // Minimal YAML subset parser — only the `anythingllm:` block's scalar fields.
   // Avoids adding a YAML dep (MCP must stay zero-deps).
+  //
+  // F-023 WARNING: only flat scalars supported. Nested keys like `anythingllm.proxy.host`
+  // will be silently ignored (no error). If schema grows nested fields, replace with a
+  // proper YAML lib (mind the zero-deps constraint — this MCP server has no node_modules).
   const result = {};
   const lines = text.split('\n');
   let inBlock = false;

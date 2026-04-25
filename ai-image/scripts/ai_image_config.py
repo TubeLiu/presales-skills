@@ -331,7 +331,10 @@ def cmd_add_model(provider: str, yaml_fragment: str) -> int:
 
 
 def cmd_validate(provider_filter: Optional[str]) -> int:
-    """健康检查：逐 provider 检查 API key 是否已配置。（真实 API call 验证留给未来。）"""
+    """健康检查：逐 provider 检查 API key 是否已配置。（真实 API call 验证留给未来。）
+
+    F-028: 末尾打印提示，明示本命令不验证 API key 真实可用性。
+    """
     cfg = load_config()
     if not cfg:
         print(f"配置文件不存在：{CONFIG_PATH}")
@@ -372,7 +375,17 @@ def cmd_validate(provider_filter: Optional[str]) -> int:
             print(f"  • {issue}")
         print()
         print("使用 /ai-image-config set api_keys.<provider> <key> 配置")
+        print(
+            "注：本命令仅检查配置字段格式与必填项，不验证 API key 是否真实可用；"
+            "如需测试 API 连通性，请触发实际生成（如 image-gen \"test\" -o /tmp/）",
+            file=sys.stderr,
+        )
         return 1
+    print(
+        "注：本命令仅检查配置字段格式与必填项，不验证 API key 是否真实可用；"
+        "如需测试 API 连通性，请触发实际生成（如 image-gen \"test\" -o /tmp/）",
+        file=sys.stderr,
+    )
     return 0
 
 
@@ -408,6 +421,8 @@ FIELD_MAPPING = {
 
 def cmd_migrate() -> int:
     """合并旧的 solution-master/tender-workflow config.yaml 到统一 config.yaml"""
+    # F-041: 推荐顺序提示
+    print("提示：推荐先跑 /twc migrate（tender-workflow 内部旧→新），再跑本命令（跨 plugin 合并）。", file=sys.stderr)
     old_paths = [p for p in LEGACY_CONFIGS.values() if p.exists()]
     if not old_paths:
         print("未检测到旧 config 文件。无需迁移。")

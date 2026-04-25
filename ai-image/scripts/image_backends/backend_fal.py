@@ -24,6 +24,8 @@ from image_backends.backend_common import (
     sanitize_error,
 )
 
+# TODO(F-030): apply get_timeout() and retry_delay_from_header() in 429/timeout paths
+
 
 VALID_ASPECT_RATIOS = ["1:1", "16:9", "9:16", "3:4", "4:3"]
 DEFAULT_ENDPOINT = "https://fal.run"

@@ -176,6 +176,41 @@ def retry_delay(attempt: int, rate_limited: bool) -> int:
     return 5
 
 
+def retry_delay_from_header(resp, fallback: int) -> int:
+    """Honor Retry-After header (seconds or HTTP-date); else use fallback (F-030).
+
+    Some providers (Stability, OpenAI etc.) include Retry-After on 429 responses;
+    respecting it is more correct than fixed exponential backoff and avoids 429-loop bans.
+    """
+    ra = resp.headers.get("Retry-After") if resp is not None else None
+    if not ra:
+        return fallback
+    try:
+        return max(int(ra), 1)
+    except ValueError:
+        # HTTP-date format
+        from email.utils import parsedate_to_datetime
+        import datetime
+        try:
+            dt = parsedate_to_datetime(ra)
+            delta = (dt - datetime.datetime.now(dt.tzinfo)).total_seconds()
+            return max(int(delta), 1)
+        except Exception:
+            return fallback
+
+
+def get_timeout(default: int = 180) -> int:
+    """Read HTTP timeout from IMAGE_TIMEOUT env or fall back to default (F-030).
+
+    Allows users to bump timeout for slow providers (Replicate / Fal large models)
+    without code changes: IMAGE_TIMEOUT=600 image-gen ...
+    """
+    try:
+        return int(os.environ.get("IMAGE_TIMEOUT", default))
+    except ValueError:
+        return default
+
+
 def download_image(url: str, path: str, headers: dict = None, timeout: int = 180) -> str:
     """Download an image URL and save it to disk."""
     response = requests.get(url, headers=headers or {}, timeout=timeout)

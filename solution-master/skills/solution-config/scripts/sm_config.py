@@ -64,7 +64,7 @@ DEFAULTS = {
     },
     "mcp_search": {"priority": ["tavily_search", "exa_search"]},
     "cdp_sites": {"enabled": False, "sites": []},
-    "drawio": {"cli_path": None},
+    "drawio": {},  # F-035: cli_path 字段已废弃（drawio-gen 自定位 CLI），从 DEFAULTS 移除以避免 setup 写入旧字段
 }
 
 
@@ -329,14 +329,15 @@ def validate() -> List[str]:
     drawio_skill_installed = any(p.exists() for p in drawio_candidates)
 
     if not drawio_skill_installed:
-        issues.append("drawio plugin 未安装（架构图/流程图将降级为 AI 生成）。请执行 /plugin install drawio@presales-skills")
+        # F-035: 删除"降级为 AI 生成"的错误承诺（SKILL 没实现此分支）
+        issues.append("drawio plugin 未安装（架构图/流程图功能将不可用）。请执行 /plugin install drawio@presales-skills")
     else:
-        # skill 已安装时才检查 CLI 配置
-        drawio_path = _deep_get(cfg, "drawio.cli_path")
-        if drawio_path and not Path(drawio_path).exists():
-            issues.append(f"draw.io CLI 路径不存在: {drawio_path}")
-        elif not drawio_path:
-            issues.append("draw.io skill 已安装但 CLI 路径未配置（drawio.cli_path），.drawio 文件无法自动导出为 PNG")
+        # F-035: drawio.cli_path 字段已废弃（drawio-gen 自定位 CLI）；deprecation warn 提示用户从 config 删除
+        drawio_path_legacy = _deep_get(cfg, "drawio.cli_path")
+        if drawio_path_legacy:
+            issues.append(
+                "drawio.cli_path 字段已废弃（drawio-gen 自定位 CLI），请从 config.yaml 中删除"
+            )
 
     return issues
 
@@ -490,7 +491,17 @@ def main():
             print(f"发现 {len(issues)} 个问题：")
             for i, issue in enumerate(issues, 1):
                 print(f"  {i}. {issue}")
+            print(
+                "注：本命令仅检查配置字段格式与必填项，不验证 API key 是否真实可用；"
+                "如需测试 API 连通性，请触发实际生成（如 image-gen \"test\" -o /tmp/）",
+                file=sys.stderr,
+            )
             sys.exit(1)
+        print(
+            "注：本命令仅检查配置字段格式与必填项，不验证 API key 是否真实可用；"
+            "如需测试 API 连通性，请触发实际生成（如 image-gen \"test\" -o /tmp/）",
+            file=sys.stderr,
+        )
 
     elif cmd == "models":
         provider_filter = sys.argv[2] if len(sys.argv) > 2 else None

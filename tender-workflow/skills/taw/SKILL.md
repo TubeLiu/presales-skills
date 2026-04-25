@@ -266,6 +266,15 @@ Phase 3：质量自检与输出
 
 **Step 1.6：AnythingLLM 可用性检测**
 
+**降级矩阵（F-036）**：`--kb-source` 与 `ANYTHINGLLM_AVAILABLE` 的交互行为：
+
+| `--kb-source` | ANYTHINGLLM_AVAILABLE=false 时行为 |
+|---|---|
+| `anythingllm` | 致命错误 + 提示 "/plugin install anythingllm-mcp@presales-skills 或改用 --kb-source local" |
+| `auto` | 自动降级到 local（Local-KnowledgeBase Markdown 检索） |
+| `local` | 正常走 local，与 AnythingLLM 状态无关 |
+| `none` | 忽略 KB |
+
 1. 尝试调用 `anythingllm_search`（query="test", workspace 暂不指定）：
    - 成功 → 继续步骤 2
    - 失败（工具不存在或报错）→ `ANYTHINGLLM_AVAILABLE=false`，跳过后续步骤

@@ -16,6 +16,7 @@ import requests
 from image_backends.backend_common import (
     MAX_RETRIES,
     download_image,
+    get_timeout,
     http_error,
     is_rate_limit_error,
     normalize_image_size,
@@ -140,7 +141,7 @@ def _generate_image(api_key: str, prompt: str, negative_prompt: str = None,
     print()
     print("  [..] Generating...", end="", flush=True)
     start = time.time()
-    response = requests.post(url, headers=headers, json=payload, timeout=300)
+    response = requests.post(url, headers=headers, json=payload, timeout=get_timeout(300))
     elapsed = time.time() - start
     print(f"\n  [DONE] Response received ({elapsed:.1f}s)")
 

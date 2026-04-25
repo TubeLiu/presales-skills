@@ -82,18 +82,21 @@ digraph retrieval {
 
 ### 触发条件
 
-读取配置 `cdp_sites.enabled`（通过 `python3 "${CLAUDE_SKILL_DIR}/../solution-config/scripts/sm_config.py" get cdp_sites.enabled`）：
+读取配置 `cdp_sites.enabled`（通过 `python3 "${CLAUDE_PLUGIN_ROOT:-${CLAUDE_SKILL_DIR}/..}/skills/solution-config/scripts/sm_config.py" get cdp_sites.enabled`）：
 - `true` 且 `cdp_sites.sites` 非空 → 执行第四层
 - `false` 或未配置 → 跳过第四层（退化为三层检索）
 
+> **路径写法说明（F-022）**：`${CLAUDE_PLUGIN_ROOT}` 在 plugin 模式注入；`${CLAUDE_SKILL_DIR}/..` 是 npx 模式 fallback。两种模式都解析到 `<solution-master>/skills/solution-config/scripts/sm_config.py`。
+
 ### 执行流程
 
-1. **读取站点配置：** `python3 "${CLAUDE_SKILL_DIR}/../solution-config/scripts/sm_config.py" get cdp_sites`，获取站点列表
-2. **启动 CDP Proxy：** 调用 web-access plugin 暴露的前置检查命令：
+1. **读取站点配置：** `python3 "${CLAUDE_PLUGIN_ROOT:-${CLAUDE_SKILL_DIR}/..}/skills/solution-config/scripts/sm_config.py" get cdp_sites`，获取站点列表
+2. **启动 CDP Proxy**（前置依赖检查 — F-009）：
    ```bash
-   web-access-check
+   command -v web-access-check
    ```
-   该命令完成环境自检、启动 CDP Proxy，并在 stdout 输出可用站点清单。若命令未找到（`command not found`）说明 web-access plugin 未安装——`/plugin install web-access@presales-skills` 再重试；未通过时引导用户完成 Chrome 远程调试设置（参照 web-access plugin 指引）
+   - 命令存在（exit 0）→ 继续执行 `web-access-check` 完成环境自检 + 启动 CDP Proxy；未通过时引导用户完成 Chrome 远程调试设置（参照 web-access plugin 指引）
+   - 命令不存在（exit 127）→ **跳过本第四层，直接进入第五层（智能融合）**；同时打印一行 stderr：`[knowledge-retrieval] web-access plugin 未安装，已跳过 CDP 登录态层（如需启用，运行 /plugin install web-access@presales-skills 后重试）`
 3. **对每个站点执行检索（可通过子 Agent 并行）：**
    a. **加载站点经验：** 通过 `web-access-match-site '<domain>'` 读取该站点的经验内容——stdout 直接返回匹配的站点经验正文；stdout 为空表示没有对应经验文件，继续走通用检索流程
    b. **构造搜索 URL：** 将站点配置的 `search_url` 中的 `{query}` 替换为 URL 编码后的检索关键词（如"服务网格"编码为 `%E6%9C%8D%E5%8A%A1%E7%BD%91%E6%A0%BC`）

@@ -24,6 +24,8 @@ from image_backends.backend_common import (
     sanitize_error,
 )
 
+# TODO(F-030): apply get_timeout() and retry_delay_from_header() in 429/timeout paths
+
 
 ASPECT_RATIO_MAP = {
     "1:1": "1x1",

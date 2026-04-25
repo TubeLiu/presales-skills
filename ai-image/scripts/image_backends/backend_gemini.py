@@ -21,6 +21,7 @@ from google import genai
 from google.genai import types
 from image_backends.backend_common import (
     MAX_RETRIES,
+    get_timeout,
     is_rate_limit_error,
     normalize_image_size,
     resolve_output_path,
