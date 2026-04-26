@@ -190,6 +190,6 @@ cat tests/conftest.py
 ## 参考文档
 
 - 详细使用指南：`tests/e2e/README.md`
-- 数据格式规范：`docs/data-format.md`
+- 数据格式规范：见 `skills/taw/SKILL.md` §3.3 + 各 skill SKILL.md 的输入/输出段
 - taa Skill 文档：`skills/taa/SKILL.md`
 - taw Skill 文档：`skills/taw/SKILL.md`

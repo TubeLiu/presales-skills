@@ -63,16 +63,13 @@ tender-workflow/
 │   └── .index/
 │       └── kb_catalog.yaml             # 自动生成目录索引（kb_indexer.py 产出）
 │
-├── tools/                          # 工具脚本
-│   └── tw_config.py                # 统一配置管理工具（CLI + Python import）
-│                                   # (AnythingLLM MCP 已抽到独立 plugin anythingllm-mcp)
-│
-└── docs/                           # 文档
-    ├── data-format.md              # 各阶段产出物数据格式规范
-    ├── product-index-v2-usage.md   # Product V2 三层索引使用指南
-    ├── ai-image-generation.md      # AI 图片生成功能文档
-    └── anythingllm-integration.md  # AnythingLLM 集成文档
+└── tools/                          # 工具脚本
+    └── tw_config.py                # 统一配置管理工具（CLI + Python import）
+                                    # (AnythingLLM MCP 已抽到独立 plugin anythingllm-mcp)
 ```
+
+文档说明：本插件不再单独维护文档目录。对外说明全部在根 `README.md`；
+AI 工作流细节在各 skill 的 `SKILL.md` + `references/`；变更记录见 `git log`。
 
 ## 关键约束
 
@@ -155,7 +152,7 @@ python skills/taw/tools/kb_indexer.py --scan --kb-path /path/to/Local-KnowledgeB
 - **Skill 代码**: `skills/tpl/`、`skills/taw/`、`skills/trv/`、`skills/taa/`、`skills/twc/`
 - **知识库（v3.0）**: `Local-KnowledgeBase/` (全 Markdown 格式，每个文档一个目录，含主文档 .md + images/)
 - **产出物**: `output/` (taa 产出)、`drafts/` (taw 产出)
-- **数据格式规范**: `docs/data-format.md`
+- **数据格式规范**: 见 `skills/taw/SKILL.md` §3.3 文件命名 + 各 skill SKILL.md 输入/输出段
 
 ## 知识库结构
 
@@ -195,4 +192,4 @@ entries:
 
 ## 变更记录
 
-各版本详细变更说明（tpl/taa/taw/trv 各版本核心变更、新增文件、向后兼容性等）见 [`docs/CHANGELOG.md`](docs/CHANGELOG.md)。
+`git log --oneline` 是权威；不再单独维护 CHANGELOG。
