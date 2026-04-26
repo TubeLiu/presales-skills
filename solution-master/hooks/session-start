@@ -32,25 +32,17 @@ fi
 # Read main solution-master SKILL content (post M4 11→1 merge: iron rules now live here)
 using_sm_content=$(cat "${SM_ROOT}/skills/go/SKILL.md" 2>&1 || echo "Error reading solution-master skill")
 
-# Escape string for JSON embedding using bash parameter substitution.
-# Each ${s//old/new} is a single C-level pass - orders of magnitude
-# faster than the character-by-character loop this replaces.
+# Escape string for JSON embedding via Python json.dumps — full RFC 8259 coverage
+# including all control chars U+0000–U+001F (F-022 fix).
 #
-# Handles the five most common JSON escape sequences per RFC 8259:
-# backslash, double-quote, newline, CR, tab, backspace, form-feed.
-# Other control chars (U+0000–U+0007, U+000E–U+001F) are rare in
-# markdown content and intentionally not handled — if they appear in
-# a SKILL file, JSON validity is not guaranteed.
+# 历史：原本用 bash 参数替换链，仅覆盖 7 种最常见 escape；用户 SKILL.md 偶尔粘入
+# 二进制片段或控制字符时会破坏 JSON。改用 python3 json.dumps，stdin 读取避开 argv
+# 尺寸限制 + ensure_ascii=False 保中文为字面字符（输出更紧凑）。
+#
+# python3 在 solution-master plugin 全流程已是必备依赖（sm_config.py / kb_indexer.py），
+# 不引入新依赖。
 escape_for_json() {
-    local s="$1"
-    s="${s//\\/\\\\}"
-    s="${s//\"/\\\"}"
-    s="${s//$'\b'/\\b}"
-    s="${s//$'\f'/\\f}"
-    s="${s//$'\n'/\\n}"
-    s="${s//$'\r'/\\r}"
-    s="${s//$'\t'/\\t}"
-    printf '%s' "$s"
+    printf '%s' "$1" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read(), ensure_ascii=False)[1:-1], end="")'
 }
 
 using_sm_escaped=$(escape_for_json "$using_sm_content")
