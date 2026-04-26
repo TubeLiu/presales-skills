@@ -1,21 +1,24 @@
-"""ppt-master 的依赖自动化安装 bootstrap。
+"""Plugin 依赖自动化安装 bootstrap（共享脚本，跨 plugin 字节相同）。
 
-每个入口脚本在最开头插入：
+入口脚本（image_gen.py / ai_image_config.py / svg_to_pptx.py / ...）在最开头：
 
-    import sys
-    from pathlib import Path
-    sys.path.insert(0, str(Path(__file__).resolve().parent))  # 或父目录（子目录脚本）
     from _ensure_deps import ensure_deps
     ensure_deps()
 
-首次调用时读 ppt-master 根目录的 `requirements.txt`，pip install 全部依赖，touch 一个
-marker 文件跳过后续调用。升级 plugin（cache dir 带 version 号）时 marker 不继承，自动
-重装新版依赖。
+逻辑：
+  1. 读同 skill root 的 `requirements.txt`
+  2. 存在 marker 文件（<skill_root>/.deps-installed）则 skip
+  3. 拿 .deps-installing.lock 排他锁（F-013，避免并发调用打架）
+  4. 调用 `sys.executable -m pip install -r <requirements.txt>`
+  5. 成功后 touch marker；失败打印警告但不 abort（让脚本继续，由其自身 ImportError 暴露具体缺哪个包）
 
-F-013：跨进程锁（.deps-installing.lock）防止并发首次调用打架。
+Marker 位于 skill 根目录。plugin 升级时由于 cache dir 路径带 version（如
+~/.claude/plugins/cache/presales-skills/ai-image/<commit-sha>/），marker 不会跨版本继承，
+自动触发新 requirements 的重装。
 
-# TODO(F-051): 两份 _ensure_deps.py（ai-image + ppt-master）后续考虑抽公共 lib。
-# v1.0.0 起两份 _SKILL_DIR 计算一致（都 1 级 parent）；仍需人工 sync 核心逻辑。
+# F-020 / F-051: 本文件在 ai-image / ppt-master 两 plugin 中字节相同。
+# tests/test_ensure_deps_identity.py lint 强制 enforce identity，避免未来某次
+# 只改一份漂移。如需修改，必须两份同步改 + 跑 pytest 验证 lint 通过。
 # 本脚本是依赖 bootstrap 入口，不能依赖第三方包（portalocker / filelock 等）。
 """
 
@@ -27,15 +30,19 @@ import sys
 import time
 from pathlib import Path
 
-# _ensure_deps.py 位于 ppt-master/skills/make/scripts/
-# v1.0.0：requirements.txt 已迁入 skill 内部（与 scripts/ 同处 skill root，1 级 parent）。
-# 旧名 _PLUGIN_ROOT 改名为 _SKILL_DIR，与 ai-image 同款 layout（旧两份 parent 深度差异已消除）。
 _SCRIPTS_DIR = Path(__file__).resolve().parent
+# v1.0.0：requirements.txt 已迁入 skill 内部（与 scripts/ 同处 skill root，1 级 parent）。
+# 旧名 _PLUGIN_ROOT 改名为 _SKILL_DIR，反映 vercel CLI 装到 Codex 时拷贝单元是 skill/。
 _SKILL_DIR = _SCRIPTS_DIR.parent
 _REQ = _SKILL_DIR / "requirements.txt"
 _MARKER = _SKILL_DIR / ".deps-installed"
 _LOCK = _SKILL_DIR / ".deps-installing.lock"
 
+# Plugin label 用于日志：从 <plugin>/skills/<skill> 反推 plugin 名。
+# 用 parent.parent.name 避免硬编码各 plugin 名，让两份脚本字节相同。
+_PLUGIN_LABEL = _SKILL_DIR.parent.parent.name
+
+# 允许环境变量强制跳过（CI、容器、用户已手动管理依赖等场景）
 _SKIP_ENV = "PRESALES_SKILLS_SKIP_AUTO_INSTALL"
 
 
@@ -70,18 +77,18 @@ def ensure_deps(quiet: bool = True) -> None:
                 pass
         else:
             print(
-                f"[ppt-master] WARN: 锁等待 30s 超时，可能另一进程卡住未清理。"
+                f"[{_PLUGIN_LABEL}] WARN: 锁等待 30s 超时，可能另一进程卡住未清理。"
                 f"继续无锁尝试 install 兜底（pip 内部锁会兜底，worst case 二者都成功 install 同一份依赖，幂等）。",
                 file=sys.stderr,
             )
             # fall-through 到 install（不 return，本进程接管）
     except (OSError, PermissionError):
-        # 只读 cache / 权限不足 → fall-through 无锁 install
+        # 只读 cache（如 Nix store） / 权限不足 → fall-through 无锁 install
         pass
 
     try:
         print(
-            f"[ppt-master] First-time setup: installing Python dependencies from {_REQ.name}…",
+            f"[{_PLUGIN_LABEL}] First-time setup: installing Python dependencies from {_REQ.name}…",
             file=sys.stderr,
         )
         args = [sys.executable, "-m", "pip", "install", "-r", str(_REQ)]
@@ -92,7 +99,7 @@ def ensure_deps(quiet: bool = True) -> None:
             subprocess.check_call(args)
         except subprocess.CalledProcessError as e:
             print(
-                f"[ppt-master] WARN: pip install failed (exit {e.returncode}). "
+                f"[{_PLUGIN_LABEL}] WARN: pip install failed (exit {e.returncode}). "
                 f"Run manually: pip install -r {_REQ}",
                 file=sys.stderr,
             )
@@ -105,10 +112,12 @@ def ensure_deps(quiet: bool = True) -> None:
         try:
             _MARKER.touch()
         except OSError:
+            # 缓存目录可能只读（极端场景）；不 fatal，仅下次会重试
             pass
 
-        print(f"[ppt-master] Dependencies installed.", file=sys.stderr)
+        print(f"[{_PLUGIN_LABEL}] Dependencies installed.", file=sys.stderr)
     finally:
+        # 仅当本进程拿到锁时才清，避免误删他人的锁
         if lock_acquired:
             try:
                 _LOCK.unlink(missing_ok=True)
