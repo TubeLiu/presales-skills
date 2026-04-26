@@ -1,7 +1,7 @@
 {
   "name": "tender-workflow",
   "description": "四角色招投标工作流（tpl/taa/taw/trv/twc）。依赖 drawio、ai-image plugin；anythingllm-mcp 可选（未装时降级为本地 KB + 联网检索）。所有 sub-skill 通过 SKILL description 自然语言触发。",
-  "version": "0.2.2",
+  "version": "1.0.0",
   "author": {
     "name": "LiuZiJiao"
   },

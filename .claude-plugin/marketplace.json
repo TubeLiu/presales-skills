@@ -6,15 +6,15 @@
     "homepage": "https://github.com/Alauda-io/presales-skills"
   },
   "metadata": {
-    "description": "Presales skills monorepo — solution-master / ppt-master / tender-workflow + shared plugins (drawio, ai-image, anythingllm-mcp, web-access).",
-    "version": "0.3.2"
+    "description": "Presales skills monorepo — solution-master / ppt-master / tender-workflow + shared plugins (drawio, ai-image, anythingllm-mcp, web-access). v1.0.0 marketplace breaking：物理改名 5 个 plugin 的 mega skill 目录消除 <plugin>:<plugin> 双名 + ppt-master 默认 Alauda 模板 + Codex npx fix runtime files into skills/. 升级请阅 README ⚠ 段（运行 bin/clean-stale-cache.sh 清旧 cache）。",
+    "version": "1.0.0"
   },
   "plugins": [
     {
       "name": "drawio",
       "source": "./drawio",
-      "description": "Draw.io 图表生成（.drawio XML + PNG/SVG/PDF 导出）。独立共享 plugin，solution-master 与 tender-workflow 均依赖。通过 SKILL description 自然语言触发。",
-      "version": "0.3.0",
+      "description": "Draw.io 图表生成（.drawio XML + PNG/SVG/PDF 导出）。v1.0.0：skill dir 改名 drawio→draw（slash 形式 /drawio:draw 消除双名）+ runtime scripts 迁入 skills/draw/。独立共享 plugin，solution-master 与 tender-workflow 均依赖。通过 SKILL description 自然语言触发。",
+      "version": "1.0.0",
       "author": {
         "name": "LiuZiJiao"
       },
@@ -28,8 +28,8 @@
     {
       "name": "ai-image",
       "source": "./ai-image",
-      "description": "统一 AI 图片生成：13 个后端（volcengine/ark、qwen/dashscope、gemini、openai、minimax、stability、bfl、ideogram、zhipu、siliconflow、fal、replicate、openrouter）+ 共享 YAML 模型注册表。生图与配置管理通过 SKILL description 自然语言触发。独立共享 plugin，三个主 plugin 都依赖。",
-      "version": "0.4.2",
+      "description": "统一 AI 图片生成：13 个后端（volcengine/ark、qwen/dashscope、gemini、openai、minimax、stability、bfl、ideogram、zhipu、siliconflow、fal、replicate、openrouter）+ 共享 YAML 模型注册表。v1.0.0：skill dir 改名 ai-image→gen（slash 形式 /ai-image:gen 消除双名）+ prompts/ + requirements.txt 迁入 skills/gen/（Codex 兼容）。生图与配置管理通过 SKILL description 自然语言触发。独立共享 plugin，三个主 plugin 都依赖。",
+      "version": "1.0.0",
       "author": {
         "name": "LiuZiJiao"
       },
@@ -60,8 +60,8 @@
     {
       "name": "web-access",
       "source": "./web-access",
-      "description": "联网操作 + CDP 浏览器自动化 skill。独立 plugin，solution-master 可选依赖（cdp_sites.enabled=true 时必需）；其它 skill 通过 SKILL description 自然语言触发或 installed_plugins.json 自定位脚本调用。",
-      "version": "0.2.1",
+      "description": "联网操作 + CDP 浏览器自动化 skill。v1.0.0：skill dir 改名 web-access→browse（slash 形式 /web-access:browse 消除双名）。独立 plugin，solution-master 可选依赖（cdp_sites.enabled=true 时必需）；其它 skill 通过 SKILL description 自然语言触发或 installed_plugins.json 自定位脚本调用。",
+      "version": "1.0.0",
       "author": {
         "name": "LiuZiJiao"
       },
@@ -76,8 +76,8 @@
     {
       "name": "solution-master",
       "source": "./solution-master",
-      "description": "AI 辅助通用解决方案撰写框架。11 个原 sub-skill 合并为 1 个主 SKILL + workflow/ 子文件按需加载。依赖 drawio、ai-image plugin；anythingllm-mcp、web-access 可选。通过 SKILL description 自然语言触发；Claude Code + Cursor 用户额外有 SessionStart hook 自动注入铁律。",
-      "version": "0.2.2",
+      "description": "AI 辅助通用解决方案撰写框架。M4 11→1 mega 合并保留（铁律集中 + SessionStart hook 防脱轨）。v1.0.0：skill dir 改名 solution-master→sm（slash 形式 /solution-master:sm 消除双名）+ kb_indexer.py:165 runtime fix + sm_config orphan 修。依赖 drawio、ai-image plugin；anythingllm-mcp、web-access 可选。通过 SKILL description 自然语言触发；Claude Code + Cursor 用户额外有 SessionStart hook 自动注入铁律。",
+      "version": "1.0.0",
       "author": {
         "name": "LiuZiJiao"
       },
@@ -91,8 +91,8 @@
     {
       "name": "ppt-master",
       "source": "./ppt-master",
-      "description": "PPT 生成 (PDF/DOCX/URL/MD → SVG → PPTX)。依赖 ai-image plugin。通过 SKILL description 自然语言触发。",
-      "version": "0.4.0",
+      "description": "PPT 生成 (PDF/DOCX/URL/MD → SVG → PPTX)。v1.0.0：skill dir 改名 ppt-master→make（slash 形式 /ppt-master:make 消除双名）+ requirements.txt 迁入 skills/make/（Codex 兼容）+ **默认套 Alauda 模板**（free design 与切换其它模板需用户明说）。依赖 ai-image plugin。通过 SKILL description 自然语言触发。",
+      "version": "1.0.0",
       "author": {
         "name": "LiuZiJiao"
       },
@@ -106,8 +106,8 @@
     {
       "name": "tender-workflow",
       "source": "./tender-workflow",
-      "description": "四角色招投标工作流（tpl/taa/taw/trv/twc）。依赖 drawio、ai-image plugin；anythingllm-mcp 可选（未装时降级为本地 KB + 联网检索）。所有 sub-skill 通过 SKILL description 自然语言触发。",
-      "version": "0.2.2",
+      "description": "四角色招投标工作流（tpl/taa/taw/trv/twc）。v1.0.0：tools/{tw_config,tpl_docx_writer,trv_docx_reviser,docx_encoding_check}.py 迁入 skills/twc/tools/（Codex 兼容）；旧路径 tools/tw_config.py 留 deprecation shim 至 v1.1.0；tools/hooks/ → git-hooks/（已 opt-in core.hooksPath 的 dev 重跑 git config core.hooksPath git-hooks）。依赖 drawio、ai-image plugin；anythingllm-mcp 可选（未装时降级为本地 KB + 联网检索）。所有 sub-skill 通过 SKILL description 自然语言触发。",
+      "version": "1.0.0",
       "author": {
         "name": "LiuZiJiao"
       },

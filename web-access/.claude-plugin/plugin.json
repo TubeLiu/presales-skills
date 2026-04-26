@@ -1,7 +1,7 @@
 {
   "name": "web-access",
   "description": "联网操作 + CDP 浏览器自动化 skill。独立 plugin，solution-master 可选依赖（cdp_sites.enabled=true 时必需）；其它 skill 通过 SKILL description 自然语言触发或 installed_plugins.json 自定位脚本调用。",
-  "version": "0.2.1",
+  "version": "1.0.0",
   "author": {
     "name": "LiuZiJiao"
   },

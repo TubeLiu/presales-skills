@@ -1,7 +1,7 @@
 {
   "name": "solution-master",
   "description": "AI 辅助通用解决方案撰写框架。11 个原 sub-skill 合并为 1 个主 SKILL + workflow/ 子文件按需加载。依赖 drawio、ai-image plugin；anythingllm-mcp、web-access 可选。通过 SKILL description 自然语言触发；Claude Code + Cursor 用户额外有 SessionStart hook 自动注入铁律。",
-  "version": "0.2.2",
+  "version": "1.0.0",
   "author": {
     "name": "LiuZiJiao"
   },
