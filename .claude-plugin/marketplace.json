@@ -7,14 +7,14 @@
   },
   "metadata": {
     "description": "Presales skills monorepo — 7 个聚焦 plugin（solution-master 写方案 / ppt-master 做 PPT / tender-workflow 招投标 / drawio 画图 / ai-image 生图 / web-access 联网 / anythingllm-mcp 知识库），同时支持 Claude Code（marketplace 安装）和 Cursor / Codex / OpenCode（vercel-labs/skills CLI 安装）。",
-    "version": "2.0.0"
+    "version": "1.0.0"
   },
   "plugins": [
     {
       "name": "drawio",
       "source": "./drawio",
       "description": "Draw.io 图表生成（.drawio XML + PNG/SVG/PDF 导出）。slash 调用 /drawio:draw 或自然语言触发（'画一张架构图' / 'draw a flowchart'）。独立共享 plugin，solution-master 与 tender-workflow 均依赖。",
-      "version": "2.0.0",
+      "version": "1.0.0",
       "author": {
         "name": "LiuZiJiao"
       },
@@ -45,7 +45,7 @@
       "name": "anythingllm-mcp",
       "source": "./anythingllm-mcp",
       "description": "AnythingLLM MCP server — 知识库语义搜索 + workspace 列举。独立共享 plugin，solution-master 和 tender-workflow 均可选依赖；不装也能降级为本地 YAML 索引或联网检索。",
-      "version": "0.1.2",
+      "version": "1.0.0",
       "author": {
         "name": "LiuZiJiao"
       },
@@ -77,7 +77,7 @@
       "name": "solution-master",
       "source": "./solution-master",
       "description": "AI 辅助通用解决方案撰写框架（技术方案 / 业务方案 / 咨询报告 / 项目建议书 / 招投标方案）。覆盖头脑风暴 → 任务分解 → 子智能体并行撰写 → 双阶段审查 → DOCX 输出全流程。slash 调用 /solution-master:go 或自然语言触发（'写方案' / '撰写技术方案'）。依赖 drawio、ai-image plugin；anythingllm-mcp、web-access 可选。Claude Code + Cursor 用户额外有 SessionStart hook 自动注入铁律防脱轨。",
-      "version": "1.1.0",
+      "version": "1.0.0",
       "author": {
         "name": "LiuZiJiao"
       },
