@@ -133,6 +133,18 @@ fi
 | 浏览器操作 / 访问登录态站点 / Confluence 等 | web-access plugin（按其 SKILL.md 指引） |
 | 维护本框架本身（创建新 workflow / 编辑现有 workflow） | `$SKILL_DIR/../../docs/writing-skills.md` |
 
+## 子智能体工具限制（铁律）
+
+<HARD-GATE>
+Claude Code background subagent（Task tool 派发）有 **pre-approval** 机制：启动前 Claude Code 把 subagent 要用的工具权限列给用户预批准；启动后**未在 allowlist 中的 Skill / mcp__\* / WebFetch / WebSearch 调用 auto-deny**。
+
+**分派子 Agent 前必须先在主 session 跑完所有需要这些工具的步骤**（配图调 `Skill(skill="ai-image:gen")`、知识库检索调 `mcp__plugin_anythingllm-mcp_anythingllm__anythingllm_search`、Web 检索调 `WebSearch`/`mcp__tavily*`/`mcp__exa*`/`WebFetch`），把结果拼到 Task prompt 里。子 Agent prompt 不能含"调 Skill / 调 mcp__\* / 调 Web\*"指令——subagent 端 `agents/*.md` §工具限制 已自检会 NEEDS_CONTEXT 报回，浪费一轮。
+
+反模式：派 writer 时让它"顺便调一下 Skill 配图"——已知踩坑（用户 2026-04-27 实测）。
+
+参考：claude-code-guide 2026-04-27 查证（`sub-agents.md` 第 38, 279, 365, 647 行；`permissions.md` 全文）。如用户希望 subagent 直接调这些工具，可在 `~/.claude/settings.json` 加 `permissions.allow` 预批准（见主 README）。
+</HARD-GATE>
+
 ## 子智能体调度
 
 按 `workflow/writing.md` 流程，对每个章节任务分派一个全新隔离子智能体。

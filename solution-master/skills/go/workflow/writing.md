@@ -96,6 +96,18 @@ digraph solution_writing {
 
 ### Phase 1：知识检索 + 配图规划（每个任务）
 
+<HARD-GATE>
+**Phase 1 的 `Skill(skill="ai-image:gen")` 调用、knowledge-retrieval 的 MCP / Web 检索全部必须主 session 完成**——不能放进 writer subagent 的 prompt 让它自己调（subagent pre-approval 限制，参见 SKILL.md §子智能体工具限制）。
+
+正确流程：
+1. 主 session 跑 `Skill(skill="ai-image:gen")` 拿图片产出
+2. 主 session 跑 knowledge-retrieval（详见该 workflow 自身的 hard-gate）
+3. 把图片路径 + 检索结果拼进 writer subagent Task prompt 的"## 配图方案"和"## 知识库素材"段
+4. writer subagent 在写章节时引用图片、用素材，**不调 Skill / MCP / Web***
+
+反模式：派 writer 时让它"顺便调一下 Skill / 顺便去 Tavily 查一下" → subagent 端 §工具限制 自检会 NEEDS_CONTEXT 报回，浪费一轮。
+</HARD-GATE>
+
 1. 调用 knowledge-retrieval 技能，传入任务的 KB 检索关键词
 2. **检查任务的"配图需求"字段**：
    - 如果配图需求明确表示需要图片（即字段值不是"无"、"无需配图"、"无配图需求"、"N/A"等否定性表述），**必须**通过 `Skill(skill="ai-image:gen")` 调用 ai-image plugin
