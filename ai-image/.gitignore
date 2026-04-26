@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Plugin-specific runtime markers
+skills/gen/.deps-installed
+skills/gen/.deps-installing.lock
+
+# 用户自定义模型注册表（如有，由 add-model 子命令产生）
+skills/gen/prompts/models-user.yaml
+
+# 测试产物
+.pytest_cache/

@@ -23,10 +23,10 @@ ppt-master/projects/*/
 ppt-master/exports/
 **/svg_output/
 **/svg_final/
-ai-image/skills/ai-image/.deps-installed
-ppt-master/skills/ppt-master/.deps-installed
-ai-image/skills/ai-image/.deps-installing.lock
-ppt-master/skills/ppt-master/.deps-installing.lock
+ai-image/skills/gen/.deps-installed
+ppt-master/skills/make/.deps-installed
+ai-image/skills/gen/.deps-installing.lock
+ppt-master/skills/make/.deps-installing.lock
 
 # vercel-labs/skills CLI 副产物（用户在 cwd 运行 `npx skills add ./` 实测时产生）
 skills-lock.json

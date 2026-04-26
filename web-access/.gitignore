@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# CDP / browser automation 临时产物
+.chrome-cdp-tmp/
+*.har

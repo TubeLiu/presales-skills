@@ -1,0 +1,16 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# 用户自定义 style preset（v1.3+ 由 SKILL.md 'save preset' 流程产生）
+skills/draw/styles/user/
+
+# 用户测试产物（draw.io CLI 导出 PNG/SVG/PDF 时若不指定 -o 会落到 cwd）
+*.drawio.png
+*.drawio.svg
+*.drawio.pdf
