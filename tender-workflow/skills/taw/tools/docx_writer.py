@@ -228,11 +228,12 @@ def validate_heading_hierarchy(doc, expected_outline):
 
 
 def strip_numbering_prefix(text):
-    """剥除文本开头的编号前缀（如 '1.3.1 招标方需求理解' → '招标方需求理解'）。
+    """剥除文本开头的编号前缀（如 '1.3.1 招标方需求理解' / '1. 技术部分' → 标题正文）。
 
     兜底防御：subagent 偶尔会把编号写进 heading text，运行时强制清理。
+    支持 'N.' / 'N.M' / 'N.M.K' / ... 末尾可选 '.'。
     """
-    return re.sub(r'^\d+(\.\d+)*\s+', '', text.strip())
+    return re.sub(r'^\d+(\.\d+)*\.?\s+', '', text.strip())
 
 
 def clean_doc_defaults(doc):
