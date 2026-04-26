@@ -77,15 +77,15 @@ digraph retrieval {
 
 ### 触发条件
 
-读取配置 `cdp_sites.enabled`（通过 `python3 "${CLAUDE_PLUGIN_ROOT:-$SKILL_DIR/..}/skills/solution-config/scripts/sm_config.py" get cdp_sites.enabled`）：
+读取配置 `cdp_sites.enabled`（通过 `python3 "${CLAUDE_PLUGIN_ROOT:-$SKILL_DIR/..}/skills/sm/scripts/sm_config.py" get cdp_sites.enabled`）：
 - `true` 且 `cdp_sites.sites` 非空 → 执行第四层
 - `false` 或未配置 → 跳过第四层（退化为三层检索）
 
-> **路径写法说明（F-022）**：`$SKILL_DIR/..` 在 plugin 模式注入；`$SKILL_DIR/..` 是 npx 模式 fallback。两种模式都解析到 `<solution-master>/skills/solution-config/scripts/sm_config.py`。
+> **路径写法说明（F-022）**：`$SKILL_DIR/..` 在 plugin 模式注入；`$SKILL_DIR/..` 是 npx 模式 fallback。两种模式都解析到 `<solution-master>/skills/sm/scripts/sm_config.py`。
 
 ### 执行流程
 
-1. **读取站点配置：** `python3 "${CLAUDE_PLUGIN_ROOT:-$SKILL_DIR/..}/skills/solution-config/scripts/sm_config.py" get cdp_sites`，获取站点列表
+1. **读取站点配置：** `python3 "${CLAUDE_PLUGIN_ROOT:-$SKILL_DIR/..}/skills/sm/scripts/sm_config.py" get cdp_sites`，获取站点列表
 2. **启动 CDP Proxy**（前置依赖检查 — F-009）：
    ```bash
    command -v web-access-check

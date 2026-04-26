@@ -151,3 +151,56 @@ def test_vercel_cli_discovery():
     found = int(m.group(1))
     # 当前预期：drawio + ai-image + ppt-make + web-access + solution-master + 5 tender = 10
     assert found == 10, f"Expected 10 skills, vercel CLI found {found}. Output:\n{output[:1000]}"
+
+
+# ---------------------------------------------------------------------------
+# v1.0.0 新增：第 10 项 — 跨 sub-skill 引用必须在同 plugin 内
+# ---------------------------------------------------------------------------
+
+# Pattern A: $SKILL_DIR/../<X>/...  或 ${SKILL_DIR}/../<X>/...
+_PATTERN_A = re.compile(r'\$\{?SKILL_DIR\}?/\.\./([a-z0-9_-]+)/')
+# Pattern B: ${...:-$SKILL_DIR/..}/skills/<X>/...（复合形式，如 workflow/knowledge-retrieval.md）
+_PATTERN_B = re.compile(r'\$\{[^}]*\$SKILL_DIR/\.\.[^}]*\}/skills/([a-z0-9_-]+)/')
+
+
+def _plugin_skills_root(md_path: Path):
+    """从任意 markdown 路径反推 <plugin>/skills/。"""
+    for ancestor in md_path.parents:
+        if ancestor.name == "skills" and (ancestor.parent / ".claude-plugin" / "plugin.json").exists():
+            return ancestor
+    return None
+
+
+def test_cross_skill_refs_within_plugin():
+    """v1.0.0：$SKILL_DIR/../<X>/... 或 ${...:-$SKILL_DIR/..}/skills/<X>/ 中 <X>
+    必须是同 plugin 的兄弟 sub-skill 目录。
+
+    覆盖：SKILL.md / setup.md / workflow/*.md / 其它 skills/<X>/ 下的 markdown。
+    禁止跨 plugin 用相对路径（Claude Code marketplace cache layout 下不是兄弟）。
+    """
+    violations = []
+    md_files = []
+    for plugin_json in REPO_ROOT.glob("*/.claude-plugin/plugin.json"):
+        skills_dir = plugin_json.parent.parent / "skills"
+        if skills_dir.is_dir():
+            md_files.extend(skills_dir.rglob("*.md"))
+
+    for md_path in md_files:
+        plugin_skills = _plugin_skills_root(md_path)
+        if plugin_skills is None:
+            continue
+        text = md_path.read_text(encoding="utf-8")
+        for sibling in (*_PATTERN_A.findall(text), *_PATTERN_B.findall(text)):
+            # 排除非目录段（如 ../tools/<X>.py 中的 tools，那不是跨 sub-skill 而是同 sub-skill 内子目录）
+            # ⇒ 同 sub-skill 内 $SKILL_DIR/../tools/ 不应出现，应改 $SKILL_DIR/tools/；这种该报
+            #   但跨 sub-skill 兄弟 $SKILL_DIR/../<sibling-skill>/ 应当存在 sibling 目录
+            if not (plugin_skills / sibling).is_dir():
+                violations.append(
+                    f"{md_path.relative_to(REPO_ROOT)}: 引用 sibling sub-skill "
+                    f"'{sibling}/' 不在同 plugin 兄弟目录中"
+                )
+
+    assert not violations, (
+        "跨 sub-skill 引用违反同 plugin 限制（或写错 sibling 名）：\n"
+        + "\n".join(violations)
+    )
