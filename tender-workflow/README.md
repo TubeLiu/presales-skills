@@ -133,7 +133,19 @@ ai_image:
 
 解析优先级：**CLI 参数 > 环境变量 > skill 节 > 全局节 > 默认值**。
 
-`/twc setup` 引导式 6 步配置（KB 路径 → AnythingLLM → draw.io → AI 生图 API → skill 默认值 → 验证）。
+`/twc setup` 引导式 6 步配置（KB 路径 → AnythingLLM → draw.io → MCP 搜索工具 → skill 默认值 → 验证）。
+
+### MCP 搜索工具（Step 4）
+
+支持三类用户级 MCP server，全部走 web-access plugin 的 `mcp_installer.py` 注册到 `~/.claude.json`，缺 `node`/`uv` 时 wizard 自动用户级安装；register 后会询问是否实测：
+
+| Provider | Tool | 拿 key |
+|---|---|---|
+| `tavily` | `tavily_search` | https://tavily.com |
+| `exa` | `exa_search` | https://exa.ai |
+| `minimax-token-plan` | `web_search` + `understand_image` | 订阅 [Token Plan](https://platform.minimaxi.com/subscribe/token-plan) 拿 `sk-cp-` 前缀 key（普通 chat key 不能给 MCP 用） |
+
+`mcp_search.priority` 可任意组合 `tavily_search` / `exa_search` / `minimax_search`，按列表顺序检索；最终兜底走内置 WebSearch。
 
 ---
 
