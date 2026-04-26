@@ -1,6 +1,6 @@
 {
   "name": "tender-workflow",
-  "description": "四角色招投标工作流——tpl（甲方策划，技术规格 + 评标办法）/ taa（乙方分析，招标分析报告 + 投标大纲）/ taw（乙方撰稿，章节内容并行写）/ trv（多维度审核，含 AI 智能修订）/ twc（统一配置）。slash 调用 /tender-workflow:taa 等或自然语言触发（'写标书' / '审一下标书'）。依赖 drawio、ai-image plugin；anythingllm-mcp 可选（未装时降级本地 KB + 联网检索）。",
+  "description": "四角色招投标工作流——tpl（甲方策划，技术规格 + 评标办法）/ taa（乙方分析，招标分析报告 + 投标大纲）/ taw（乙方撰稿，章节内容并行写）/ trv（多维度审核，含 AI 智能修订）/ twc（统一配置）。slash 调用 /tender-workflow:taa 等或自然语言触发（'写标书' / '审一下标书'）。依赖 drawio、ai-image plugin；anythingllm-mcp 可选（未装时降级本地 KB）；web-access 可选（/twc setup 配 MCP 搜索工具 tavily/exa/minimax 时使用其 mcp_installer.py，未装则跳过该步走内置 WebSearch 兜底）。",
   "version": "1.0.0",
   "author": {
     "name": "LiuZiJiao"

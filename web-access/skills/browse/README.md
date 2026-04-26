@@ -128,7 +128,9 @@ python3 "${CLAUDE_SKILL_DIR}/scripts/mcp_installer.py" test minimax        # std
 python3 "${CLAUDE_SKILL_DIR}/scripts/mcp_installer.py" unregister minimax
 ```
 
-`auto-install` 走用户级路径（uv 用 astral.sh install.sh / install.ps1；node 优先 fnm/brew/winget），不需要 sudo；只有兜底场景才输出 `NEEDS_USER_ACTION` 让 wizard 转发命令。`test` 子命令 spawn server 跑 MCP JSON-RPC 握手（initialize → notifications/initialized → tools/call），**不依赖 reload-plugins**，配置写入后立即可验。minimax key 强制要求 `sk-cp-` 前缀（普通 chat key 不能给 MCP 用，见 MiniMax-AI/MiniMax-M2 issue #96）。
+`auto-install` 走用户级路径（uv 用 astral.sh install.sh / install.ps1；node 优先 fnm/brew/winget），不需要 sudo；只有兜底场景才输出 `NEEDS_USER_ACTION` 让 wizard 转发命令。`test` 子命令 spawn server 跑 MCP JSON-RPC 握手（initialize → notifications/initialized → tools/call），**不依赖 reload-plugins**，配置写入后立即可验。minimax key 强制要求 `sk-cp-` 前缀（普通 chat key 不能给 MCP 用，见 [MiniMax-AI/MiniMax-M2 issue #96](https://github.com/MiniMax-AI/MiniMax-M2/issues/96)）。
+
+> **路径写法**：上面例子用 web-access 自身 skill 加载时设置的 `${CLAUDE_SKILL_DIR}`。被 tender-workflow / solution-master setup wizard 调用时，wizard 用 `installed_plugins.json` bootstrap 探针解析成绝对路径，因此命令形如 `python3 "$WA_INSTALLER" check uv`（`WA_INSTALLER=<web-access install path>/skills/browse/scripts/mcp_installer.py`）。两种写法等价，按调用上下文选。
 
 ## CDP Proxy API
 

@@ -463,8 +463,15 @@ def test_web_access_readme_documents_mcp_installer():
 
 
 def test_tender_workflow_readme_lists_minimax():
-    """tender-workflow README 必须把 minimax-token-plan 列入 MCP 搜索 provider 表。"""
+    """tender-workflow README 的 ### MCP 搜索工具 段必须把 minimax 列入 provider 表。
+
+    收紧到段内匹配，避免 README 别处偶发提到 'minimax' 字符串（如 ai-image
+    后端列表里也含 minimax）造成假阳性。
+    """
     p = REPO_ROOT / "tender-workflow/README.md"
     text = _read(p)
-    assert "minimax" in text.lower(), "README 应列 minimax"
-    assert "sk-cp-" in text, "README 应说明 minimax key 必须 sk-cp- 前缀"
+    m = re.search(r"###\s+MCP[^\n]*\n([\s\S]+?)(?=\n##\s|\Z)", text)
+    assert m, "README 缺 '### MCP …' 小节"
+    section = m.group(1)
+    assert "minimax" in section.lower(), "MCP 段必须列 minimax provider"
+    assert "sk-cp-" in section, "MCP 段必须说明 minimax key 必须 sk-cp- 前缀"
