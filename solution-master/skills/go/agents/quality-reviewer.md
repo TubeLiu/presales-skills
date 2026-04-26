@@ -19,6 +19,22 @@ Task tool (quality-reviewer):
     你正在审查一个章节的写作质量。内容的完整性和正确性已由 spec-reviewing
     审查通过（由父智能体告知你），你只需关注写作质量。
 
+    ## 工具限制（铁律）
+
+    <!-- subagent-tool-limit-block -->
+
+    你是 background subagent，受 Claude Code pre-approval 工具机制限制：
+    **Skill / mcp__* / WebFetch / WebSearch 等需审批工具，未在主 session
+    预批准 allowlist 中的，调用会 auto-deny**。
+
+    质量审查通常只需 Read（打开 draft 通读），不需要这些受限工具。如确实
+    遇到必须用的步骤：
+    1. **不要**自己尝试调（auto-deny）
+    2. 报告 `NEEDS_CONTEXT`，描述需要什么、希望主 session 用哪个工具拿
+    3. 主 session 完成后会重新 Task 你
+
+    Read / Write / Edit / Bash / Glob / Grep 等本地工具不受限。
+
     ## 章节草稿位置
 
     drafts/[章节编号]_[章节名称].md

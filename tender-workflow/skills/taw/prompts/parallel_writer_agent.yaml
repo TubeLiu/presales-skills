@@ -14,6 +14,22 @@ description: |
 agent_prompt_template: |
   你是投标文件撰写专家，负责撰写章节「{chapter_title}」中的子节「{h3_numbering} {h3_title}」。
 
+  ## 工具限制（铁律）
+
+  <!-- subagent-tool-limit-block -->
+
+  你是 background subagent，受 Claude Code pre-approval 工具机制限制：
+  **Skill / mcp__* / WebFetch / WebSearch 等需审批工具，未在主 session
+  预批准 allowlist 中的，调用会 auto-deny**。
+
+  并行写作场景下所有素材（KB 检索结果、AI 生图结果、Web 搜索结果）已由
+  主 session 在 Phase 2A 准备完毕并拼进本 prompt。**直接用 prompt 中已
+  提供的素材撰写**，不要自己调 Skill / mcp__* / Web*。
+
+  确实遇到必须用这些工具的步骤 → 报告 `NEEDS_CONTEXT`，描述需要什么、
+  希望主 session 用哪个工具拿；主 session 会补素材重派。Read / Write /
+  Edit / Bash / Glob / Grep 等本地工具不受限。
+
   ## 写作蓝图（全章共享上下文，必须严格遵守）
 
   ### 论述主线

@@ -18,6 +18,23 @@ Task tool (writer):
   prompt: |
     你正在撰写任务 N：[章节名称]
 
+    ## 工具限制（铁律）
+
+    <!-- subagent-tool-limit-block -->
+
+    你是 background subagent，受 Claude Code pre-approval 工具机制限制：
+    **Skill / mcp__* / WebFetch / WebSearch 等需审批工具，未在主 session
+    预批准 allowlist 中的，调用会 auto-deny**。
+
+    遇到必须用这些工具的步骤：
+    1. **不要**自己尝试调（会被 auto-deny，浪费一轮）
+    2. 报告状态 `NEEDS_CONTEXT`，描述需要什么数据/资源、希望主 session
+       用哪个工具拿
+    3. 主 session 完成后会重新 Task 你，把素材塞进新 prompt
+
+    只用 prompt 已提供的素材完成任务。Read / Write / Edit / Bash / Glob /
+    Grep 等本地工具不受限。
+
     ## 任务描述
 
     [计划中任务的完整文本 - 粘贴到这里，不要让子智能体去读计划文件]

@@ -19,6 +19,22 @@ Task tool (spec-reviewer):
   prompt: |
     你正在审查一个章节产出是否与其规格匹配。
 
+    ## 工具限制（铁律）
+
+    <!-- subagent-tool-limit-block -->
+
+    你是 background subagent，受 Claude Code pre-approval 工具机制限制：
+    **Skill / mcp__* / WebFetch / WebSearch 等需审批工具，未在主 session
+    预批准 allowlist 中的，调用会 auto-deny**。
+
+    审查任务通常只需 Read / Glob / Grep（核对 draft 与规格、查证据文件），
+    不需要这些受限工具。如确实遇到必须用的步骤：
+    1. **不要**自己尝试调（auto-deny）
+    2. 报告 `NEEDS_CONTEXT`，描述需要什么、希望主 session 用哪个工具拿
+    3. 主 session 完成后会重新 Task 你
+
+    Read / Write / Edit / Bash / Glob / Grep 等本地工具不受限。
+
     ## 要求的内容
 
     [任务需求的完整文本：章节标题、要点清单、字数目标、配图需求、验收标准]
