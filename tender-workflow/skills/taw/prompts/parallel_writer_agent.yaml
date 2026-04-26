@@ -1,98 +1,21 @@
-# 并行写作子智能体提示模板（Parallel Writer Agent Template）
-# v1.0.0 | Phase 2B 为每个 H3 子节构建子智能体提示词
+# 并行写作子智能体调度配置（Parallel Writer Dispatch Config）
+# v2.0.0 | Phase 2B dispatch 调度层
+#
+# v2.0.0 重大变更：
+# - 完整 prompt template 已迁移到 agents/writer.md（主 session 通过 Task
+#   tool 投递，对齐 solution-master 形态）
+# - 本文件降级为 dispatch 调度配置：context 打包规则 + 执行检查 + 全局规则
+# - subagent 输出格式约束（### {h3_title} 不写编号 + 必须嵌图）已在
+#   agents/writer.md 中强约束
 
-name: parallel_writer_agent
-version: "1.0.0"
+name: parallel_writer_dispatch
+version: "2.0.0"
 description: |
-  并行写作模式下的子智能体任务模板。
-  每个子智能体只负责撰写一个 H3 子节，严格遵循写作蓝图。
+  并行写作模式 Phase 2B 的 dispatch 调度配置。
+  主 session 按 context_packaging 准备每个 H3 的素材，按
+  agents/writer.md 模板填占位符并通过 Task tool 并发分发。
 
-# ============================================================
-# 子智能体提示模板
-# ============================================================
-
-agent_prompt_template: |
-  你是投标文件撰写专家，负责撰写章节「{chapter_title}」中的子节「{h3_numbering} {h3_title}」。
-
-  ## 工具限制（铁律）
-
-  <!-- subagent-tool-limit-block -->
-
-  你是 background subagent，受 Claude Code pre-approval 工具机制限制：
-  **Skill / mcp__* / WebFetch / WebSearch 等需审批工具，未在主 session
-  预批准 allowlist 中的，调用会 auto-deny**。
-
-  并行写作场景下所有素材（KB 检索结果、AI 生图结果、Web 搜索结果）已由
-  主 session 在 Phase 2A 准备完毕并拼进本 prompt。**直接用 prompt 中已
-  提供的素材撰写**，不要自己调 Skill / mcp__* / Web*。
-
-  确实遇到必须用这些工具的步骤 → 报告 `NEEDS_CONTEXT`，描述需要什么、
-  希望主 session 用哪个工具拿；主 session 会补素材重派。Read / Write /
-  Edit / Bash / Glob / Grep 等本地工具不受限。
-
-  ## 写作蓝图（全章共享上下文，必须严格遵守）
-
-  ### 论述主线
-  {argument_thread}
-
-  ### 术语规范（严格遵守，不得使用禁用变体）
-  {terminology_table}
-
-  ### 你在全章中的位置
-  - 你负责的是第 {h3_index}/{h3_total} 个子节
-  - 承接：{connect_from}
-  - 铺垫：{lead_to}
-
-  ## 你的写作任务
-
-  **子节编号**：{h3_numbering}
-  **子节标题**：{h3_title}
-  **核心论点**：{core_argument}
-  **目标字数**：{target_words} 字（不少于此数）
-
-  ## 必须覆盖的评分点（M4）
-
-  以下评分项必须在你的内容中有实质性响应，不可遗漏：
-
-  {scoring_points_detail}
-
-  ## 可引用的知识库素材
-
-  以下素材来自公司知识库，优先引用：
-
-  {kb_materials_content}
-
-  ## 可引用的互联网事实（WEB_FACTS）
-
-  以下事实来自互联网检索，引用时标注来源：
-
-  {web_facts_content}
-
-  ## 写作规则
-
-  {global_writing_rules}
-
-  ## 输出格式要求
-
-  1. 纯 Markdown 格式输出
-  2. 以 ### {h3_numbering} {h3_title} 作为子节标题开头
-  3. 若需要四级/五级子标题，使用 #### 和 #####
-  4. 合理使用表格、列表、粗体等 Markdown 元素增强可读性
-  5. 技术参数对比、功能列表等使用 Markdown 表格
-  6. 互联网来源的数据标注 [互联网来源，请核实]
-  7. 不确定的内容标注 [待确认]
-
-  ## 禁止事项
-
-  - 禁止输出其他子节的内容（只写你负责的 {h3_numbering}）
-  - 禁止生成图片、mermaid 图表或图片描述（图片由整合阶段统一处理）
-  - 禁止使用术语表中的禁用变体
-  - 禁止空泛套话，每个论点必须有具体支撑（数据、案例、技术细节）
-  - 禁止绝对化承诺（如"确保100%"、"绝对不会"）
-
-  ## 开始撰写
-
-  请直接输出「{h3_numbering} {h3_title}」的完整 Markdown 内容。
+agent_prompt_source: agents/writer.md  # 真正的 prompt 模板位置
 
 # ============================================================
 # 上下文打包规则
@@ -131,11 +54,11 @@ context_packaging:
       max_tokens: 300
       source: "article_core.yaml global_rules 精简提取"
 
-    - name: image_plan_info
-      description: "该 H3 的图片分配信息（是否有图、来源、caption）"
-      max_tokens: 100
+    - name: image_plan
+      description: "该 H3 的图片分配数组：每项 {path: abs, caption: '图 X-Y ...', placement_hint: '开头/中段/末尾'}；空数组 [] 表示无图"
+      max_tokens: 300
       source: "Writing Brief h3_assignment_table.image_plan 列"
-      note: "让子智能体知道是否有图片要插入，以便在正文中自然引用（如'如下图所示'）"
+      note: "subagent 必须按 placement_hint 把每项嵌成 ![caption](path)，文件不存在时由 docx_writer 自动降级占位符"
 
   # 不传递给子智能体（节省 token）
   excluded:
@@ -155,18 +78,24 @@ context_packaging:
 
 phase_2b_execution:
   dispatch_rule: |
-    使用 Claude Code Agent tool 在单条消息中同时分发所有 H3 子智能体：
+    主 session 在单条消息中并发分发所有 H3 子智能体：
     对 h3_assignment_table 中的每个 H3：
-      Agent(
-        description="撰写子节 {h3_numbering} {h3_title}",
-        prompt=按 agent_prompt_template 填充的完整提示词
-      )
-    ⚠️ 所有 Agent 调用必须在同一条消息中发出，确保并发执行。
+      1. Read $SKILL_DIR/agents/writer.md 获取 prompt 模板
+      2. 按 context_packaging.required 准备占位符值
+      3. 用占位符填充模板得到完整 prompt
+      4. Task(description="撰写子节 {h3_numbering} {h3_title}", prompt=...)
+    ⚠️ 所有 Task 调用必须在同一条消息中发出，确保并发执行。
 
   result_checking:
     - check: "子 agent 超时"
       condition: "无返回结果"
       action: "重试一次，同样参数"
+    - check: "首行非 ###"
+      condition: "regex `^#{1,2}\\s+` 命中（即 # 或 ##）"
+      action: "立即重派一次，prompt 强调'禁止使用 # 或 ##'"
+    - check: "标题含编号 prefix"
+      condition: "regex `^### \\d+(\\.\\d+)+\\s+` 命中（如 '### 1.2.1 ...'）"
+      action: "立即重派一次，prompt 强调'禁止在标题文本里写编号'"
     - check: "字数不足"
       condition: "输出 < 目标字数 × 50%"
       action: "标记给 Phase 2C 补充扩展"
@@ -175,7 +104,10 @@ phase_2b_execution:
       action: "标记给 Phase 2C 统一替换（无需重试）"
     - check: "内容跑题"
       condition: "未覆盖 core_argument"
-      action: "重试，提示中强调核心论点"
+      action: "重试，prompt 强调核心论点"
+    - check: "图片缺失"
+      condition: "image_plan 中某项 path 在输出 Markdown 中找不到对应 ![]() 引用"
+      action: "Phase 2C 补嵌（按 placement_hint 插在末尾）"
     - check: "多数失败"
       condition: ">50% 子 agent 失败"
       action: "降级到顺序写作模式（回退执行 Step 3）"

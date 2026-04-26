@@ -259,7 +259,9 @@ _SUBAGENT_PROMPT_BODIES = [
     "solution-master/skills/go/agents/writer.md",
     "solution-master/skills/go/agents/spec-reviewer.md",
     "solution-master/skills/go/agents/quality-reviewer.md",
-    "tender-workflow/skills/taw/prompts/parallel_writer_agent.yaml",
+    "tender-workflow/skills/taw/agents/writer.md",
+    "tender-workflow/skills/taw/agents/spec-reviewer.md",
+    "tender-workflow/skills/taw/agents/quality-reviewer.md",
 ]
 
 
