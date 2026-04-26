@@ -58,7 +58,30 @@ digraph retrieval {
 
 ## 第二层：AnythingLLM（语义搜索）
 
-1. 检查 AnythingLLM 是否启用（配置 `anythingllm.enabled`）
+### 可用性检测（F-014）
+
+执行前先确认 AnythingLLM MCP 工具可用：
+
+1. 读取配置 `anythingllm.enabled`（`python3 "${CLAUDE_PLUGIN_ROOT:-$SKILL_DIR/..}/skills/go/scripts/sm_config.py" get anythingllm.enabled`）
+2. 检测 MCP 工具是否注册：
+   - 尝试调用 `mcp__plugin_anythingllm-mcp_anythingllm__anythingllm_search`（query="probe"）
+   - 工具不存在 / 调用失败 → `ANYTHINGLLM_AVAILABLE=false`
+
+### 降级矩阵（mirror tender-workflow taw F-036）
+
+`--kb-source` 与 `ANYTHINGLLM_AVAILABLE` 的交互行为：
+
+| `--kb-source` | ANYTHINGLLM_AVAILABLE=false 时行为 |
+|---|---|
+| `anythingllm` | **致命错误** + 提示："/plugin install anythingllm-mcp@presales-skills 安装可选依赖；或改用 --kb-source local" |
+| `auto` | **自动降级**：跳过第二层，仅走 第一层（本地 KB）+ 第三层（Web）+ 第四层（CDP，如启用）。其它层结果不变 |
+| `local` | 正常走 local，与 AnythingLLM 状态无关 |
+| `cdp` | 仅 CDP，与 AnythingLLM 状态无关 |
+| `none` | 忽略 KB 检索，与 AnythingLLM 状态无关 |
+
+### 检索流程（ANYTHINGLLM_AVAILABLE=true 时）
+
+1. 检查 AnythingLLM 是否启用（配置 `anythingllm.enabled` 为 true）
 2. 构造查询：`章节标题 + 关键词`
 3. 调用 `anythingllm_search(query, workspace)`
 4. 过滤：score >= 0.7，最多 5 条
