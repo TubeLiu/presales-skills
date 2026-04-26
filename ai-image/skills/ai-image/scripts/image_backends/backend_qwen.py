@@ -91,16 +91,30 @@ def _resolve_url(base_url: str) -> str:
 
 
 def _resolve_size(aspect_ratio: str, image_size: str) -> str:
-    """Resolve the target resolution for a ratio and logical size preset."""
+    """Resolve the target resolution for a ratio and logical size preset.
+
+    Accepts: '1K' / '2K' / '4K' / '512px' presets (mapped via ASPECT_RATIO_SIZE_MAP),
+    or explicit 'WxH' / 'W*H' (e.g. '512x512' / '1024*1024') passed through as-is.
+    """
     normalized = normalize_image_size(image_size)
-    size = (ASPECT_RATIO_SIZE_MAP.get(normalized) or {}).get(aspect_ratio)
-    if not size:
-        supported = sorted(ASPECT_RATIO_SIZE_MAP["1K"])
-        raise ValueError(
-            f"Unsupported aspect ratio '{aspect_ratio}' for Qwen backend. "
-            f"Supported: {supported}"
-        )
-    return size
+    if normalized in ASPECT_RATIO_SIZE_MAP:
+        size = ASPECT_RATIO_SIZE_MAP[normalized].get(aspect_ratio)
+        if not size:
+            supported = sorted(ASPECT_RATIO_SIZE_MAP[normalized])
+            raise ValueError(
+                f"Unsupported aspect ratio '{aspect_ratio}' for Qwen backend at preset '{normalized}'. "
+                f"Supported aspect ratios: {supported}"
+            )
+        return size
+    # 自由输入 WxH / W*H：直接透传给 Qwen API（API 接受 'W*H' 格式）
+    raw = image_size.strip().lower().replace("x", "*")
+    parts = raw.split("*")
+    if len(parts) == 2 and all(p.isdigit() for p in parts):
+        return f"{parts[0]}*{parts[1]}"
+    raise ValueError(
+        f"Unsupported image_size '{image_size}' for Qwen backend. "
+        f"Use a preset ({sorted(ASPECT_RATIO_SIZE_MAP)}) or explicit 'WxH' / 'W*H' (e.g. '512x512')."
+    )
 
 
 def _generate_image(api_key: str, prompt: str, negative_prompt: str = None,

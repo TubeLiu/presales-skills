@@ -56,8 +56,10 @@ CONFIG_PATH = CONFIG_DIR / "config.yaml"
 USER_MODELS_PATH = CONFIG_DIR / "models-user.yaml"
 
 # 脚本所在目录（plugin install 时由 Claude Code 管控位置，__file__ 可靠）
+# scripts/ 在 ai-image/skills/ai-image/scripts/ 下（3 级深）；prompts/ 与 requirements.txt
+# 在 plugin 根目录 ai-image/，需 3 级 parent。
 SCRIPT_DIR = Path(__file__).resolve().parent
-PLUGIN_ROOT = SCRIPT_DIR.parent  # ai-image/
+PLUGIN_ROOT = SCRIPT_DIR.parent.parent.parent  # ai-image/
 PLUGIN_REGISTRY = PLUGIN_ROOT / "prompts" / "ai_image_models.yaml"
 
 LEGACY_CONFIGS = {
@@ -417,16 +419,28 @@ def cmd_validate(provider_filter: Optional[str]) -> int:
     if not cfg:
         print(f"配置文件不存在：{CONFIG_PATH}")
         return 1
+    if not PLUGIN_REGISTRY.exists():
+        print(f"错误：注册表文件不存在：{PLUGIN_REGISTRY}", file=sys.stderr)
+        print("  这通常是 plugin 安装不完整或 PLUGIN_ROOT 路径解析有误。", file=sys.stderr)
+        return 1
     registry = _load_yaml(PLUGIN_REGISTRY)
     api_keys = cfg.get("api_keys") or {}
     providers = registry.get("providers", {})
 
+    if not providers:
+        print(f"错误：注册表 {PLUGIN_REGISTRY} 中无 providers 字段或为空。", file=sys.stderr)
+        return 1
+
+    if provider_filter and provider_filter not in providers:
+        known = ", ".join(sorted(providers.keys()))
+        print(f"错误：provider '{provider_filter}' 不在注册表中。", file=sys.stderr)
+        print(f"  已知 provider: {known}", file=sys.stderr)
+        return 1
+
     issues: list[str] = []
-    checked = 0
     for prov_name, prov_data in providers.items():
         if provider_filter and prov_name != provider_filter:
             continue
-        checked += 1
         key = api_keys.get(prov_name)
         if not key:
             # 也检查 env var
@@ -441,10 +455,6 @@ def cmd_validate(provider_filter: Optional[str]) -> int:
             issues.append(f"{prov_name}: 未设置 API key（config.yaml 和 env 都空）")
         else:
             print(f"✓ {prov_name}: API key 已配置（{len(key)} chars）")
-
-    if checked == 0:
-        print(f"provider '{provider_filter}' 未知")
-        return 1
 
     if issues:
         print()

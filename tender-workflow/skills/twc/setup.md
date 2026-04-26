@@ -14,7 +14,13 @@
 python3 --version 2>/dev/null || python --version 2>/dev/null || py -3 --version 2>/dev/null
 ```
 
-未通过时按 ai-image setup.md 同款"依赖安装引导"流程。
+⚠ Windows 特例：命令"成功"但无输出（exit 49）= WindowsApps 下的 Microsoft Store stub，按"未装"处理。识别：
+```bash
+python --version 2>&1 | grep -qi "Microsoft Store" && echo STUB
+where python 2>&1 | grep -qi "WindowsApps" && echo STUB
+```
+
+未通过时按 ai-image setup.md 同款"依赖安装引导"流程（Windows 推荐 `winget install -e --id Python.Python.3.12`）。
 
 ### B. Node.js ≥ 22（仅启用 AnythingLLM 或 CDP 时必需，按需触发）
 

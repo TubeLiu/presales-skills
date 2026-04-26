@@ -17,7 +17,6 @@ Marker 位于 plugin 根目录。plugin 升级时由于 cache dir 路径带 vers
 自动触发新 requirements 的重装。
 
 # TODO(F-051): 两份 _ensure_deps.py（ai-image + ppt-master）后续考虑抽公共 lib。
-# 注意：两份的 _PLUGIN_ROOT 计算路径深度不同（ai-image: 1 级 parent；ppt-master: 3 级 parent）。
 # 改任一份的核心逻辑必须人工 sync 到另一份；不可机械 copy 整段。
 # 本脚本是依赖 bootstrap 入口，不能依赖第三方包（portalocker / filelock 等）。
 """
@@ -31,7 +30,9 @@ import time
 from pathlib import Path
 
 _SCRIPTS_DIR = Path(__file__).resolve().parent
-_PLUGIN_ROOT = _SCRIPTS_DIR.parent
+# scripts/ 位于 ai-image/skills/ai-image/scripts/ 下（3 级深）。requirements.txt 在
+# plugin 根目录 ai-image/。M1-M5 跨 agent 重构后路径深度由 1→3，必须 3 级 parent。
+_PLUGIN_ROOT = _SCRIPTS_DIR.parent.parent.parent
 _REQ = _PLUGIN_ROOT / "requirements.txt"
 _MARKER = _PLUGIN_ROOT / ".deps-installed"
 _LOCK = _PLUGIN_ROOT / ".deps-installing.lock"

@@ -19,7 +19,12 @@ python3 --version 2>/dev/null || python --version 2>/dev/null || py -3 --version
 ```
 
 - ✅ 已装且版本 ≥ 3.10 → 继续步骤 1
-- ❌ 未装 / 版本 < 3.10：进入下方"依赖安装引导"
+- ⚠ Windows 特例：命令"成功"但**无任何输出**（exit code 49）= WindowsApps 下的 Microsoft Store stub（`%LOCALAPPDATA%\Microsoft\WindowsApps\python.exe` 未真正安装 Python，只会弹商店）。把它当成"未装"处理，进入下方依赖安装引导。识别方式：
+  ```bash
+  python --version 2>&1 | grep -qi "Microsoft Store" && echo STUB
+  where python 2>&1 | grep -qi "WindowsApps" && echo STUB
+  ```
+- ❌ 未装 / 版本 < 3.10 / Store stub：进入下方"依赖安装引导"
 
 ### 依赖安装引导
 
@@ -120,9 +125,10 @@ python3 "$SKILL_DIR/scripts/ai_image_config.py" set ai_image.models.<provider> <
 ```bash
 # 不要 cd，保持当前 cwd 即可（cwd 应已在用户工作目录）
 pwd   # 让用户看到测试图会落在哪
+# 用 canonical preset 512px（各 backend 都能识别），别用 WxH 字面量（部分 backend 只认 preset）
 IMAGE_BACKEND=<provider> python3 "$SKILL_DIR/scripts/image_gen.py" \
-  "a red apple" --aspect_ratio 1:1 --image_size 512x512 \
-  -o "./ai-image-test-<provider>.png"
+  "a red apple" --aspect_ratio 1:1 --image_size 512px \
+  -o "./ai-image-test-<provider>"
 ```
 
 告知用户：

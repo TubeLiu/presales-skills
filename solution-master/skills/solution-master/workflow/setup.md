@@ -23,7 +23,13 @@ solution-master 的配置分两个文件：
 python3 --version 2>/dev/null || python --version 2>/dev/null || py -3 --version 2>/dev/null
 ```
 
-未通过时按 ai-image setup.md 同款"依赖安装引导"流程。
+⚠ Windows 特例：命令"成功"但无输出（exit 49）= WindowsApps 下的 Microsoft Store stub，按"未装"处理。识别：
+```bash
+python --version 2>&1 | grep -qi "Microsoft Store" && echo STUB
+where python 2>&1 | grep -qi "WindowsApps" && echo STUB
+```
+
+未通过时按 ai-image setup.md 同款"依赖安装引导"流程（Windows 推荐 `winget install -e --id Python.Python.3.12`）。
 
 ### B. Node.js ≥ 22（仅启用 CDP 时必需，按需触发）
 
@@ -316,34 +322,29 @@ echo "$RESULT"
 python3 "$SM_CONFIG" validate
 ```
 
-## 步骤 6：draw.io CLI 路径（可选）
+## 步骤 6：draw.io 桌面版（可选 — 配图导出能力检测）
 
-### 6.1 自动检测默认安装位置
+> **注**：drawio plugin 自身会在调用时**自动定位** draw.io CLI（PATH / macOS Applications / Windows Program Files / WSL2 /mnt/c），
+> 不依赖 config.yaml 写路径。本步骤**只检测桌面版是否可用**，并在缺失时引导安装；不写任何 config 字段。
+>
+> （v2.x 旧字段 `drawio.cli_path` 已废弃。如果你的 config.yaml 还有这一行，sm_config.py validate 会给 deprecation warn 提示删除。）
 
-按下面顺序检测：
+### 6.1 自动检测安装位置
+
+按下面顺序检测（任一命中即视为可用）：
 
 ```bash
 which drawio 2>/dev/null || where drawio 2>/dev/null    # PATH
-
-# macOS
-[ -x /Applications/draw.io.app/Contents/MacOS/draw.io ] && echo "/Applications/draw.io.app/Contents/MacOS/draw.io"
-
-# Windows 原生
-[ -x "C:/Program Files/draw.io/draw.io.exe" ] && echo "C:/Program Files/draw.io/draw.io.exe"
-
-# WSL2
-[ -x "/mnt/c/Program Files/draw.io/draw.io.exe" ] && echo "/mnt/c/Program Files/draw.io/draw.io.exe"
+[ -x /Applications/draw.io.app/Contents/MacOS/draw.io ] && echo "macOS"
+[ -x "C:/Program Files/draw.io/draw.io.exe" ] && echo "Windows native"
+[ -x "/mnt/c/Program Files/draw.io/draw.io.exe" ] && echo "WSL2"
 ```
 
-检测到 → 自动写入：
-
-```bash
-python3 "$SM_CONFIG" set drawio.cli_path "<detected_path>"
-```
+检测到 → 告知用户："draw.io 桌面版已可用（位于 `<detected_path>`），drawio plugin 调用时会自动定位，无需手工配置路径。"，跳到步骤 7。
 
 ### 6.2 默认位置都没找到时的三步分支
 
-未检测到时**不要直接劝装** — 很多用户把 draw.io 装在自定义目录。按下面三步走：
+未检测到时**不要直接劝装** — 很多用户把 draw.io 装在自定义目录（公司 IT 限制 Applications/、个人偏好 ~/Apps/、挂载在 D:/E: 盘等）。按下面三步走：
 
 #### 6.2.a 询问是否已装在其他路径
 
@@ -358,16 +359,12 @@ python3 "$SM_CONFIG" set drawio.cli_path "<detected_path>"
 "<user_provided_path>" --version 2>&1 | head -1   # 试跑确认是 draw.io
 ```
 
-- 验证通过 → 写入：
-  ```bash
-  python3 "$SM_CONFIG" set drawio.cli_path "<user_provided_path>"
-  ```
-  跳到步骤 7
+- 验证通过 → 告知用户："已确认 draw.io 在 `<path>` 可用。drawio plugin 当前不读 config 字段定位 CLI——如果它的自动检测列表没覆盖你这个路径，使用时它会报错；那时再把这个路径告诉我，我让 drawio plugin 通过环境变量 `DRAWIO_CLI` 或 PATH 临时使用。"，跳到步骤 7
 - 验证失败（路径不存在 / 不可执行 / 跑出来不是 draw.io）→ 告知用户错误原因 + 让用户重新提供路径，或回到 6.2.b
 
 #### 6.2.b 用户回"没装" → 询问要不要装
 
-> "draw.io 桌面版未装，仅能生成 .drawio 源文件（不能导出 PNG/SVG/PDF）。要我帮你装吗？"
+> "draw.io 桌面版未装，drawio skill 仍可生成 .drawio 源文件，但不能自动导出 PNG/SVG/PDF。要我帮你装吗？"
 
 同意装 → 按 §0.5 §A/B 同款"依赖安装引导"模式（先 print + 等用户 y + Bash 执行 / 降级打印）：
 
@@ -379,11 +376,9 @@ python3 "$SM_CONFIG" set drawio.cli_path "<detected_path>"
 
 #### 6.2.c 用户拒绝装 → 跳过
 
-```bash
-python3 "$SM_CONFIG" set drawio.cli_path ""    # 显式置空
-```
+> "已跳过 draw.io 桌面版。后续 drawio skill 仍可生成 .drawio 源文件，但不能自动导出 PNG/SVG/PDF——需要时你可以用 draw.io Web 版（https://app.diagrams.net）手动打开 .drawio 文件后导出。"
 
-> "已跳过 draw.io。后续 drawio skill 仍可生成 .drawio 源文件，但不能自动导出 PNG/SVG/PDF——需要时你可以用 draw.io Web 版（https://app.diagrams.net）手动打开 .drawio 文件后导出。"
+不需要写 config 字段（drawio plugin 不依赖 config 定位）。直接跳到步骤 7。
 
 ## 步骤 7：API keys 透传
 

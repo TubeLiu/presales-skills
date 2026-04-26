@@ -7,7 +7,7 @@
   },
   "metadata": {
     "description": "Presales skills monorepo — solution-master / ppt-master / tender-workflow + shared plugins (drawio, ai-image, anythingllm-mcp, web-access).",
-    "version": "0.3.1"
+    "version": "0.3.2"
   },
   "plugins": [
     {
@@ -29,7 +29,7 @@
       "name": "ai-image",
       "source": "./ai-image",
       "description": "统一 AI 图片生成：13 个后端（volcengine/ark、qwen/dashscope、gemini、openai、minimax、stability、bfl、ideogram、zhipu、siliconflow、fal、replicate、openrouter）+ 共享 YAML 模型注册表。生图与配置管理通过 SKILL description 自然语言触发。独立共享 plugin，三个主 plugin 都依赖。",
-      "version": "0.4.1",
+      "version": "0.4.2",
       "author": {
         "name": "LiuZiJiao"
       },
@@ -77,7 +77,7 @@
       "name": "solution-master",
       "source": "./solution-master",
       "description": "AI 辅助通用解决方案撰写框架。11 个原 sub-skill 合并为 1 个主 SKILL + workflow/ 子文件按需加载。依赖 drawio、ai-image plugin；anythingllm-mcp、web-access 可选。通过 SKILL description 自然语言触发；Claude Code + Cursor 用户额外有 SessionStart hook 自动注入铁律。",
-      "version": "0.2.1",
+      "version": "0.2.2",
       "author": {
         "name": "LiuZiJiao"
       },
@@ -107,7 +107,7 @@
       "name": "tender-workflow",
       "source": "./tender-workflow",
       "description": "四角色招投标工作流（tpl/taa/taw/trv/twc）。依赖 drawio、ai-image plugin；anythingllm-mcp 可选（未装时降级为本地 KB + 联网检索）。所有 sub-skill 通过 SKILL description 自然语言触发。",
-      "version": "0.2.1",
+      "version": "0.2.2",
       "author": {
         "name": "LiuZiJiao"
       },

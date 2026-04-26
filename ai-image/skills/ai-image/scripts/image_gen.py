@@ -277,7 +277,8 @@ def _load_unified_config_into_env() -> None:
     so process env > .env > config.yaml precedence holds.
     """
     config_path = Path.home() / ".config" / "presales-skills" / "config.yaml"
-    registry_path = Path(__file__).resolve().parent.parent / "prompts" / "ai_image_models.yaml"
+    # scripts/ 在 ai-image/skills/ai-image/scripts/（3 级深）；prompts/ 在 plugin 根目录
+    registry_path = Path(__file__).resolve().parent.parent.parent.parent / "prompts" / "ai_image_models.yaml"
     if not config_path.exists() or not registry_path.exists():
         return
 
