@@ -7,14 +7,19 @@
 
 逻辑：
   1. 读同 skill root 的 `requirements.txt`
-  2. 存在 marker 文件（<skill_root>/.deps-installed）则 skip
-  3. 拿 .deps-installing.lock 排他锁（F-013，避免并发调用打架）
-  4. 调用 `sys.executable -m pip install -r <requirements.txt>`
-  5. 成功后 touch marker；失败打印警告但不 abort（让脚本继续，由其自身 ImportError 暴露具体缺哪个包）
+  2. marker 文件（<skill_root>/.deps-installed）已存在 → skip
+  3. **解析 requirements 名单，用 importlib.metadata 检查每个包是否已注册**
+     （已通过 pipx / venv / 系统包管理器 / --break-system-packages 等任何途径
+     装好都算）；全部已装 → 直接 touch marker，不跑 pip
+  4. 否则拿 .deps-installing.lock 排他锁（避免并发调用打架）
+  5. 调用 `sys.executable -m pip install -r <requirements.txt>`
+  6. 无论成功失败都 touch marker：成功是真装好；失败常见于 PEP 668
+     externally-managed-environment（macOS Homebrew / Debian 系统 Python），
+     重试无用，让脚本继续，由其自身 ImportError 暴露具体缺哪个包
 
 Marker 位于 skill 根目录。plugin 升级时由于 cache dir 路径带 version（如
 ~/.claude/plugins/cache/presales-skills/ai-image/<commit-sha>/），marker 不会跨版本继承，
-自动触发新 requirements 的重装。
+自动触发新 requirements 的重检测。
 
 # F-020 / F-051: 本文件在 ai-image / ppt-master 两 plugin 中字节相同。
 # tests/test_ensure_deps_identity.py lint 强制 enforce identity，避免未来某次
@@ -25,10 +30,17 @@ Marker 位于 skill 根目录。plugin 升级时由于 cache dir 路径带 versi
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 import sys
 import time
 from pathlib import Path
+
+try:
+    from importlib.metadata import PackageNotFoundError, distribution
+except ImportError:  # Python < 3.8 fallback (项目要求 3.8+，仅防御)
+    distribution = None
+    PackageNotFoundError = Exception  # type: ignore
 
 _SCRIPTS_DIR = Path(__file__).resolve().parent
 # v1.0.0：requirements.txt 已迁入 skill 内部（与 scripts/ 同处 skill root，1 级 parent）。
@@ -45,12 +57,55 @@ _PLUGIN_LABEL = _SKILL_DIR.parent.parent.name
 # 允许环境变量强制跳过（CI、容器、用户已手动管理依赖等场景）
 _SKIP_ENV = "PRESALES_SKILLS_SKIP_AUTO_INSTALL"
 
+# requirements.txt 行解析：剥掉注释 / 空行 / 选项行 / extras / version specifier
+# 拿到的是 PyPI distribution name（importlib.metadata 按这个名查）
+_NAME_SPLIT_RE = re.compile(r"[<>=!~;\[\s]")
+
+
+def _required_distributions(req_path: Path) -> list[str]:
+    """从 requirements.txt 解析出 PyPI distribution name 列表。"""
+    names: list[str] = []
+    for raw in req_path.read_text(encoding="utf-8").splitlines():
+        line = raw.split("#", 1)[0].strip()
+        if not line or line.startswith("-"):  # 空行 / -r / -e / --option
+            continue
+        # 拆出包名（剥掉 version specifier、extras []、environment markers ;）
+        name = _NAME_SPLIT_RE.split(line, 1)[0].strip()
+        if name:
+            names.append(name)
+    return names
+
+
+def _all_installed(req_path: Path) -> bool:
+    """所有 requirements 都已通过任何途径装好则 True。"""
+    if distribution is None:  # Py < 3.8 fallback：不检测，按老逻辑跑 pip
+        return False
+    try:
+        for name in _required_distributions(req_path):
+            try:
+                distribution(name)
+            except PackageNotFoundError:
+                return False
+        return True
+    except OSError:
+        # requirements.txt 读失败（极端场景）；交给老路径处理
+        return False
+
 
 def ensure_deps(quiet: bool = True) -> None:
     """Install requirements.txt once per plugin version. Idempotent + concurrent-safe."""
     if os.environ.get(_SKIP_ENV):
         return
     if _MARKER.exists() or not _REQ.exists():
+        return
+
+    # 快速通道：依赖已经齐了（pipx / venv / 系统包管理器 / --break-system-packages
+    # 等任何途径装好都算）→ 直接 touch marker，不打 pip，不打 WARN。
+    if _all_installed(_REQ):
+        try:
+            _MARKER.touch()
+        except OSError:
+            pass
         return
 
     # F-013: 跨进程锁。原子创建 lock；冲突时轮询等 marker 出现
