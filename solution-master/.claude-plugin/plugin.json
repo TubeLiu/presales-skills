@@ -24,6 +24,5 @@
     "chinese",
     "中文",
     "technical-writing"
-  ],
-  "hooks": "./hooks/hooks.json"
+  ]
 }
