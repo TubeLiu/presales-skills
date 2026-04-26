@@ -40,7 +40,7 @@ python3 scripts/update_repo.py
 | Project management | `project_manager.py`, `batch_validate.py`, `generate_examples_index.py`, `error_helper.py`, `pptx_template_import.py` | [docs/project.md](./docs/project.md) |
 | SVG pipeline | `finalize_svg.py`, `svg_to_pptx.py`, `total_md_split.py`, `svg_quality_checker.py` | [docs/svg-pipeline.md](./docs/svg-pipeline.md) |
 | Spec maintenance | `update_spec.py` | [docs/update_spec.md](./docs/update_spec.md) |
-| Image tools | `analyze_images.py`, `gemini_watermark_remover.py`, `rotate_images.py` (AI generation via `image-gen` from the separate ai-image plugin) | [docs/image.md](./docs/image.md) |
+| Image tools | `analyze_images.py`, `gemini_watermark_remover.py`, `rotate_images.py` (AI generation delegated to the separate ai-image plugin via `Skill(skill="ai-image:gen")` or its `image_gen.py`) | [docs/image.md](./docs/image.md) |
 | Repo maintenance | `update_repo.py` | README install/update section |
 | Troubleshooting | validation, preview, export, dependency issues | [docs/troubleshooting.md](./docs/troubleshooting.md) |
 
@@ -103,7 +103,7 @@ python3 scripts/update_repo.py --skip-pip
 
 - Keep one user-facing entry point per workflow at the top level of `scripts/`
 - Move provider-specific or helper internals into subdirectories
-- Prefer the unified entry points `project_manager.py`, `finalize_svg.py`, and (for AI image generation) the `image-gen` command from the ai-image plugin
+- Prefer the unified entry points `project_manager.py`, `finalize_svg.py`, and (for AI image generation) `Skill(skill="ai-image:gen")` / `image_gen.py` from the ai-image plugin
 - Prefer `svg_final/` over `svg_output/` when exporting
 
 ## Related Docs

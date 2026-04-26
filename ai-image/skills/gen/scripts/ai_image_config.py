@@ -473,13 +473,13 @@ def cmd_validate(provider_filter: Optional[str]) -> int:
         print(f'运行 "python3 {__file__} set api_keys.<provider> <key>" 配置')
         print(
             "注：本命令仅检查配置字段格式与必填项，不验证 API key 是否真实可用；"
-            "如需测试 API 连通性，请触发实际生成（如 image-gen \"test\" -o /tmp/）",
+            f"如需测试 API 连通性，请触发实际生成（如 python3 \"{SCRIPT_DIR}/image_gen.py\" \"test\" -o /tmp/）",
             file=sys.stderr,
         )
         return 1
     print(
         "注：本命令仅检查配置字段格式与必填项，不验证 API key 是否真实可用；"
-        "如需测试 API 连通性，请触发实际生成（如 image-gen \"test\" -o /tmp/）",
+        f"如需测试 API 连通性，请触发实际生成（如 python3 \"{SCRIPT_DIR}/image_gen.py\" \"test\" -o /tmp/）",
         file=sys.stderr,
     )
     return 0

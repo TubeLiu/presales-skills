@@ -103,7 +103,7 @@ fi
 | `$SKILL_DIR/scripts/source_to_md/web_to_md.cjs` | Node.js fallback for WeChat / TLS-blocked sites (use only if `curl_cffi` is unavailable; `web_to_md.py` now handles WeChat when `curl_cffi` is installed) |
 | `$SKILL_DIR/scripts/project_manager.py` | Project init / validate / manage |
 | `$SKILL_DIR/scripts/analyze_images.py` | Image analysis |
-| `image-gen` | AI image generation (multi-provider) |
+| ai-image plugin | AI image generation (multi-provider) — call via `Skill(skill="ai-image:gen")` (Claude Code) or `python3 "$AI_IMAGE_SKILL_DIR/scripts/image_gen.py"` (cross-agent fallback) |
 | `$SKILL_DIR/scripts/svg_quality_checker.py` | SVG quality check |
 | `$SKILL_DIR/scripts/total_md_split.py` | Speaker notes splitting |
 | `$SKILL_DIR/scripts/finalize_svg.py` | SVG post-processing (unified entry) |

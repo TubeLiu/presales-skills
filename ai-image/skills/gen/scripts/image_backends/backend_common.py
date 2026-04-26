@@ -203,7 +203,7 @@ def get_timeout(default: int = 180) -> int:
     """Read HTTP timeout from IMAGE_TIMEOUT env or fall back to default (F-030).
 
     Allows users to bump timeout for slow providers (Replicate / Fal large models)
-    without code changes: IMAGE_TIMEOUT=600 image-gen ...
+    without code changes: IMAGE_TIMEOUT=600 python3 image_gen.py ...
     """
     try:
         return int(os.environ.get("IMAGE_TIMEOUT", default))
