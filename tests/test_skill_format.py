@@ -411,3 +411,60 @@ def test_no_dangling_docs_refs_in_tender_workflow():
             ctx_line = next((l for l in text.splitlines() if m.group() in l), "")
             failures.append(f"{p.relative_to(REPO_ROOT)}: 残链 `{m.group()}` ({ctx_line.strip()[:80]})")
     assert not failures, "tender-workflow 内残留 docs/ 链接：\n" + "\n".join(failures)
+
+
+# ════════════════════════════════════════════════════════
+# MCP wizard（mcp_installer.py + setup.md Step 4）lint
+# ════════════════════════════════════════════════════════
+
+def test_mcp_installer_exists_with_three_providers():
+    """web-access mcp_installer.py 必须含 tavily / exa / minimax 三 provider TEMPLATES。"""
+    p = REPO_ROOT / "web-access/skills/browse/scripts/mcp_installer.py"
+    assert p.exists(), f"{p} 缺失"
+    text = _read(p)
+    for provider, env_key in (("tavily", "TAVILY_API_KEY"),
+                              ("exa", "EXA_API_KEY"),
+                              ("minimax", "MINIMAX_API_KEY")):
+        assert f'"{provider}":' in text, f"TEMPLATES 缺 {provider}"
+        assert env_key in text, f"{provider} 缺 env key {env_key}"
+    # minimax 必须含 sk-cp- 校验
+    assert "sk-cp-" in text, "minimax 必须强校验 sk-cp- 前缀"
+    # 必须含 understand_image（minimax test 双 tool）
+    assert "understand_image" in text and "web_search" in text, \
+        "minimax test 必须同时跑 web_search + understand_image"
+
+
+def test_twc_setup_uses_mcp_installer_for_minimax():
+    """tender-workflow twc setup.md Step 4 必须含 minimax + sk-cp- + 探针变量。"""
+    p = REPO_ROOT / "tender-workflow/skills/twc/setup.md"
+    text = _read(p)
+    assert "minimax" in text.lower(), "Step 4 应支持 minimax"
+    assert "sk-cp-" in text, "minimax key 必须强约束 sk-cp- 前缀"
+    assert "WA_INSTALLER" in text or "mcp_installer.py" in text, \
+        "Step 4 必须探针引用 web-access mcp_installer，不能 inline 复制 register 逻辑"
+
+
+def test_sm_setup_uses_mcp_installer_for_minimax():
+    """solution-master setup.md §4 必须与 twc 对称：含 minimax + sk-cp- + 探针。"""
+    p = REPO_ROOT / "solution-master/skills/go/workflow/setup.md"
+    text = _read(p)
+    assert "minimax" in text.lower(), "§4 应支持 minimax"
+    assert "sk-cp-" in text, "minimax key 必须强约束 sk-cp- 前缀"
+    assert "WA_INSTALLER" in text or "mcp_installer.py" in text, \
+        "§4 必须探针引用 web-access mcp_installer"
+
+
+def test_web_access_readme_documents_mcp_installer():
+    """web-access README 必须暴露 mcp_installer.py 给外部读者（被其他 wizard 调用）。"""
+    p = REPO_ROOT / "web-access/skills/browse/README.md"
+    text = _read(p)
+    assert "mcp_installer" in text, \
+        "web-access README 应说明 mcp_installer.py（presales-skills 集成段）"
+
+
+def test_tender_workflow_readme_lists_minimax():
+    """tender-workflow README 必须把 minimax-token-plan 列入 MCP 搜索 provider 表。"""
+    p = REPO_ROOT / "tender-workflow/README.md"
+    text = _read(p)
+    assert "minimax" in text.lower(), "README 应列 minimax"
+    assert "sk-cp-" in text, "README 应说明 minimax key 必须 sk-cp- 前缀"
