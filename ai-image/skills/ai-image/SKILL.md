@@ -103,88 +103,38 @@ IMAGE_BACKEND=ark python3 "$SKILL_DIR/scripts/image_gen.py" "用户提示词" -o
 
 详细列表：`python3 "$SKILL_DIR/scripts/ai_image_config.py" models`
 
-## 配置管理（setup / show / set / models / validate / add-model / migrate 场景）
+## 配置
 
-所有配置通过 `ai_image_config.py` 子命令管理。先按 §路径自定位 解析 `SKILL_DIR`，然后：
+完整 setup wizard 见同目录 [`setup.md`](setup.md)。**当用户说「配置 ai-image / 帮我配置 ai-image / 初始化 / setup / migrate / 我刚装新版需要配置」时**：
 
-| 触发词 | 命令 |
+1. 用 Read 工具加载 `$SKILL_DIR/setup.md`（路径 `$SKILL_DIR` 由 §路径自定位 段解析）
+2. 严格按 setup.md 引导用户完成配置（含 Python 依赖前置检查、API key 收集 + 立即实测、默认模型 / 默认 provider / 默认尺寸 选择）
+3. 不要凭记忆执行 — 每次都 Read 当前版本
+
+### 命令速查（已熟悉的 power user 直接用）
+
+所有配置通过 `ai_image_config.py` 子命令。先按 §路径自定位 解析 `SKILL_DIR`：
+
+| 子命令 | 命令 |
 |---|---|
-| 配置 / 初始化 / 我刚装新版 | `python3 "$SKILL_DIR/scripts/ai_image_config.py" setup` |
-| 查看配置 / show | `python3 "$SKILL_DIR/scripts/ai_image_config.py" show [section]` |
-| 设置 / 改 key / change | `python3 "$SKILL_DIR/scripts/ai_image_config.py" set <key.path> <value>` |
-| 列出模型 / list models | `python3 "$SKILL_DIR/scripts/ai_image_config.py" models [provider]` |
-| 加自定义模型 / add | `python3 "$SKILL_DIR/scripts/ai_image_config.py" add-model <provider> <yaml>` |
-| 验证 / validate | `python3 "$SKILL_DIR/scripts/ai_image_config.py" validate [provider]` |
-| 迁移配置 / migrate | `python3 "$SKILL_DIR/scripts/ai_image_config.py" migrate` |
+| setup（含 auto-migrate） | `python3 "$SKILL_DIR/scripts/ai_image_config.py" setup` |
+| show | `python3 "$SKILL_DIR/scripts/ai_image_config.py" show [section]` |
+| set | `python3 "$SKILL_DIR/scripts/ai_image_config.py" set <key.path> <value>` |
+| models | `python3 "$SKILL_DIR/scripts/ai_image_config.py" models [provider]` |
+| add-model | `python3 "$SKILL_DIR/scripts/ai_image_config.py" add-model <provider> <yaml>` |
+| validate | `python3 "$SKILL_DIR/scripts/ai_image_config.py" validate [provider]` |
+| migrate（手动；setup 已含 auto-migrate） | `python3 "$SKILL_DIR/scripts/ai_image_config.py" migrate` |
 
-### 交互式配置向导（首次配置 / "帮我配置 ai-image" 触发）
+### setup auto-migrate 逻辑（仅供参考，详见 setup.md）
 
-**当用户说「配置 ai-image / 帮我配置 ai-image / 初始化 ai-image / setup ai-image / 我刚装好需要配置」时，按以下流程引导用户**：
+`setup` 不直接收集 API key，根据 `~/.config/presales-skills/config.yaml` 与旧路径状态分支：
 
-```
-步骤 1：解析 SKILL_DIR（用本文件 §路径自定位 段）
+- 新 config 不存在 + 旧 config 含 api_keys → **自动调 migrate** 合并到统一路径
+- 新 config 存在但 api_keys 为空 + 旧 config 有内容 → **同样自动 migrate**（防止用户跑过空 setup 后旧 key 永远丢）
+- 新 config 不存在 + 无可迁移 → 写默认骨架
+- 新 config 存在且 api_keys 已有内容 → 展示摘要
 
-步骤 2：跑 setup 写默认骨架 + auto-migrate
-   bash: python3 "$SKILL_DIR/scripts/ai_image_config.py" setup
-   读取 stderr/stdout，告知用户结果（已迁移 / 已写骨架 / 配置已存在）
-
-步骤 3：跑 show 展示当前配置（API keys 自动 mask）
-   bash: python3 "$SKILL_DIR/scripts/ai_image_config.py" show api_keys
-
-步骤 4：问用户想配哪些 provider（一次最少 1 个）
-   询问用户："你想配置哪些 AI 图片 provider？我推荐先配以下几个常用的：
-     • ark（火山方舟，Seedream 4.5/5.0，真实感照片）
-     • dashscope（阿里云通义万相，中文场景 / 文字渲染）
-     • gemini（Google Gemini 2.5 Flash Image，通用画质）
-   你也可以选 13 个 provider 中的任意一个或多个：
-     openai / minimax / stability / bfl / ideogram / zhipu / siliconflow / fal / replicate / openrouter
-   请告诉我 provider 名 + 对应 API key（可分多次提供，每次一个 provider）。"
-
-步骤 5：用户每提供一个 key，立即调 set 写入：
-   bash: python3 "$SKILL_DIR/scripts/ai_image_config.py" set api_keys.<provider> <key>
-   写入后立即 validate 单个 provider：
-   bash: python3 "$SKILL_DIR/scripts/ai_image_config.py" validate <provider>
-
-步骤 6：问用户默认 provider（如已配置多个）
-   询问用户："默认用哪个 provider 作为生图后端？（默认 ark）"
-   bash: python3 "$SKILL_DIR/scripts/ai_image_config.py" set ai_image.default_provider <provider>
-
-步骤 7：问用户默认图片尺寸
-   询问用户："默认图片尺寸？（推荐 2048x2048，可选 1K / 1024x1024 / 16:9 等）"
-   bash: python3 "$SKILL_DIR/scripts/ai_image_config.py" set ai_image.default_size <size>
-
-步骤 8：跑 validate 全量健康检查
-   bash: python3 "$SKILL_DIR/scripts/ai_image_config.py" validate
-   告知用户每个 provider 的 API key 是否就绪 / 报错原因
-
-步骤 9：完成提示
-   "ai-image 配置完成！配置文件：~/.config/presales-skills/config.yaml
-    现在你可以说'生成一张 K8s 架构图'之类自然语言来生图。"
-```
-
-**关键纪律**：
-- 不要批量收 API keys 后才调 set——一个一个收 + 立即写 + 立即 validate，让用户随时看到错误
-- 只问用户"想配哪些 provider"，不要把 13 个全列然后挨个问（疲劳）
-- 用户提供 API key 后立即写入 yaml，不要让 key 在对话历史里停留
-- 用户跳过任何步骤都允许（"先这些就行"），SKILL 不强求填完所有字段
-
-### setup 行为说明
-
-`setup` 不直接收集 API key，行为根据 `~/.config/presales-skills/config.yaml` 与旧路径 (`~/.config/{solution-master,tender-workflow}/config.yaml`) 状态分支：
-
-- **新 config 不存在 + 旧 config 含 api_keys** → 自动调用 migrate 合并到统一路径
-- **新 config 存在但 api_keys 块为空 + 旧 config 含 api_keys** → 同样自动 migrate（防止用户跑过空 setup 后旧 ark key 永远丢）
-- **新 config 不存在 + 无可迁移内容** → 写默认骨架，提示用户后续运行 `set api_keys.<provider> <key>` 填入 key
-- **新 config 存在且 api_keys 已有内容** → 展示当前配置摘要
-
-### migrate 行为说明
-
-`migrate` 涉及备份、写 conflict 块、prune 旧 config 等高副作用操作：
-- 把 `~/.config/{solution-master,tender-workflow}/config.yaml` 中的 `api_keys` / `ai_image` / `ai_keys` 三个块抽到 `~/.config/presales-skills/config.yaml`
-- plugin 专属字段（cdp_sites / taa-taw / localkb 等）保留在源文件不动
-- 执行前会备份原文件到 `<file>.bak.<timestamp>`
-
-setup 已经包含 auto-migrate 兜底，正常情况下用户不需要手动调 migrate。仅在用户**已经手动跑过 setup 写了空骨架** + **后来才发现旧 config 有内容** 时，需要显式 `migrate`（auto-migrate 在已有 api_keys 时不触发）。
+setup.md wizard 已经处理这些分支 + 引导后续填 key + 选默认模型 + 实测验证。
 
 ## 跨 plugin 调用说明
 

@@ -301,3 +301,12 @@ updated: 2026-03-19
 |------|---------|
 | `references/cdp-api.md` | 需要 CDP API 详细参考、JS 提取模式、错误处理时 |
 | `references/site-patterns/{domain}.md` | 确定目标网站后，读取对应站点经验 |
+| `setup.md` | 用户首次配置 web-access、或被 solution-master 的 CDP 配置流程委托时 |
+
+## 配置
+
+完整 setup wizard 见同目录 [`setup.md`](setup.md)。**当用户说「配置 web-access / 帮我配置 web-access / 启用 CDP / 初始化 web-access」，或本 SKILL 被 solution-master 的 CDP 配置流程委托时**：
+
+1. 用 Read 工具加载 `$SKILL_DIR/setup.md`（路径 `$SKILL_DIR` 由 §路径自定位 段解析）
+2. 严格按 setup.md 引导用户完成配置（含 Node.js 依赖前置 + Chrome remote-debug 启用 + cdp-proxy 启动 + 风险告知）
+3. 不要凭记忆执行 — 每次都 Read 当前版本

@@ -235,79 +235,15 @@ solution-master 的配置分**两个文件分工**：
 | 文件 | 字段 | 由谁管 |
 |---|---|---|
 | `~/.config/presales-skills/config.yaml` | `api_keys` / `ai_image` / `ai_keys`（共享） | ai-image plugin 的 `ai_image_config.py`（对 ai-image SKILL 说"配置 ai-image"触发其向导） |
-| `~/.config/solution-master/config.yaml` | `localkb` / `anythingllm` / `cdp_sites` / `drawio` / `mcp_search`（专属） | solution-master 自家的 `sm_config.py`（本节向导调它）|
+| `~/.config/solution-master/config.yaml` | `localkb` / `anythingllm` / `cdp_sites` / `drawio` / `mcp_search`（专属） | solution-master 自家的 `sm_config.py` |
 
-未配置时，AI 图片功能降级为占位符，其他功能正常。详见 `$SKILL_DIR/workflow/config.md`。
+未配置时，AI 图片功能降级为占位符，其他功能正常。
 
-### 交互式配置向导（首次配置 / "帮我配置 solution-master" 触发）
+**完整 setup wizard 见 `$SKILL_DIR/workflow/setup.md`。** 当用户说「配置 solution-master / 帮我配置 solution-master / 初始化 solution-master / setup solution-master / 我刚装好需要配置」时：
 
-**当用户说「配置 solution-master / 帮我配置 solution-master / 初始化 solution-master / setup solution-master / 我刚装好需要配置」时，按以下流程引导用户**（不要批量问完再写，每步立即写入并展示当前状态）：
-
-```
-步骤 0：解析 SKILL_DIR（用本文件 §路径自定位 段），SM_CONFIG="$SKILL_DIR/scripts/sm_config.py"
-
-步骤 1：跑 show 看现状
-   bash: python3 "$SM_CONFIG" show
-   告知用户当前哪些字段已有值、哪些是默认/缺失
-
-步骤 2：本地知识库路径（必填，否则 knowledge-retrieval 降级为纯 web 检索）
-   询问用户："你的本地知识库目录在哪？（用绝对路径。如果还没有，可以先建一个空目录，后续往里加 .md 文件）"
-   写入：python3 "$SM_CONFIG" set localkb.path <path>
-
-步骤 3：AnythingLLM 语义搜索（可选，跳过则降级为本地 YAML 索引 + Web 多源）
-   询问用户："要启用 AnythingLLM 语义搜索吗？（需要本地或远程跑了 AnythingLLM 服务；不启用也能正常工作）"
-   若启用：
-     问 base_url（默认 http://localhost:3001）
-     问 workspace slug（如不确定，让用户先去 AnythingLLM Web UI 看一下）
-   写入：
-     python3 "$SM_CONFIG" set anythingllm.enabled true
-     python3 "$SM_CONFIG" set anythingllm.base_url <url>
-     python3 "$SM_CONFIG" set anythingllm.workspace <slug>
-   若跳过：
-     python3 "$SM_CONFIG" set anythingllm.enabled false
-
-步骤 4：MCP 搜索工具优先级（可选，影响 web 检索回退顺序）
-   询问用户："Web 检索用哪个优先级？默认 [tavily_search, exa_search]，也可只配 tavily 或只配 exa"
-   写入：python3 "$SM_CONFIG" set mcp_search.priority "[tavily_search, exa_search]"
-
-步骤 5：CDP 登录态站点检索（可选，仅 web-access plugin 已装时启用）
-   先检测 web-access 是否安装（用 §跨 skill 调用 段的 installed_plugins.json fallback 找 web-access）
-   若未装：跳过此步并告知"需要 cdp 检索时先装 web-access plugin"
-   若已装：询问用户"要启用 CDP 登录态站点（如内部 Confluence / 知识库）检索吗？"
-     若启用：
-       询问用户每个站点的 name / domain / search_url / login_url / max_results（cdp_sites.sites 是数组，建议生成 yaml 片段后让用户审核 + 直接编辑 yaml）
-       写入：python3 "$SM_CONFIG" set cdp_sites.enabled true
-       cdp_sites.sites 数组用 set 不太好写，建议直接用 Edit 工具改 yaml 文件
-     若跳过：
-       python3 "$SM_CONFIG" set cdp_sites.enabled false
-
-步骤 6：draw.io CLI 路径（可选，仅需要 .drawio 导出 PNG/SVG/PDF 时填）
-   先尝试自动检测：
-     macOS: /Applications/draw.io.app/Contents/MacOS/draw.io
-     Linux: which drawio
-     Windows: "C:\Program Files\draw.io\draw.io.exe" 或 WSL2 /mnt/c/Program Files/draw.io/draw.io.exe
-   若检测到，确认用户："检测到 draw.io 在 <path>，用这个吗？"
-   若未检测到，询问用户："你装了 draw.io 桌面版吗？路径在哪？（不装也能跑，仅 .drawio 文件不能导出为 PNG/SVG）"
-   写入：python3 "$SM_CONFIG" set drawio.cli_path "<path>"
-
-步骤 7：API keys（共享配置，转发到 ai-image SKILL）
-   告知用户："solution-master 撰写章节配图时会用到 AI 生图 API keys。这部分由 ai-image plugin 管理（共享给所有 plugin）。
-            如果你还没配，对我说'帮我配置 ai-image'我来引导你完成。"
-
-步骤 8：跑 validate 全量健康检查
-   bash: python3 "$SM_CONFIG" validate
-   告知用户每项检查结果
-
-步骤 9：完成提示
-   "solution-master 配置完成！配置文件：~/.config/solution-master/config.yaml
-    现在你可以说'帮我写一份 K8s 多集群方案'之类自然语言来启动方案撰写流程。"
-```
-
-**关键纪律**：
-- 不要批量问完所有问题再写——一步一步问 + 立即调 set 写入 + 立即 show 让用户看到当前状态
-- 用户可以跳过任何"可选"字段（"先这些就行"），SKILL 不强求
-- 步骤 5 的 cdp_sites.sites 数组结构复杂，建议生成 yaml 片段让用户审核后用 Edit 工具直接改 yaml 文件
-- API keys 在步骤 7 透传给 ai-image SKILL，不在本流程内问
+1. 用 Read 工具加载 `$SKILL_DIR/workflow/setup.md`（路径 `$SKILL_DIR` 由 §路径自定位 段解析）
+2. 严格按 setup.md 引导用户完成配置（含 Python 依赖前置 + localkb / anythingllm / mcp_search 试调引导 / CDP 委托 web-access wizard + 站点循环 + 实测 / drawio CLI 多分支 / API keys 透传 / validate）
+3. 不要凭记忆执行 — 每次都 Read 当前版本
 
 ## SessionStart hook（Claude Code + Cursor 专属增强）
 
