@@ -91,77 +91,125 @@ python3 "$SM_CONFIG" set anythingllm.enabled true
 python3 "$SM_CONFIG" set anythingllm.enabled false
 ```
 
-## 步骤 4：MCP 搜索工具优先级（可选）+ 试调验证 + 引导配 key
+## 步骤 4：MCP 搜索工具配置（可选）
 
-### 4.1 询问优先级
+知识检索可走 MCP 搜索工具补充 web 素材。当前支持三类，全部走 web-access plugin 的 `mcp_installer.py` 统一注册到 `~/.claude.json`：
 
-询问用户：
+| Provider | Runtime | 包 | 提供 tool |
+|---|---|---|---|
+| **tavily** | node | `tavily-mcp@latest` | `tavily_search` |
+| **exa** | node | `exa-mcp-server@latest` | `exa_search` |
+| **minimax-token-plan** | uv | `minimax-coding-plan-mcp` | `web_search` + `understand_image`（图理解）；需订阅 [Token Plan](https://platform.minimaxi.com/subscribe/token-plan) 拿 `sk-cp-` 前缀 key |
 
-> "Web 检索用哪个优先级？默认 `[tavily_search, exa_search]`（先试 tavily，失败回退 exa）。也可只配一个：
-> - `[tavily_search]`（仅 tavily）
-> - `[exa_search]`（仅 exa）
-> - `[]`（不用 MCP 搜索，仅靠 Claude Code 内置 WebSearch）"
+### 4.0 路径自定位 web-access plugin
 
 ```bash
-python3 "$SM_CONFIG" set mcp_search.priority "[<用户选择>]"
+WA_PATH=$(python3 -c "
+import json, os, sys
+p = os.path.expanduser('~/.claude/plugins/installed_plugins.json')
+if os.path.exists(p):
+    d = json.load(open(p))
+    for entries in d.get('plugins', {}).values():
+        for e in (entries if isinstance(entries, list) else [entries]):
+            if isinstance(e, dict) and '/web-access/' in e.get('installPath', ''):
+                print(e['installPath']); sys.exit(0)
+" 2>/dev/null)
+[ -n "$WA_PATH" ] && WA_INSTALLER="$WA_PATH/skills/browse/scripts/mcp_installer.py" \
+  || { echo "MISSING: web-access plugin 未安装，请先 /plugin install web-access@presales-skills 然后 /reload-plugins"; exit 1; }
 ```
 
-### 4.2 对每个选中的工具试调（核心新增）
+未装 → 提示用户安装后回来；阻塞此步。
 
-**只设 priority 不配 key 没意义 — 必须实测每个工具能不能跑。** 对 priority 数组里每个工具按以下流程：
+### 4.1 检测当前已注册状态
 
-#### 4.2.a tavily_search 试调（如选中）
-
-Claude 用 mcp 工具试调一次最小搜索：
-
+```bash
+python3 -c "
+import json
+from pathlib import Path
+p = Path.home() / '.claude.json'
+c = json.loads(p.read_text()) if p.exists() else {}
+s = c.get('mcpServers', {})
+for k in ('tavily', 'exa', 'minimax'):
+    print(f'{k}: ' + ('✅' if k in s else '⚠️ 未配置'))
+"
 ```
-Tool call: mcp__tavily__tavily_search
-Args: { "query": "kubernetes", "max_results": 1 }
+
+### 4.2 询问要配哪些（多选）
+
+通过 AskUserQuestion 让用户多选：`Tavily` / `Exa` / `MiniMax Token Plan` / `全部跳过`。
+全部跳过 → 进步骤 5。
+
+### 4.3 对每个选中 provider 循环
+
+按以下流程对每个 `<provider>` 走完再进下一个：
+
+**a. 检测 runtime**
+
+```bash
+RUNTIME=$( [ "$provider" = "minimax" ] && echo uv || echo node )
+python3 "$WA_INSTALLER" check "$RUNTIME"
 ```
 
-或对应注册名（按用户实际装的 MCP server，如 `mcp__tavily-search__tavily_search` / `mcp__tavily_mcp__search`）。
+- `OK <path>` → 进 b
+- `MISSING` → 调 `python3 "$WA_INSTALLER" auto-install "$RUNTIME"`（用户级路径，不要 sudo）
+  - 输出 `OK ...` → 提示 reopen shell 让 PATH 生效（fnm/uv 都装到 `~/.local/bin` 等位置），让用户回话告诉我 "装好了" → 重检测回 a
+  - 输出 `NEEDS_USER_ACTION: <command>` → 转述命令给用户，等用户回话 → 重检测回 a
 
-**结果分支**：
+**b. 探活包可用性**
 
-- ✅ 返回搜索结果 → 告知用户"tavily 已配通，可用"，进入 4.2.b
-- ❌ 错误 = "tool not found / tavily MCP server not registered"：
+```bash
+python3 "$WA_INSTALLER" probe "$provider"
+```
 
-  > "你选了 tavily 但 Claude Code 未注册 tavily MCP server。要用 tavily，需要先装一个 tavily MCP plugin（推荐：https://github.com/anthropics/mcp-tavily 或社区版本），并按其文档配 `TAVILY_API_KEY` 环境变量。
-  >
-  > 现在你有 3 个选择：
-  > 1. 我等你去装 + 配 key + `/reload-plugins`，然后回来对我说"好了"我重新试调
-  > 2. 改 priority 把 tavily 移掉（保留 exa 或纯 WebSearch）
-  > 3. 先跳过这步，后续真用到时再配（但 knowledge-retrieval workflow 在你启用了 tavily 时会一直试调失败）"
+- `PASS` → 进 c
+- `FAIL` → 转述末行错误，让用户决定重试（回 a）/ 跳过该 provider
 
-  按用户选择处理（1 → 等用户回复后重新 4.2.a；2 → 回到 4.1 改 priority；3 → 进入 4.2.b）
+**c. 收集 API key**
 
-- ❌ 错误 = "missing API key / unauthorized / 401"：
+通过 AskUserQuestion 收 key（一次问一个 provider）：
+- **Tavily**：从 https://tavily.com 获取（无前缀强约束）
+- **Exa**：从 https://exa.ai 获取（无前缀强约束）
+- **MiniMax**：从 https://platform.minimaxi.com 订阅 Token Plan 后拿 key，**必须 `sk-cp-` 前缀**（普通 chat key 不能给 MCP 用）
 
-  > "tavily MCP server 已注册但 API key 未配 / 已过期。请检查环境变量 `TAVILY_API_KEY` 或对应 MCP plugin 的配置文件（具体路径取决于你装的 tavily MCP plugin），配好后重新 `/reload-plugins` 再回来重试。"
+**d. 写入 ~/.claude.json**
 
-  等用户回复后重新 4.2.a。
+```bash
+python3 "$WA_INSTALLER" register "$provider" --key="$KEY"
+```
 
-- ❌ 其它错误（rate limit / 网络）：转述错误给用户，让用户自行决定重试或跳过
+- 输出 `OK <provider> written to ~/.claude.json` → 进 e
+- 输出 `INVALID_KEY_PREFIX: ...` → 回 c 重收 key
 
-#### 4.2.b exa_search 试调（如选中）
+**e. 询问是否实测（推荐）**
 
-重复 4.2.a 流程，但 MCP 工具名换成 `mcp__exa__exa_search` / `mcp__exa-search__exa_search` / 类似。
+通过 AskUserQuestion：`现在测一下 <provider> 通不通？`（Yes / Skip）
 
-错误信息同样三类：
-- 工具未注册 → 引导装 mcp-exa（如 https://github.com/exa-labs/mcp-exa）+ 配 `EXA_API_KEY`
-- API key 缺失 → 引导配 `EXA_API_KEY`
-- 其它 → 转述
+- Yes → `python3 "$WA_INSTALLER" test "$provider"`
+  - 该子命令独立 spawn server 跑 MCP JSON-RPC 握手 + tools/call 实测，**不依赖 reload-plugins**
+  - tavily/exa 跑 1 次 search；minimax 跑 `web_search` + `understand_image` 两次 tool/call，**全 PASS** 才算通过
+  - 全 PASS → 显示 `✅ <provider> 实测通过`
+  - 任一 FAIL → 转述输出末行 + 给用户三选一：①换 key（回 c）②unregister 跳过（`python3 "$WA_INSTALLER" unregister "$provider"`）③留着自己排查
+- Skip → 直接进下一个 provider
 
-### 4.3 全部试调通过后
+### 4.4 设置优先级
 
-> "Web 检索已配通。priority = `<最终列表>`。
-> 后续 knowledge-retrieval workflow 会按此优先级试调；如果某次失败，自动 fallback 到下一个工具，最后兜底用 Claude Code 内置 WebSearch。"
+按用户实际配通的子集排（推荐顺序：tavily > exa > minimax_search）。
 
-### 4.4 关键纪律
+```bash
+# 例：三件套都配通
+python3 "$SM_CONFIG" set mcp_search.priority "[tavily_search, exa_search, minimax_search]"
+# 例：仅配了 minimax
+python3 "$SM_CONFIG" set mcp_search.priority "[minimax_search]"
+# 例：全跳过 → 仅靠内置 WebSearch
+python3 "$SM_CONFIG" set mcp_search.priority "[]"
+```
 
-- **不要只 set 不试调** — 这是 v0.3.0 之前的痛点（用户后续真检索时才发现 key 没配）
-- 试调失败时**不要默默跳过**，必须转述错误 + 给用户三个明确选择
-- API key 配置不在 sm_config.py 范围内（这些是用户级 MCP server 的 env / config）— wizard 只引导，不代为执行
+### 4.5 关键纪律
+
+- **配置自动化的边界**：用户级安装路径（uv via astral.sh / node via fnm）→ 直接装；落到 sudo 才 print + 等 y
+- **register 后必问 test** — 不要静默写完就走，否则用户后续真检索时才发现 key 失效
+- **test 失败必须给三选一** — 不能默默跳过；unregister 提供干净回滚路径
+- **minimax sk-cp- 校验** — 普通 chat key 不能给 MCP 用（MiniMax-AI/MiniMax-M2 issue #96）
 
 ## 步骤 5：CDP 登录态站点检索（可选）
 
