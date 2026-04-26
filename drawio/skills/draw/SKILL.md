@@ -1,224 +1,618 @@
 ---
 name: draw
 description: >
-  当用户要求"画图 / 画一张图 / 生成流程图 / 架构图 / 拓扑图 / 时序图 / ER 图 / 类图 /
-  网络图 / 线框图 / 原型图"或英文 "create / generate / draw / design diagram /
-  flowchart / architecture / sequence / class / network / mockup / wireframe /
-  UI sketch" 时触发，也包括用户提到 draw.io / drawio / drawoi / .drawio 文件、
-  或要求把图导出 PNG / SVG / PDF / JPG 时。
-  生成原生 .drawio 文件（mxGraphModel XML），可选导出为 PNG / SVG / PDF / JPG。
-  始终保留源 .drawio 文件以便后续编辑。
+  画图 / 生成流程图 / 架构图 / 拓扑图 / 时序图 / ER 图 / 类图 / UML / 网络图 /
+  ML 模型图 / 线框图 时触发；亦支持 6 种 preset（ERD / UML class / sequence /
+  architecture / ML/DL / flowchart）+ animated connectors + style presets +
+  自定义 output dir。生成 .drawio XML，可选导出 PNG/SVG/PDF/JPG。3+ 组件复杂
+  关系时 proactively 触发。draw / generate / design diagram / flowchart /
+  architecture / sequence / class / network / mockup / wireframe / UI sketch
+  时触发。
 allowed-tools: Read, Write, Bash, Glob
 ---
 
-# Draw.io Diagram Skill
-
 > **跨平台兼容性 checklist**（Windows / macOS / Linux）：
-> 1. **Python 命令名**：示例用 `python3`。Windows 原生若不可识别（python.org installer 未勾"Add to PATH"、Conda / WinPython 等），改用 `python` 或 `py -3`。
-> 2. **路径自定位**：本文档脚本路径用 Python `Path(__file__).resolve().parent` 自定位，不依赖 Bash `realpath`（macOS 默认无、Windows cmd 无）。
-> 3. **可执行检测**：检测 draw.io CLI 时优先 `which drawio` / `where drawio`（PowerShell 用 `Get-Command`），不要用 `command -v`（Windows cmd 无）。
-> 4. **Bash heredoc / 单行多命令**：`<<'EOF'` heredoc 和 `&&` / `||` 短路在 Windows cmd 不支持；Windows 用户优先在 Git Bash / WSL2 中运行。
-> 5. **路径分隔符**：写路径用正斜杠 `/`（多数 Windows API 接受），避免硬编码反斜杠 `\`。
+> 1. **Python 命令名**：示例用 `python3`。Windows 不可识别时改 `python` 或 `py -3`。
+> 2. **路径自定位**：本文档所有脚本路径用下方 §路径自定位 一节的 bootstrap 解析。
+> 3. **可执行检测**：用 `which`/`where`/`Get-Command`，不用 `command -v`。
+> 4. **Bash heredoc / `&&` / `||`**：Windows cmd 不支持，建议在 Git Bash / WSL2 中运行。
+> 5. **路径分隔符**：用正斜杠 `/`，避免硬编码反斜杠 `\`。
 
 <SUBAGENT-STOP>
-此技能是给协调者读的。**判定你是否子智能体**：如果你的当前角色定义来自 Task prompt 而非 SKILL.md 自然加载（即调用方在 Task 工具的 prompt 字段里塞了 agents/<role>.md 的内容），你就是子智能体；跳过本 SKILL.md 的工作流编排部分，只执行 Task prompt 给你的具体任务。
+此技能给协调者读。**判定你是否子智能体**：如果你的当前角色定义来自 Task prompt 而非 SKILL.md 自然加载（即调用方在 Task 工具的 prompt 字段里塞了 agents/<role>.md 的内容），你就是子智能体；跳过本 SKILL.md 的工作流编排部分，只执行 Task prompt 给你的具体任务。
 </SUBAGENT-STOP>
 
-Generate draw.io diagrams as native `.drawio` files. Optionally export to PNG, SVG, or PDF. Keep the source `.drawio` file alongside the exported file — it is the only way to edit the diagram later.
+## 路径自定位
 
-## How to create a diagram
-
-1. **Generate draw.io XML** in mxGraphModel format for the requested diagram
-2. **Write the XML** to a `.drawio` file in the current working directory using the Write tool
-3. **Post-process edge routing** (optional): If `npx @drawio/postprocess` is available, run it on the `.drawio` file to optimize edge routing (simplify waypoints, fix edge-vertex collisions, straighten approach angles). Skip silently if not available — do not install it or ask the user about it
-4. **If the user requested an export format** (png, svg, pdf), locate the draw.io CLI (see below) and export the diagram. **Always keep the source `.drawio` file** — do NOT delete it. Do NOT pass `-e` / `--embed-diagram` to the CLI (see warning below). If the CLI is not found, keep the `.drawio` file and tell the user they can install the draw.io desktop app to enable export, or open the `.drawio` file directly
-5. **Open the result** — the exported file if exported, or the `.drawio` file otherwise. If the open command fails, print the file path so the user can open it manually
-
-## Choosing the output format
-
-Check the user's request for a format preference. Examples:
-
-- "create a flowchart" → `flowchart.drawio`
-- "png flowchart for login" → `login-flow.drawio.png`
-- "svg ER diagram" → `er-diagram.drawio.svg`
-- "pdf architecture overview" → `architecture-overview.drawio.pdf`
-
-If no format is mentioned, just write the `.drawio` file and open it in draw.io. The user can always ask to export later.
-
-### Supported export formats
-
-| Format | Notes |
-|--------|-------|
-| `png` | Viewable everywhere, compatible with DOCX embedding via python-docx / PIL |
-| `svg` | Scalable, web-friendly |
-| `pdf` | Printable |
-| `jpg` | Lossy compression |
-
-> **WARNING — do NOT use the `-e` / `--embed-diagram` flag.** It produces truncated PNG files (missing IEND chunk) that PIL/Pillow cannot read, causing python-docx embedding to fail. This is a known draw.io CLI bug. Keep the source `.drawio` file for future editing instead of relying on embedded XML.
-
-## draw.io CLI
-
-The draw.io desktop app includes a command-line interface for exporting.
-
-### Locating the CLI
-
-First, detect the environment, then locate the CLI accordingly:
-
-#### WSL2 (Windows Subsystem for Linux)
-
-WSL2 is detected when `/proc/version` contains `microsoft` or `WSL`:
+**首次调用本 skill 的脚本前，先跑一次以下 bootstrap 解析 DRAW_DIR**（后续命令用 `$DRAW_DIR/styles/...` 等）：
 
 ```bash
-grep -qi microsoft /proc/version 2>/dev/null && echo "WSL2"
+DRAW_DIR=""
+for d in "$HOME/.cursor/skills/draw" "$HOME/.agents/skills/draw" \
+         "./.cursor/skills/draw" "./.agents/skills/draw" \
+         "$HOME/.claude/plugins/cache/presales-skills/drawio/"*"/skills/draw"; do
+    [ -d "$d" ] && DRAW_DIR="$d" && break
+done
+[ -z "$DRAW_DIR" ] && DRAW_DIR="${CLAUDE_PLUGIN_ROOT:-./drawio}/skills/draw"
 ```
 
-On WSL2, use the Windows draw.io Desktop executable via `/mnt/c/...`:
+## Overview
+
+Generate `.drawio` XML files and export to PNG/SVG/PDF/JPG locally using the native draw.io desktop app CLI.
+
+**Supported formats:** PNG, SVG, PDF, JPG — no browser automation needed.
+
+## When to Use
+
+**Explicit triggers:** user says "diagram", "visualize", "flowchart", "draw", "architecture diagram", "process flow", "ER diagram", "UML", "sequence diagram", "class diagram", "neural network", "model architecture"
+
+**Proactive triggers:**
+- Explaining a system with 3+ interacting components
+- Describing a multi-step process or decision tree
+- Comparing architectures or approaches side by side
+
+**Skip when:** a simple list or table suffices, or user is in a quick Q&A flow
+
+## Prerequisites
+
+The draw.io desktop app must be installed and the CLI accessible:
 
 ```bash
-DRAWIO_CMD=`/mnt/c/Program Files/draw.io/draw.io.exe`
+# macOS (Homebrew — recommended)
+brew install --cask drawio
+draw.io --version
+
+# macOS (full path if not in PATH)
+/Applications/draw.io.app/Contents/MacOS/draw.io --version
+
+# Windows
+"C:\Program Files\draw.io\draw.io.exe" --version
+
+# Linux
+draw.io --version
 ```
 
-The backtick quoting is required to handle the space in `Program Files` in bash.
+Install draw.io desktop if missing:
+- macOS: `brew install --cask drawio` or download from https://github.com/jgraph/drawio-desktop/releases
+- Windows: download installer from https://github.com/jgraph/drawio-desktop/releases
+- Linux: download `.deb`/`.rpm` from https://github.com/jgraph/drawio-desktop/releases
 
-If draw.io is installed in a non-default location, check common alternatives:
+## Workflow
 
-```bash
-# Default install path
-`/mnt/c/Program Files/draw.io/draw.io.exe`
+Before starting the workflow, assess whether the user's request is specific enough. If key details are missing, ask 1-3 focused questions:
+- **Diagram type** — which preset? (ERD, UML, Sequence, Architecture, ML/DL, Flowchart, or general)
+- **Output format** — PNG (default), SVG, PDF, or JPG?
+- **Output location** — default is the user's working dir; honor any explicit path the user gives (e.g. "put it in `./artifacts/`"). Don't ask if they didn't mention one.
+- **Scope/fidelity** — how many components? Any specific technologies or labels?
 
-# Per-user install (if the above does not exist)
-`/mnt/c/Users/$WIN_USER/AppData/Local/Programs/draw.io/draw.io.exe`
-```
+Skip clarification if the request already specifies these details or is clearly simple (e.g., "draw a flowchart of X").
 
-#### macOS
 
-```bash
-/Applications/draw.io.app/Contents/MacOS/draw.io
-```
+**Step 0.5 — Resolve active preset.** Determine which (if any) user-defined style preset applies to this generation.
 
-#### Linux (native)
+- Scan the user's message for a phrase that clearly names a style preset: "use my `<name>` style", "with my `<name>` style", "in `<name>` mode", "in the style of `<name>`". A bare `with <name>` does **not** count — "draw a diagram with redis" names a component, not a style. If a clear match is found → active preset = `<name>`.
+- Else, check `~/.drawio-skill/styles/` for any file with `"default": true`. If found → active preset = that one.
+- Else → no preset active; fall through to the built-in color/shape/edge conventions for the rest of the workflow.
 
-```bash
-drawio   # typically on PATH via snap/apt/flatpak
-```
+Load the preset JSON from `~/.drawio-skill/styles/<name>.json`, falling back to `$DRAW_DIR/styles/built-in/<name>.json`. If the named preset exists in neither location, tell the user the name is unknown, list the available presets (user dir + built-in), and stop — do **not** silently fall back to defaults.
 
-#### Windows (native, non-WSL2)
+When a preset loads successfully, mention it in the first line of the reply: *"Using preset `<name>` (confidence: `<level>`)."* See the **Applying a preset** subsection below for how the preset changes color/shape/edge/font decisions.
 
-```
-"C:\Program Files\draw.io\draw.io.exe"
-```
+1. **Check deps** — verify `draw.io --version` succeeds; note platform for correct CLI path
+2. **Plan** — identify shapes, relationships, layout (LR or TB), group by tier/layer
+3. **Generate** — write `.drawio` XML file to disk. Default output dir is the user's working dir; if the user specified an output path or directory (e.g. `./artifacts/`, `docs/images/`), use that instead — `mkdir -p` the target dir first. Apply the same dir choice to PNG/SVG/PDF exports in steps 4 and 7.
+4. **Export draft** — run CLI to produce PNG for preview
+5. **Self-check** — use the agent's built-in vision capability to read the exported PNG, catch obvious issues, auto-fix before showing user (requires a vision-enabled model such as Claude Sonnet/Opus)
+6. **Review loop** — show image to user, collect feedback, apply targeted XML edits, re-export, repeat until approved
+7. **Final export** — export approved version to all requested formats, report file paths
 
-Use `which drawio` (or `where drawio` on Windows) to check if it's on PATH before falling back to the platform-specific path.
+### Step 5: Self-Check
 
-### Export command
+After exporting the draft PNG, use the agent's vision capability (e.g., Claude's image input) to read the image and check for these issues before showing the user. If the agent does not support vision, skip self-check and show the PNG directly:
 
-```bash
-drawio -x -f <format> -b 10 -o <output> <input.drawio>
-```
+| Check | What to look for | Auto-fix action |
+|-------|-----------------|-----------------|
+| Overlapping shapes | Two or more shapes stacked on top of each other | Shift shapes apart by ≥200px |
+| Clipped labels | Text cut off at shape boundaries | Increase shape width/height to fit label |
+| Missing connections | Arrows that don't visually connect to shapes | Verify `source`/`target` ids match existing cells |
+| Off-canvas shapes | Shapes at negative coordinates or far from the main group | Move to positive coordinates near the cluster |
+| Edge-shape overlap | An edge/arrow visually crosses through an unrelated shape | Add waypoints (`<Array as="points">`) to route around the shape, or increase spacing between shapes |
+| Stacked edges | Multiple edges overlap each other on the same path | Distribute entry/exit points across the shape perimeter (use different exitX/entryX values) |
 
-**WSL2 example:**
+- Max **2 self-check rounds** — if issues remain after 2 fixes, show the user anyway
+- Re-export after each fix and re-read the new PNG
 
-```bash
-`/mnt/c/Program Files/draw.io/draw.io.exe` -x -f png -b 10 -o diagram.drawio.png diagram.drawio
-```
+### Step 6: Review Loop
 
-Key flags:
-- `-x` / `--export`: export mode
-- `-f` / `--format`: output format (png, svg, pdf, jpg)
-- ~~`-e` / `--embed-diagram`~~: **DO NOT USE** — produces truncated PNG (missing IEND chunk), breaks PIL/python-docx. See "Supported export formats" warning.
-- `-o` / `--output`: output file path
-- `-b` / `--border`: border width around diagram (default: 0)
-- `-t` / `--transparent`: transparent background (PNG only)
-- `-s` / `--scale`: scale the diagram size
-- `--width` / `--height`: fit into specified dimensions (preserves aspect ratio)
-- `-a` / `--all-pages`: export all pages (PDF only)
-- `-p` / `--page-index`: select a specific page (1-based)
+After self-check, show the exported image and ask the user for feedback.
 
-### Opening the result
+**Targeted edit rules** — for each type of feedback, apply the minimal XML change:
 
-| Environment | Command |
-|-------------|---------|
-| macOS | `open <file>` |
-| Linux (native) | `xdg-open <file>` |
-| WSL2 | `cmd.exe /c start "" "$(wslpath -w <file>)"` |
-| Windows | `start <file>` |
+| User request | XML edit action |
+|-------------|----------------|
+| Change color of X | Find `mxCell` by `value` matching X, update `fillColor`/`strokeColor` in `style` |
+| Add a new node | Append a new `mxCell` vertex with next available `id`, position near related nodes |
+| Remove a node | Delete the `mxCell` vertex and any edges with matching `source`/`target` |
+| Move shape X | Update `x`/`y` in the `mxGeometry` of the matching `mxCell` |
+| Resize shape X | Update `width`/`height` in the `mxGeometry` of the matching `mxCell` |
+| Add arrow from A to B | Append a new `mxCell` edge with `source`/`target` matching A and B ids |
+| Change label text | Update the `value` attribute of the matching `mxCell` |
+| Change layout direction | **Full regeneration** — rebuild XML with new orientation |
 
-**WSL2 notes:**
-- `wslpath -w <file>` converts a WSL2 path (e.g. `/home/user/diagram.drawio`) to a Windows path (e.g. `C:\Users\...`). This is required because `cmd.exe` cannot resolve `/mnt/c/...` style paths.
-- The empty string `""` after `start` is required to prevent `start` from interpreting the filename as a window title.
+**Rules:**
+- For single-element changes: edit existing XML in place — preserves layout tuning from prior iterations
+- For layout-wide changes (e.g., swap LR↔TB, "start over"): regenerate full XML
+- Overwrite the same `{name}.png` each iteration — do not create `v1`, `v2`, `v3` files
+- After applying edits, re-export and show the updated image
+- Loop continues until user says approved / done / LGTM
+- **Safety valve:** after 5 iteration rounds, suggest the user open the `.drawio` file in draw.io desktop for fine-grained adjustments
 
-**WSL2 example:**
+### Step 7: Final Export
 
-```bash
-cmd.exe /c start "" "$(wslpath -w diagram.drawio)"
-```
+Once the user approves:
+- Export to all requested formats (PNG, SVG, PDF, JPG) — default to PNG if not specified
+- Report file paths for both the `.drawio` source file and exported image(s)
+- **Auto-launch:** offer to open the `.drawio` file in draw.io desktop for fine-tuning — `open diagram.drawio` (macOS), `xdg-open` (Linux), `start` (Windows)
+- Confirm files are saved and ready to use
 
-## File naming
+## Style Presets
 
-- Use a descriptive filename based on the diagram content (e.g., `login-flow`, `database-schema`)
-- Use lowercase with hyphens for multi-word names
-- For export, use double extensions: `name.drawio.png`, `name.drawio.svg`, `name.drawio.pdf` — this signals the file was generated by draw.io
-- After a successful export, **keep** the source `.drawio` file alongside the exported file — it is the only way to re-edit the diagram (we do NOT use `--embed-diagram` due to the PIL/python-docx bug)
+A **style preset** is a named JSON file that captures a user's visual preferences — palette, shape vocabulary, fonts, edge style. When a preset is active, it fully replaces the built-in conventions described in the `### Applying a preset` subsection below (under `## Draw.io XML Structure`).
 
-## XML format
+**Locations, in lookup order:**
+1. `~/.drawio-skill/styles/<name>.json` — user presets (persist across vendor sync).
+2. `$DRAW_DIR/styles/built-in/<name>.json` — built-ins shipped with the skill (`default`, `corporate`, `handdrawn`).
 
-A `.drawio` file is native mxGraphModel XML. Always generate XML directly — Mermaid and CSV formats require server-side conversion and cannot be saved as native files.
+A user preset shadows a built-in of the same name.
 
-### Basic structure
+Only user presets can have `"default": true`. When the user says *"make `<built-in-name>` my default"*, copy the built-in JSON to `~/.drawio-skill/styles/<name>.json` first, then set `default: true` on the copy — leave the shipped built-in untouched.
 
-Every diagram must have this structure:
+**Name normalisation:** always lowercase the user-provided name before writing or looking up files (the preset schema enforces lowercase; uppercase names will fail validation).
+
+### Learn flow
+
+**Triggers:** "learn my style from `<path>` as `<name>`", "save this as `<name>` style", "remember this style as `<name>`".
+
+**Dispatch by file extension:**
+- `.drawio`, `.xml` → XML path
+- `.png`, `.jpg`, `.jpeg`, `.svg` (rasterized flat image) → image path
+
+**Steps:**
+
+1. **Load the extraction reference.** Read `references/style-extraction.md` into context.
+2. **Extract** following the XML path or image path procedure in the reference.
+3. **Normalize and build candidate.** Convert the user-provided preset name to lowercase. Use this normalized name for ALL file paths in this flow. Build the candidate preset JSON and write it to `/tmp/drawio-preset-<name>.json` (where `<name>` is the already-normalized name). Do **not** save to `~/.drawio-skill/styles/<name>.json` yet.
+4. **Render a sample** using the sample-diagram skeleton in `references/style-extraction.md`, parameterized by the candidate preset. Export PNG to `./preset-<name>-sample.png` using the same `draw.io -x -f png -s 2 -o ./preset-<name>-sample.png /tmp/drawio-preset-<name>.drawio` command the main workflow uses.
+5. **Show the user:**
+   - Preset summary table (palette hex values, shapes per role, font, edge style, extras).
+   - The sample PNG path (and embed the image if the environment supports it).
+   - Provenance line: `source.type`, `source.path`, `extracted_at`, `confidence`.
+6. **Wait for approval:**
+   - "save" / "looks good" → write candidate to `~/.drawio-skill/styles/<name>.json`. Create `~/.drawio-skill/styles/` if it doesn't exist. Delete tempfile and sample PNG.
+   - "change `<field>` to `<value>`" → edit the in-memory candidate, re-render, re-ask.
+   - "cancel" / "abort" / "no" → delete tempfile and sample PNG; nothing saved.
+
+**Error behavior:**
+
+| Failure | Behavior |
+|---|---|
+| Source path does not exist | Stop; report path not found. |
+| XML parse fails | Stop; report the parse error; suggest opening the file in drawio desktop to repair. |
+| Image vision unavailable | Stop; tell user to re-run on a vision-capable model or provide the `.drawio` file. |
+| Extraction yields 0 vertices / shapes | Stop; refuse to save. |
+| Extraction yields <3 distinct color pairs | Continue; mark `confidence: "low"` (image) or `"medium"` (XML); warn in summary. |
+| Preset name collides with existing user preset | Ask: overwrite, or pick a new name. |
+| Preset name collides with a built-in preset | Save to user dir (shadows the built-in); warn once. |
+| Sample render fails | Still show summary; note "could not render sample — saving on your OK anyway". Do not block. |
+
+### Management operations
+
+All operations are natural language — no slash commands.
+
+*Apply name normalisation (lowercase) to all `<name>`, `<a>`, `<b>` arguments before any file operation.*
+
+| User says | Agent does |
+|---|---|
+| "list my styles", "what styles do I have", "show me my style presets" | Read `~/.drawio-skill/styles/` and `$DRAW_DIR/styles/built-in/`. Print a table: `name`, `location` (user/built-in), `source.type`, `confidence`, `default` flag. Built-ins shadowed by a user preset are marked so. |
+| "show my `<name>` style", "what's in `<name>`" | Print the preset JSON (pretty-printed) + a one-line summary (source, confidence, is-default). |
+| "make `<name>` the default", "set `<name>` as default" | If `<name>` is a user preset: set `default: true` on it; clear `default` on any other user preset that had it; save both files. If `<name>` is a built-in: copy `$DRAW_DIR/styles/built-in/<name>.json` → `~/.drawio-skill/styles/<name>.json` first, then set `default: true` on the copy. Never mutate the shipped built-in. |
+| "remove default", "unset default" | Clear `default: true` from whichever user preset has it. |
+| "delete `<name>`", "remove `<name>`" | Confirm first. Then `rm ~/.drawio-skill/styles/<name>.json`. Refuse to delete files under `$DRAW_DIR/styles/built-in/` — suggest shadowing with a user preset of the same name. |
+| "rename `<a>` to `<b>`" | `mv ~/.drawio-skill/styles/<a>.json ~/.drawio-skill/styles/<b>.json`, then update the `name` field inside. Fails if `<a>` is a built-in (offer to copy-then-rename instead). |
+| "learn my style from `<path>` as `<name>`" | Dispatch to the Learn flow above. |
+
+### Preset file validation
+
+When loading any preset (for generation or management), do a lightweight structural check:
+- Required top-level fields present (`name`, `version`, `palette`, `roles`, `shapes`, `font`, `edges`).
+- `version === 1`.
+- Every populated palette slot has both `fillColor` and `strokeColor` as `#RRGGBB`.
+- `confidence` ∈ {`"low"`, `"medium"`, `"high"`} if present.
+
+On validation failure:
+- **During generation:** warn the user, fall back to built-in conventions for this one diagram, do not mutate the file.
+- **During learn:** refuse to save the candidate; report which field failed.
+
+## Draw.io XML Structure
+
+### File skeleton
 
 ```xml
-<mxGraphModel adaptiveColors="auto">
-  <root>
-    <mxCell id="0"/>
-    <mxCell id="1" parent="0"/>
-    <!-- Diagram cells go here with parent="1" -->
-  </root>
-</mxGraphModel>
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="drawio" version="26.0.0">
+  <diagram name="Page-1">
+    <mxGraphModel>
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <!-- user shapes start at id="2" -->
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
 ```
 
-- Cell `id="0"` is the root layer
-- Cell `id="1"` is the default parent layer
-- All diagram elements use `parent="1"` unless using multiple layers
+**Rules:**
+- `id="0"` and `id="1"` are required root cells — never omit them
+- User shapes start at `id="2"` and increment sequentially
+- All shapes have `parent="1"` (unless inside a container — then use container's id)
+- All text uses `html=1` in style for proper rendering
+- **Never use `--` inside XML comments** — it's illegal per XML spec and causes parse errors
+- Escape special characters in attribute values: `&amp;`, `&lt;`, `&gt;`, `&quot;`
+- **Multi-line text in labels:** use `&#xa;` for line breaks inside `value` attributes (not literal `\n`). Example: `value="Line 1&#xa;Line 2"`
 
-## XML reference
+### Shape types (vertex)
 
-For the complete draw.io XML reference — common styles, edge routing, containers, layers, tags, metadata, dark mode colors, and XML well-formedness rules — use your Read tool to open `xml-reference.md` in this skill's directory (sibling to this `SKILL.md`). Consult it before generating non-trivial diagrams.
+| Style keyword | Use for |
+|--------------|---------|
+| `rounded=0` | plain rectangle (default) |
+| `rounded=1` | rounded rectangle — services, modules |
+| `ellipse;` | circles/ovals — start/end, databases |
+| `rhombus;` | diamond — decision points |
+| `shape=mxgraph.aws4.resourceIcon;` | AWS icons |
+| `shape=cylinder3;` | cylinder — databases |
+| `swimlane;` | group/container with title bar |
 
-The file is bundled with the plugin, so no network fetch is required — this keeps the skill usable in enterprise environments that block `raw.githubusercontent.com`.
+### Required properties
 
-## Optional: Python helper script
+```xml
+<!-- Rectangle / rounded box -->
+<mxCell id="2" value="Label" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+  <mxGeometry x="100" y="100" width="160" height="60" as="geometry" />
+</mxCell>
 
-This plugin ships an optional Python helper at `scripts/drawio_generator.py` (sibling to this SKILL.md, in the plugin's `scripts/` directory). It wraps common patterns. Most callers can generate XML directly via the Write tool and skip the helper. If you want to invoke it, use the standard installed_plugins.json fallback to find the plugin path:
+<!-- Cylinder (database) -->
+<mxCell id="3" value="DB" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" vertex="1" parent="1">
+  <mxGeometry x="350" y="100" width="120" height="80" as="geometry" />
+</mxCell>
+
+<!-- Diamond (decision) -->
+<mxCell id="4" value="Check?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+  <mxGeometry x="100" y="220" width="160" height="80" as="geometry" />
+</mxCell>
+```
+
+### Containers and groups
+
+For architecture diagrams with nested elements, use draw.io's parent-child containment — do **not** just place shapes on top of larger shapes.
+
+| Type | Style | When to use |
+|------|-------|-------------|
+| **Group** (invisible) | `group;pointerEvents=0;` | No visual border needed, container has no connections |
+| **Swimlane** (titled) | `swimlane;startSize=30;` | Container needs a visible title bar, or container itself has connections |
+| **Custom container** | Add `container=1;pointerEvents=0;` to any shape | Any shape acting as a container without its own connections |
+
+**Key rules:**
+- Add `pointerEvents=0;` to container styles that should not capture connections between children
+- Children set `parent="containerId"` and use coordinates **relative to the container**
+
+```xml
+<!-- Swimlane container -->
+<mxCell id="svc1" value="User Service" style="swimlane;startSize=30;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+  <mxGeometry x="100" y="100" width="300" height="200" as="geometry"/>
+</mxCell>
+<!-- Child inside container — coordinates relative to parent -->
+<mxCell id="api1" value="REST API" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="svc1">
+  <mxGeometry x="20" y="40" width="120" height="60" as="geometry"/>
+</mxCell>
+<mxCell id="db1" value="Database" style="shape=cylinder3;whiteSpace=wrap;html=1;" vertex="1" parent="svc1">
+  <mxGeometry x="160" y="40" width="120" height="60" as="geometry"/>
+</mxCell>
+```
+
+### Connector (edge)
+
+**CRITICAL:** Every edge `mxCell` must contain a `<mxGeometry relative="1" as="geometry" />` child element. Self-closing edge cells (`<mxCell ... edge="1" ... />`) are **invalid** and will not render. Always use the expanded form.
+
+```xml
+<!-- Directed arrow — always include rounded, orthogonalLoop, jettySize for clean routing -->
+<mxCell id="10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="2" target="3">
+  <mxGeometry relative="1" as="geometry" />
+</mxCell>
+
+<!-- Arrow with label + explicit entry/exit points to control direction -->
+<mxCell id="11" value="HTTP/REST" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="2" target="4">
+  <mxGeometry relative="1" as="geometry" />
+</mxCell>
+
+<!-- Arrow with waypoints — use when edge must route around other shapes -->
+<mxCell id="12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="3" target="5">
+  <mxGeometry relative="1" as="geometry">
+    <Array as="points">
+      <mxPoint x="500" y="50" />
+    </Array>
+  </mxGeometry>
+</mxCell>
+```
+
+**Edge style rules:**
+- **Animated connectors:** add `flowAnimation=1;` to any edge style to show a moving dot animation along the arrow. Works in SVG export and draw.io desktop — ideal for data-flow and pipeline diagrams. Example: `style="edgeStyle=orthogonalEdgeStyle;flowAnimation=1;rounded=1;..."`
+- **Always** include `rounded=1;orthogonalLoop=1;jettySize=auto` — these enable smart routing that avoids overlaps
+- Pin `exitX/exitY/entryX/entryY` on every edge when a node has 2+ connections — distributes lines across the shape perimeter
+- Add `<Array as="points">` waypoints when an edge must detour around an intermediate shape
+- **Leave room for arrowheads:** the final straight segment between the last bend and the target shape must be ≥20px long. If too short, the arrowhead overlaps the bend and looks broken. Fix by increasing node spacing or adding explicit waypoints
+
+### Distributing connections on a shape
+
+When multiple edges connect to the same shape, assign different entry/exit points to prevent stacking:
+
+| Position | exitX/entryX | exitY/entryY | Use when |
+|----------|-------------|-------------|----------|
+| Top center | 0.5 | 0 | connecting to node above |
+| Top-left | 0.25 | 0 | 2nd connection from top |
+| Top-right | 0.75 | 0 | 3rd connection from top |
+| Right center | 1 | 0.5 | connecting to node on right |
+| Bottom center | 0.5 | 1 | connecting to node below |
+| Left center | 0 | 0.5 | connecting to node on left |
+
+**Rule:** if a shape has N connections on one side, space them evenly (e.g., 3 connections on bottom → exitX = 0.25, 0.5, 0.75)
+
+### Applying a preset
+
+When the Workflow's step *Resolve active preset* identified a preset, it fully replaces the built-in palette, shape keywords, edge defaults, and font for this diagram — do not mix values from the built-in color table below.
+
+**Color lookup.** For each role a shape plays (service / database / queue / gateway / error / external / security), resolve `preset.roles[role]` to a slot name, then `preset.palette[<slot>]` to the `(fillColor, strokeColor)` pair. If `roles[role]` is unset or the resolved slot is `null`, follow this fallback ladder:
+
+1. Try the role's canonical slot (`service→primary`, `database→success`, `queue→warning`, `gateway→accent`, `error→danger`, `external→neutral`, `security→secondary`).
+2. If that slot is also empty, pick the most-populated non-null slot in the preset.
+3. Never reach into the built-in color table below — the preset is authoritative.
+
+**Decision and container shapes** are not in `preset.roles` — they have shape vocabulary (`preset.shapes.decision`, `preset.shapes.container`) but no role-to-slot mapping. Pick their colors as follows:
+- **Decision** (rhombus) → use `preset.palette.warning` (the canonical yellow slot in the built-in conventions). If `warning` is empty, apply the slot-fallback ladder above starting from `warning`.
+- **Container** (swimlane) → use the palette slot matching the tier/grouping the container represents (e.g., a "Services" tier container uses `primary`; a "Data" tier uses `success`). If no tier signal is available, default to `primary`.
+
+**Shape keywords.** Use `preset.shapes[role]` as the **prefix** of the vertex style string (before `whiteSpace=wrap;html=1;...`). Example: for a database role, if `preset.shapes.database = "shape=cylinder3"`, the vertex style starts `shape=cylinder3;whiteSpace=wrap;html=1;fillColor=...`. The six named shape keys are `service`, `database`, `queue`, `decision`, `external`, `container`. Roles `gateway`, `error`, and `security` reuse `preset.shapes.service` unless the preset explicitly populates a key with their name.
+
+**Edges.** Use `preset.edges.style` as the base edge style string. Append `preset.edges.arrow`. Per-edge routing keys (`exitX/exitY/entryX/entryY/...`) are still added by the usual routing rules in the rest of this document. If the flow between two shapes matches a token from `preset.edges.dashedFor` (either because the user's prompt used that word, or because one end of the edge plays a role whose typical relation is "optional"), append `;dashed=1` to the edge style.
+
+**Fonts.** Append `fontFamily=<preset.font.fontFamily>;fontSize=<preset.font.fontSize>` to every vertex style. Container headers and swimlane titles additionally get `fontSize=<preset.font.titleFontSize>;fontStyle=1` when `preset.font.titleBold` is `true`.
+
+**Extras.**
+- `preset.extras.sketch === true` → append `sketch=1` to every vertex style and every edge style.
+- `preset.extras.globalStrokeWidth !== 1` (any value other than the drawio default of 1, including `0.5`) → append `strokeWidth=<n>` to every vertex style and every edge style.
+
+**Interaction with diagram-type presets (ERD / UML / Sequence / ML / Flowchart).** Diagram-type presets earlier in this document set structural style keywords that the user preset must preserve (e.g., ERD tables rely on `shape=table;startSize=30;container=1;childLayout=tableLayout;...`). The rule: keep the diagram-type preset's structural keywords, then layer the user preset's color / font / edge / extras on top. When a diagram-type preset hardcodes a color (`fillColor=#dae8fc`, etc.) that conflicts with the user preset, the user preset's color wins. Exception: `fillColor=none` is structural — do not replace it with a palette color.
+
+### Color palette (fillColor / strokeColor)
+
+*Used only when no preset is active (see "Applying a preset" above).*
+
+| Color name | fillColor | strokeColor | Use for |
+|-----------|-----------|-------------|---------|
+| Blue | `#dae8fc` | `#6c8ebf` | services, clients |
+| Green | `#d5e8d4` | `#82b366` | success, databases |
+| Yellow | `#fff2cc` | `#d6b656` | queues, decisions |
+| Orange | `#ffe6cc` | `#d79b00` | gateways, APIs |
+| Red/Pink | `#f8cecc` | `#b85450` | errors, alerts |
+| Grey | `#f5f5f5` | `#666666` | external/neutral |
+| Purple | `#e1d5e7` | `#9673a6` | security, auth |
+
+### Layout tips
+
+**Spacing — scale with complexity:**
+
+| Diagram complexity | Nodes | Horizontal gap | Vertical gap |
+|-------------------|-------|----------------|--------------|
+| Simple | ≤5 | 200px | 150px |
+| Medium | 6–10 | 280px | 200px |
+| Complex | >10 | 350px | 250px |
+
+**Routing corridors:** between shape rows/columns, leave an extra ~80px empty corridor where edges can route without crossing shapes. Never place a shape in a gap that edges need to traverse.
+
+**Grid alignment:** snap all `x`, `y`, `width`, `height` values to **multiples of 10** — this ensures shapes align cleanly on draw.io's default grid and makes manual editing easier.
+
+**General rules:**
+- Plan a grid before assigning x/y coordinates — sketch node positions on paper/mentally first
+- Group related nodes in the same horizontal or vertical band
+- Use `swimlane` cells for logical grouping with visible borders
+- Place heavily-connected "hub" nodes centrally so edges radiate outward instead of crossing
+- To force straight vertical connections, pin entry/exit points explicitly on edges:
+  `exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0`
+- Always center-align a child node under its parent (same center x) to avoid diagonal routing
+- **Event bus pattern**: place Kafka/bus nodes in the **center of the service row**, not below — services on either side can reach it with short horizontal arrows (`exitX=1` left side, `exitX=0` right side), eliminating all line crossings
+- Horizontal connections (`exitX=1` or `exitX=0`) never cross vertical nodes in the same row; use them for peer-to-peer and publish connections
+
+**Avoiding edge-shape overlap:**
+- Before finalizing coordinates, trace each edge path mentally — if it must cross an unrelated shape, either move the shape or add waypoints
+- For tree/hierarchical layouts: assign nodes to layers (rows), connect only between adjacent layers to minimize crossings
+- For star/hub layouts: place the hub center, satellites around it — edges stay short and radial
+- When an edge must span multiple rows/columns, route it along the outer corridor, not through the middle of the diagram
+
+## Export
+
+### Commands
 
 ```bash
-DRAWIO_PATH=$(python3 -c "
-import json, os, sys
-p = os.path.expanduser('~/.claude/plugins/installed_plugins.json')
-if os.path.exists(p):
-    d = json.load(open(p))
-    for entries in d.get('plugins', {}).values():
-        for e in (entries if isinstance(entries, list) else [entries]):
-            if isinstance(e, dict) and '/drawio/' in e.get('installPath', ''):
-                print(e['installPath']); sys.exit(0)
-" 2>/dev/null)
-[ -n "$DRAWIO_PATH" ] && python3 "$DRAWIO_PATH/scripts/drawio_generator.py" --help
+# macOS — Homebrew (draw.io in PATH)
+draw.io -x -f png -s 2 -o diagram.png input.drawio
+
+# macOS — full path (if not in PATH)
+/Applications/draw.io.app/Contents/MacOS/draw.io -x -f png -s 2 -o diagram.png input.drawio
+
+# Windows
+"C:\Program Files\draw.io\draw.io.exe" -x -f png -s 2 -o diagram.png input.drawio
+
+# Linux (headless — requires xvfb-run)
+xvfb-run -a draw.io -x -f png -s 2 -o diagram.png input.drawio
+
+# SVG export
+draw.io -x -f svg -o diagram.svg input.drawio
+
+# PDF export
+draw.io -x -f pdf -o diagram.pdf input.drawio
+
+# Custom output directory (e.g. CI artifacts dir) — create if missing, then export there
+mkdir -p ./artifacts && draw.io -x -f png -s 2 -o ./artifacts/diagram.png input.drawio
 ```
 
-## Troubleshooting
+**Key flags:**
+- `-x` — export mode (required)
+- `-f` — format: `png`, `svg`, `pdf`, `jpg`
+- `-s` — scale: `1`, `2`, `3` (2 recommended for PNG)
+- `-o` — output file path; accepts any directory (e.g. `./artifacts/diagram.png`) — `mkdir -p` the target dir first. Use `.png` double extension when embedding.
+- `-b` — border width around diagram (default: 0, recommend 10)
+- `-t` — transparent background (PNG only)
+- `--page-index 0` — export specific page (default: all)
 
-| Problem | Cause | Solution |
-|---------|-------|----------|
-| draw.io CLI not found | Desktop app not installed or not on PATH | Keep the `.drawio` file and tell the user to install the draw.io desktop app, or open the file manually |
-| Export produces empty/corrupt file | Invalid XML (e.g. double hyphens in comments, unescaped special characters) | Validate XML well-formedness before writing; see the XML well-formedness section below |
-| Diagram opens but looks blank | Missing root cells `id="0"` and `id="1"` | Ensure the basic mxGraphModel structure is complete |
-| Edges not rendering | Edge mxCell is self-closing (no child mxGeometry element) | Every edge must have `<mxGeometry relative="1" as="geometry" />` as a child element |
-| File won't open after export | Incorrect file path or missing file association | Print the absolute file path so the user can open it manually |
-| PNG cannot be embedded in DOCX / PIL UnidentifiedImageError | Used `-e` / `--embed-diagram` during export | Re-export without `-e`; the flag produces truncated PNG missing the IEND chunk |
+### Browser fallback (no CLI needed)
 
-## CRITICAL: XML well-formedness
+When the draw.io desktop CLI is unavailable, generate a browser-editable URL by deflate-compressing and base64-encoding the XML:
 
-- **NEVER include ANY XML comments (`<!-- -->`) in the output.** XML comments are strictly forbidden — they waste tokens, can cause parse errors, and serve no purpose in diagram XML.
-- Escape special characters in attribute values: `&amp;`, `&lt;`, `&gt;`, `&quot;`
-- Always use unique `id` values for each `mxCell`
+```bash
+# Encode .drawio XML into a diagrams.net URL
+python3 -c "
+import zlib, base64, urllib.parse, sys
+xml = open(sys.argv[1]).read()
+# Raw deflate (no zlib header) — diagrams.net uses mxGraph's raw inflate
+c = zlib.compressobj(9, zlib.DEFLATED, -zlib.MAX_WBITS)
+compressed = c.compress(xml.encode('utf-8')) + c.flush()
+# Standard base64 (atob rejects url-safe -/_); strip any newlines
+encoded = base64.b64encode(compressed).decode('utf-8').replace('\n', '')
+print('https://viewer.diagrams.net/?tags=%7B%7D&lightbox=1&edit=_blank#R' + urllib.parse.quote(encoded, safe=''))
+" input.drawio
+```
+
+This produces a client-side URL that opens the diagram in the browser for viewing and editing. No data is uploaded to any server — the entire diagram XML is encoded in the URL fragment (after `#`), which is never sent to the server. Useful when the user cannot install the desktop app.
+
+### Fallback chain
+
+When tools are unavailable, degrade gracefully:
+
+| Scenario | Behavior |
+|----------|----------|
+| draw.io CLI missing, Python available | Use browser fallback (diagrams.net URL) |
+| draw.io CLI missing, Python missing | Generate `.drawio` XML only; instruct user to open in draw.io desktop or diagrams.net manually |
+| Vision unavailable for self-check | Skip self-check (step 5); proceed directly to showing user the exported PNG |
+| Export fails (Chromium/display issues) | On Linux, retry with `xvfb-run -a`; if still failing, deliver `.drawio` XML and suggest manual export |
+
+### Checking if draw.io is in PATH
+
+```bash
+# Try short command first
+if which draw.io >/dev/null 2>&1; then
+  DRAWIO="draw.io"
+elif [ -f "/Applications/draw.io.app/Contents/MacOS/draw.io" ]; then
+  DRAWIO="/Applications/draw.io.app/Contents/MacOS/draw.io"
+else
+  echo "draw.io not found — install from https://github.com/jgraph/drawio-desktop/releases"
+fi
+```
+
+## Common Mistakes
+
+| Mistake | Fix |
+|---------|-----|
+| Missing `id="0"` and `id="1"` root cells | Always include both at the top of `<root>` |
+| Shapes not connected | `source` and `target` on edge must match existing shape `id` values |
+| Export command not found on macOS | Try full path `/Applications/draw.io.app/Contents/MacOS/draw.io` |
+| Linux: blank/error output headlessly | Prefix command with `xvfb-run -a` |
+| PDF export fails | Ensure Chromium is available (draw.io bundles it on desktop) |
+| Background color wrong in CLI export | Known CLI bug; add `--transparent` flag or set background via style |
+| Overlapping shapes | Scale spacing with complexity (200–350px); leave routing corridors |
+| Edges crossing through shapes | Add waypoints, distribute entry/exit points, or increase spacing |
+| Special characters in `value` | Use XML entities: `&amp;` `&lt;` `&gt;` `&quot;` |
+| Iteration loop never ends | After 5 rounds, suggest user open .drawio in draw.io desktop for fine-tuning |
+| Self-closing edge `mxCell` | Always use expanded form with `<mxGeometry>` child — self-closing edges won't render |
+| `--` inside XML comments | Illegal per XML spec — use single hyphens or rephrase |
+| Arrowhead overlaps bend | Final edge segment before target must be ≥20px — increase spacing or add waypoints |
+| Literal `\n` in label text | Use `&#xa;` for line breaks in `value` attributes |
+
+## Diagram Type Presets
+
+When the user requests a specific diagram type, apply the matching preset below for shapes, styles, and layout conventions.
+
+### ERD (Entity-Relationship Diagram)
+
+| Element | Style | Notes |
+|---------|-------|-------|
+| Table | `shape=table;startSize=30;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;strokeColor=#6c8ebf;fillColor=#dae8fc;` | Each table is a container |
+| Row (column) | `shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=12;` | Child of table, `parent=tableId` |
+| PK column | Bold text: `fontStyle=1` on the row | Mark with `PK` prefix or key icon |
+| FK relationship | Dashed edge: `dashed=1;endArrow=ERmandOne;startArrow=ERmandOne;` | Use ER notation arrows |
+| Layout | TB, tables spaced 300px apart | Group related tables vertically |
+
+### UML Class Diagram
+
+| Element | Style | Notes |
+|---------|-------|-------|
+| Class box | `swimlane;fontStyle=1;align=center;startSize=26;html=1;` | 3-section: title / attributes / methods |
+| Separator | `line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=10;rotatable=0;labelPosition=left;points=[];portConstraint=eastwest;` | Between sections |
+| Inheritance | `endArrow=block;endFill=0;` | Hollow triangle arrow |
+| Implementation | `endArrow=block;endFill=0;dashed=1;` | Dashed + hollow triangle |
+| Composition | `endArrow=diamondThin;endFill=1;` | Filled diamond |
+| Aggregation | `endArrow=diamondThin;endFill=0;` | Hollow diamond |
+| Layout | TB, classes 250px apart | Interfaces above implementations |
+
+### Sequence Diagram
+
+| Element | Style | Notes |
+|---------|-------|-------|
+| Actor/Object | `shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;` | Lifeline with dashed vertical line |
+| Sync message | `html=1;verticalAlign=bottom;endArrow=block;` | Solid line, filled arrowhead |
+| Async message | `html=1;verticalAlign=bottom;endArrow=open;dashed=1;` | Dashed line, open arrowhead |
+| Return message | `html=1;verticalAlign=bottom;endArrow=open;dashed=1;strokeColor=#999999;` | Grey dashed |
+| Activation box | `shape=umlFrame;whiteSpace=wrap;` on the lifeline | Narrow rectangle on lifeline |
+| Layout | LR, lifelines spaced 200px apart | Time flows top to bottom |
+
+### Architecture Diagram
+
+| Element | Style | Notes |
+|---------|-------|-------|
+| Layer/tier | `swimlane;startSize=30;` | Containers for grouping: Client / API / Service / Data |
+| Service | `rounded=1;whiteSpace=wrap;html=1;` + tier color | Use color palette by tier |
+| Database | `shape=cylinder3;whiteSpace=wrap;html=1;` | Green palette |
+| Queue/Bus | `rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;` | Yellow — place centrally for hub pattern |
+| Gateway/LB | `shape=mxgraph.aws4.resourceIcon;` or `rounded=1;` with orange | Orange palette |
+| External | `rounded=1;dashed=1;fillColor=#f5f5f5;strokeColor=#666666;` | Dashed border for external systems |
+| Layout | TB or LR by tier count; ≥4 tiers → TB | Hub nodes centered |
+
+### ML / Deep Learning Model Diagram
+
+For neural network architecture diagrams — ideal for papers targeting NeurIPS, ICML, ICLR.
+
+| Element | Style | Notes |
+|---------|-------|-------|
+| Layer block | `rounded=1;whiteSpace=wrap;html=1;` + type color | Main building block |
+| Input/Output | `fillColor=#d5e8d4;strokeColor=#82b366;` | Green |
+| Conv / Pooling | `fillColor=#dae8fc;strokeColor=#6c8ebf;` | Blue |
+| Attention / Transformer | `fillColor=#e1d5e7;strokeColor=#9673a6;` | Purple |
+| RNN / LSTM / GRU | `fillColor=#fff2cc;strokeColor=#d6b656;` | Yellow |
+| FC / Linear | `fillColor=#ffe6cc;strokeColor=#d79b00;` | Orange |
+| Loss / Activation | `fillColor=#f8cecc;strokeColor=#b85450;` | Red/Pink |
+| Skip connection | `dashed=1;endArrow=block;curved=1;` | Dashed curved arrow |
+| Tensor shape label | Add shape annotation as secondary label: `value="Conv2D&#xa;(B, 64, 32, 32)"` | Use `&#xa;` for multi-line |
+| Layout | TB (data flows top→bottom), layers 150px apart | Group encoder/decoder as swimlanes |
+
+**Tensor shape convention:** annotate each layer with input/output tensor dimensions in `(B, C, H, W)` or `(B, T, D)` format. Place dimensions as the second line of the label using `&#xa;`.
+
+### Flowchart (enhanced)
+
+| Element | Style | Notes |
+|---------|-------|-------|
+| Start/End | `ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;` | Green oval |
+| Process | `rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;` | Blue rectangle |
+| Decision | `rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;` | Yellow diamond |
+| I/O | `shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;` | Orange parallelogram |
+| Subprocess | `rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;` + double border | Purple |
+| Yes/No labels | `value="Yes"` / `value="No"` on decision edges | Always label decision branches |
+| Layout | TB, 200px vertical gap | Decisions branch LR, merge back to center |

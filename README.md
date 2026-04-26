@@ -299,10 +299,13 @@ presales-skills/
 │
 ├── drawio/
 │   ├── .claude-plugin/plugin.json
+│   ├── README.md                      # plugin 简介 + 6 种 preset + 安装 draw.io CLI
 │   └── skills/draw/                   # 注册为 drawio:draw
-│       ├── SKILL.md                   # name: draw
-│       ├── xml-reference.md
-│       └── scripts/drawio_generator.py
+│       ├── SKILL.md                   # name: draw（含 6 preset / animated / ML / style presets / 自定义 output dir）
+│       ├── xml-reference.md           # 本仓原有 XML reference
+│       ├── references/style-extraction.md   # 风格提取 reference
+│       ├── styles/                          # built-in style preset (default/corporate/handdrawn) + schema.json
+│       └── assets/                          # 6 个 .drawio demo（每 preset 一个最小代表样本）
 │
 ├── ai-image/
 │   ├── .claude-plugin/plugin.json
