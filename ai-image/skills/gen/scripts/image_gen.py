@@ -396,7 +396,8 @@ def _print_backend_list() -> None:
         print(f"Config fallback file: {ENV_PATH}")
     else:
         print("Plugin mode: set API keys via ~/.config/presales-skills/config.yaml")
-        print('  or environment variables (say "configure ai-image" to Claude for guided setup)')
+        ai_cfg = Path(__file__).resolve().parent / "ai_image_config.py"
+        print(f'  or environment variables (run "python3 {ai_cfg} setup" for guided setup)')
 
 
 def _resolve_backend() -> tuple[object, str]:

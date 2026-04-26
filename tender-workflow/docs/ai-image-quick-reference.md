@@ -48,13 +48,24 @@ python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" set api_keys.ark <key>
 
 ## 模型注册表
 
+自然语言（在 Claude 会话中说）或直接运行底层脚本：
+
 ```text
 对 Claude 说："列出 ai-image 模型"               # 13 provider 全表
 对 Claude 说："列出 ai-image <provider> 的模型"  # 单 provider 详情
 ```
 
-切换默认供应商：对 Claude 说 `"设置 ai-image ai_image.default_provider 为 <ark|dashscope|gemini|...>"`
-切换某 provider 的默认模型：对 Claude 说 `"设置 ai-image ai_image.models.<provider> 为 <model_id>"`
+```bash
+python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" models             # 全表
+python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" models <provider>  # 单 provider
+```
+
+切换默认供应商 / 默认模型：
+
+```bash
+python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" set ai_image.default_provider <ark|dashscope|gemini|...>
+python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" set ai_image.models.<provider> <model_id>
+```
 
 ## 调用底层
 

@@ -37,6 +37,32 @@ except ImportError:
 
 CONFIG_PATH = Path.home() / ".config" / "tender-workflow" / "config.yaml"
 
+# ── ai-image plugin 探针（用于在 stderr 提示里给绝对脚本路径）─────
+# v1.0.0 删 bin 后跨 plugin 调用走文件存在性探针。本 helper 用于在错误提示里
+# 给可直接执行的绝对命令——避免错位的"对 Claude 说 X"自指（AI 在脚本上下文
+# 看到自指指令会困惑、用户在 CLI 看到也无法直接照做）。
+_TOOLS_DIR = Path(__file__).resolve().parent  # .../twc/tools/
+_SKILL_DIR_TWC = _TOOLS_DIR.parent             # .../twc/
+_SKILLS_ROOT = _SKILL_DIR_TWC.parent           # .../skills/
+_TENDER_WORKFLOW_ROOT = _SKILLS_ROOT.parent    # .../tender-workflow/
+_MARKETPLACE_ROOT = _TENDER_WORKFLOW_ROOT.parent  # marketplace 根（local）
+
+
+def _ai_image_script(script_name: str) -> str:
+    """返回 ai-image plugin 内某脚本的可执行命令字符串（用于错误提示）。"""
+    candidates = [
+        _MARKETPLACE_ROOT / "ai-image" / "skills" / "gen" / "scripts" / script_name,
+        Path.home() / ".claude" / "plugins" / "ai-image" / "skills" / "gen" / "scripts" / script_name,
+    ]
+    cache_dir = Path.home() / ".claude" / "plugins" / "cache"
+    if cache_dir.exists():
+        candidates.extend(cache_dir.glob(f"*/ai-image/*/skills/gen/scripts/{script_name}"))
+    for p in candidates:
+        if p.exists():
+            return f'python3 "{p}"'
+    return f'python3 "<ai-image-skill-dir>/scripts/{script_name}"（ai-image plugin 未安装：/plugin install ai-image@presales-skills）'
+
+
 LEGACY_PATHS = {
     "taw": Path.home() / ".config" / "taw" / "config.yaml",
     "taa": Path.home() / ".config" / "taa" / "config.yaml",
@@ -369,7 +395,7 @@ def set_value(key: str, value: Any) -> None:
     if key.startswith(("api_keys.", "ai_image.")) or key in ("api_keys", "ai_image"):
         raise ValueError(
             f"'{key}' 由 ai-image plugin 管理，不在 tender-workflow config 范围内。\n"
-            f'请对 Claude 说"设置 ai-image {key} 为 <value>"'
+            f"请改用：{_ai_image_script('ai_image_config.py')} set {key} <value>"
         )
     cfg = _read_yaml(CONFIG_PATH)
     _deep_set(cfg, key, value)
@@ -441,12 +467,12 @@ def validate() -> List[str]:
     if not ai_image_cfg.exists():
         issues.append(
             "AI 生图配置文件不存在（~/.config/presales-skills/config.yaml）。"
-            '如需配图请对 Claude 说"配置 ai-image"'
+            f"如需配图请运行：{_ai_image_script('ai_image_config.py')} setup"
         )
     elif "api_keys" in cfg or "ai_image" in cfg:
         issues.append(
             "~/.config/tender-workflow/config.yaml 仍包含 api_keys / ai_image 块（由 ai-image plugin 管理）。"
-            '请对 Claude 说"迁移 ai-image 配置"整理'
+            f"请运行：{_ai_image_script('ai_image_config.py')} migrate"
         )
 
     # 检查 AnythingLLM
@@ -481,7 +507,7 @@ def migrate() -> Dict[str, Any]:
     """
     # F-041: 推荐顺序提示
     print(
-        '提示：跑完此命令后，建议对 Claude 说"迁移 ai-image 配置"，把 tw 配置合并到统一的 presales-skills 路径。',
+        f"提示：跑完此命令后，建议运行 {_ai_image_script('ai_image_config.py')} migrate，把 tw 配置合并到统一的 presales-skills 路径。",
         file=sys.stderr,
     )
     result = {"migrated_keys": [], "deleted_files": [], "skipped": [], "normalized": False}
@@ -627,11 +653,10 @@ def main():
 
     elif cmd == "models":
         # v1.0.0：原 shutil.which("ai-image-config") orphan caller（commit c983037 删 bin 后失效）。
-        # 改为重定向到 ai-image plugin 的对应 skill 直接调用。
+        # 重定向到 ai-image plugin 的 ai_image_config.py（带探针解析的绝对路径）。
         print(
             "[tender-workflow] 子命令 'models' 已转交给 ai-image plugin。\n"
-            "请运行 Skill(skill=\"ai-image:gen\") 子命令 models，\n"
-            "或自然语言触发：'列出图片模型'。",
+            f"请运行：{_ai_image_script('ai_image_config.py')} models",
             file=sys.stderr,
         )
         sys.exit(0)

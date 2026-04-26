@@ -196,7 +196,7 @@ def set_value(key: str, value: Any) -> None:
     if key.startswith(("api_keys.", "ai_image.")) or key in ("api_keys", "ai_image"):
         raise ValueError(
             f"'{key}' 由 ai-image plugin 管理，不在 solution-master config 范围内。\n"
-            f'请对 Claude 说"设置 ai-image {key} 为 <value>"'
+            f"请改用：{_ai_image_script('ai_image_config.py')} set {key} <value>"
         )
     cfg = load()
     _deep_set(cfg, key, value)
@@ -280,12 +280,12 @@ def validate() -> List[str]:
     if not ai_image_cfg.exists():
         issues.append(
             "AI 生图配置文件不存在（~/.config/presales-skills/config.yaml）。"
-            '如需配图请对 Claude 说"配置 ai-image"'
+            f"如需配图请运行：{_ai_image_script('ai_image_config.py')} setup"
         )
     elif "api_keys" in cfg or "ai_image" in cfg:
         issues.append(
             "~/.config/solution-master/config.yaml 仍包含 api_keys / ai_image 块（由 ai-image plugin 管理）。"
-            '请对 Claude 说"迁移 ai-image 配置"整理'
+            f"请运行：{_ai_image_script('ai_image_config.py')} migrate"
         )
 
     # 检查 AnythingLLM
@@ -347,11 +347,11 @@ _PLUGIN_MARKERS: Dict[str, str] = {
 }
 
 
-def is_plugin_installed(plugin_name: str) -> bool:
-    """检测指定 plugin 是否已通过任何形态安装。"""
+def _plugin_marker_candidates(plugin_name: str) -> List[Path]:
+    """所有可能的 marker 路径（不判存在）；exposed for find_plugin_skill_dir 复用。"""
     marker_rel = _PLUGIN_MARKERS.get(plugin_name)
     if not marker_rel:
-        return False
+        return []
     candidates = [
         # 1. 本地 marketplace sibling（_SKILLS_ROOT.parent.parent = monorepo 根）
         _SKILLS_ROOT.parent.parent / plugin_name / marker_rel,
@@ -362,11 +362,16 @@ def is_plugin_installed(plugin_name: str) -> bool:
     if cache_dir.exists():
         # 3. 远程 marketplace cache（版本号在路径里，glob 匹配）
         candidates.extend(cache_dir.glob(f"*/{plugin_name}/*/{marker_rel}"))
-    if any(p.exists() for p in candidates):
+    return candidates
+
+
+def is_plugin_installed(plugin_name: str) -> bool:
+    """检测指定 plugin 是否已通过任何形态安装。"""
+    if any(p.exists() for p in _plugin_marker_candidates(plugin_name)):
         return True
-    # 4. anythingllm-mcp 的特殊 fallback：顶层 mcpServers fuzzy key + PATH executable
-    #    （Claude Code 装了 anythingllm-mcp plugin 会注册成
-    #    `plugin_anythingllm-mcp_anythingllm` 前缀，不是裸 `anythingllm` key）
+    # anythingllm-mcp 的特殊 fallback：顶层 mcpServers fuzzy key + PATH executable
+    # （Claude Code 装了 anythingllm-mcp plugin 会注册成
+    # `plugin_anythingllm-mcp_anythingllm` 前缀，不是裸 `anythingllm` key）
     if plugin_name == "anythingllm-mcp":
         claude_json = Path.home() / ".claude.json"
         if claude_json.exists():
@@ -379,6 +384,26 @@ def is_plugin_installed(plugin_name: str) -> bool:
         if shutil.which("mcp-anythingllm"):
             return True
     return False
+
+
+def find_plugin_skill_dir(plugin_name: str) -> Optional[Path]:
+    """返回 plugin 已安装的 SKILL.md 所在目录（SKILL_DIR）；未装返回 None。
+
+    用于在错误提示里给出可直接执行的绝对路径，避免错位的"对 Claude 说 X"
+    自指提示——AI 在脚本上下文看到自指指令会困惑。
+    """
+    for marker in _plugin_marker_candidates(plugin_name):
+        if marker.exists():
+            return marker.parent
+    return None
+
+
+def _ai_image_script(script_name: str) -> str:
+    """返回 ai-image plugin 内某脚本的可执行命令字符串（用于错误提示）。"""
+    skill_dir = find_plugin_skill_dir("ai-image")
+    if skill_dir:
+        return f'python3 "{skill_dir}/scripts/{script_name}"'
+    return f'python3 "<ai-image-skill-dir>/scripts/{script_name}"（ai-image plugin 未安装：/plugin install ai-image@presales-skills）'
 
 
 # ── CLI 入口 ─────────────────────────────────────────
@@ -466,11 +491,11 @@ def main():
 
     elif cmd in ("models", "migrate"):
         # v1.0.0：原 shutil.which("ai-image-config") orphan caller（commit c983037 删 bin 后失效）。
-        # 改为重定向到 ai-image plugin 的对应 skill 直接调用。
+        # 重定向到 ai-image plugin 的 ai_image_config.py（带探针解析的绝对路径，
+        # 用户能复制即跑、AI 能直接 subprocess）。
         print(
             f"[solution-master] 子命令 {cmd!r} 已转交给 ai-image plugin。\n"
-            f"请运行 Skill(skill=\"ai-image:gen\") 子命令 {cmd}，\n"
-            f"或自然语言触发：'{'列出图片模型' if cmd == 'models' else '迁移 ai-image 配置'}'。",
+            f"请运行：{_ai_image_script('ai_image_config.py')} {cmd}",
             file=sys.stderr,
         )
         sys.exit(0)
