@@ -236,3 +236,16 @@ rl.on('line', (line) => {
     });
   } catch (e) {}
 });
+
+// Graceful shutdown — F-013：父进程（Claude Code）退出 / stdin 关闭时让本进程也退出，
+// 避免僵尸进程残留。SIGTERM/SIGINT 是 OS 信号，stdin 'end'/'close' 是父进程关闭管道。
+function _exitGracefully() {
+  try { rl.close(); } catch (_) {}
+  process.exit(0);
+}
+process.on('SIGTERM', _exitGracefully);
+process.on('SIGINT', _exitGracefully);
+process.on('SIGHUP', _exitGracefully);
+process.stdin.on('end', _exitGracefully);
+process.stdin.on('close', _exitGracefully);
+process.stdin.on('error', _exitGracefully);
