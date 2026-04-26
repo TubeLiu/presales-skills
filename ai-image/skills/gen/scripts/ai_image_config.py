@@ -87,7 +87,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "mcp_search": {
         "priority": ["tavily_search", "exa_search"],
     },
-    "drawio": {"cli_path": None},
+    "drawio": {},  # cli_path 已废弃（v1.0.0 删 drawio-gen bin 后由 drawio plugin 自定位）；与 sm_config / tw_config 一致
     "solution_brainstorming": {},
     "taa": {},
     "taw": {},

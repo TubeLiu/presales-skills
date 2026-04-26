@@ -49,7 +49,7 @@ DEFAULTS = {
     "localkb": {"path": None},
     "anythingllm": {"enabled": False, "base_url": "http://localhost:3001", "workspace": None},
     "mcp_search": {"priority": ["tavily_search", "exa_search"]},
-    "drawio": {"cli_path": None},
+    "drawio": {},  # cli_path 字段已废弃（v1.0.0 删 drawio-gen bin 后由 drawio plugin 自定位）；保留空 dict 兼容旧 config
     "taa": {"vendor": "灵雀云", "kb_source": "auto", "anythingllm_workspace": None},
     "taw": {"kb_source": "auto", "image_source": "auto", "anythingllm_workspace": None},
     "tpl": {"default_template": None, "default_level": "standard"},
@@ -202,13 +202,11 @@ def normalize(cfg: Dict) -> Dict:
     result["mcp_search"] = cfg.get("mcp_search", dict(DEFAULTS["mcp_search"]))
 
     # 7. drawio — 规范化 key
+    # cli_path 字段已废弃（v1.0.0 删 drawio-gen bin 后 drawio plugin 自定位 CLI）
+    # 旧字段 desktop_cli_path / cli_path 保留兼容性 strip：normalize 时自动剥离
     drawio = dict(cfg.get("drawio", {}))
-    # 旧 desktop_cli_path -> cli_path
-    if not drawio.get("cli_path") and drawio.get("desktop_cli_path"):
-        drawio["cli_path"] = drawio.pop("desktop_cli_path")
-    elif "desktop_cli_path" in drawio:
-        drawio.pop("desktop_cli_path")
-    # 保留安装信息
+    drawio.pop("desktop_cli_path", None)
+    drawio.pop("cli_path", None)
     result["drawio"] = drawio
 
     # 8. skill 节
@@ -450,10 +448,10 @@ def validate() -> List[str]:
         if not allm_registered and not shutil.which("mcp-anythingllm"):
             issues.append("AnythingLLM MCP 未注册（安装独立 plugin：/plugin install anythingllm-mcp@presales-skills）")
 
-    # 检查 drawio
+    # 检查 drawio：cli_path 字段已废弃（v1.0.0 后 drawio plugin 自定位 CLI）
     drawio_path = _deep_get(cfg, "drawio.cli_path")
-    if drawio_path and not Path(drawio_path).exists():
-        issues.append(f"draw.io CLI 路径不存在: {drawio_path}")
+    if drawio_path:
+        issues.append("drawio.cli_path 字段已废弃（drawio plugin 自定位 CLI），建议运行 normalize 自动清理")
 
     return issues
 
