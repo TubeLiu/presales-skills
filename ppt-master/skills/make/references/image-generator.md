@@ -6,7 +6,7 @@ extracted into the independent **ai-image** plugin — a shared dependency for
 solution-master / ppt-master / tender-workflow.
 
 See:
-- `ai-image/skills/ai-image/SKILL.md` — main skill with usage guidance
+- `ai-image/skills/gen/SKILL.md` — main skill with usage guidance
 - `ai-image/prompts/ai_image_models.yaml` — unified 13-provider model registry
 - `ai-image/scripts/image_gen.py` — CLI entry (same interface as before)
 - `ai-image/scripts/image_backends/` — 13 backend modules

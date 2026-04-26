@@ -1,5 +1,5 @@
 ---
-name: ppt-make
+name: make
 description: >
   PPT 生成器——将 PDF/DOCX/URL/Markdown 等多源文档转换为原生可编辑的 PPTX
   （含真实 PowerPoint shape、文本框、图表，非图片）。
@@ -180,26 +180,39 @@ Import source content (choose based on the situation):
 
 🚧 **GATE**: Step 2 complete; project directory structure is ready.
 
-**Default path — free design, no question asked.** Proceed directly to Step 4. Do NOT query `layouts_index.json` and do NOT ask the user an A/B template-vs-free-design question. Free design is the standard mode: the AI tailors structure and style to the specific content.
-
-**Template flow is opt-in.** Enter it only when one of these explicit triggers appears in the user's prior messages:
-
-1. User names a specific template (e.g., "用 mckinsey 模板" / "use the academic_defense template")
-2. User names a style / brand reference that maps to a template (e.g., "McKinsey 那种" / "Google style" / "学术答辩样式")
-3. User explicitly asks what templates exist (e.g., "有哪些模板可以用")
-
-Only when a trigger fires: read `$SKILL_DIR/templates/layouts/layouts_index.json`, resolve the match (or list available options for trigger 3), and copy template files to the project directory:
+**Default path — Alauda template, no question asked.** Auto-load the Alauda layout（v1.0.0 起的 default，反 0.x 时代的 free design 默认）：
 
 ```bash
-cp $SKILL_DIR/templates/layouts/<template_name>/*.svg <project_path>/templates/
-cp $SKILL_DIR/templates/layouts/<template_name>/design_spec.md <project_path>/templates/
-cp $SKILL_DIR/templates/layouts/<template_name>/*.png <project_path>/images/ 2>/dev/null || true
-cp $SKILL_DIR/templates/layouts/<template_name>/*.jpg <project_path>/images/ 2>/dev/null || true
+# 读 user 配置覆盖（如有），否则 fallback 到 alauda
+DEFAULT_LAYOUT=$(python3 -c "
+import os
+try:
+    import yaml
+    p = os.path.expanduser('~/.config/presales-skills/config.yaml')
+    d = yaml.safe_load(open(p)) or {}
+    print(d.get('ppt_master', {}).get('default_layout', 'alauda'))
+except Exception:
+    print('alauda')
+" 2>/dev/null || echo alauda)
+
+cp $SKILL_DIR/templates/layouts/$DEFAULT_LAYOUT/*.svg <project_path>/templates/
+cp $SKILL_DIR/templates/layouts/$DEFAULT_LAYOUT/design_spec.md <project_path>/templates/
+cp $SKILL_DIR/templates/layouts/$DEFAULT_LAYOUT/*.png <project_path>/images/ 2>/dev/null || true
+cp $SKILL_DIR/templates/layouts/$DEFAULT_LAYOUT/*.jpg <project_path>/images/ 2>/dev/null || true
 ```
 
-**Soft hint (non-blocking, optional).** Before Step 4, if the user's content is an obvious strong match for an existing template (e.g., clearly an academic defense, a government report, a McKinsey-style consulting deck) AND the user has given no template signal, the AI MAY emit a single-sentence notice and continue without waiting:
+Proceed to Step 4 with the default layout applied.
 
-> Note: the library has a template `<name>` that matches this scenario closely. Say the word if you want to use it; otherwise I'll continue with free design.
+**Free design 与其它模板** flow is opt-in. 仅当 prior messages 命中以下 trigger 时才退出 default：
+
+1. **用户明说具体非 default 模板**（如 "用 mckinsey 模板" / "use the academic_defense template"）—— 把命令中的 `$DEFAULT_LAYOUT` 替换为指定模板名
+2. **用户明说风格 / brand 引用映射到某模板**（如 "McKinsey 那种" / "Google style" / "学术答辩样式"）—— 读 `$SKILL_DIR/templates/layouts/layouts_index.json` 解析匹配，把命令中的 `$DEFAULT_LAYOUT` 替换为匹配到的模板名
+3. **用户明说要 free design**（如 "free design" / "自由设计" / "不要模板" / "不用模板"）—— 跳过整个 cp 块，直接 Proceed to Step 4，AI tailors structure and style to the specific content
+4. **用户问 "有哪些模板可以用"**（列表）—— 读 `$SKILL_DIR/templates/layouts/layouts_index.json`，列出所有可用模板，等用户选
+
+**Soft hint (non-blocking, optional).** Before Step 4, if the user's content is a strong match for a non-default template (e.g., clearly an academic defense matching `academic_defense`, a government report matching `government_report`) AND the user has given no template signal, the AI MAY emit a single-sentence notice and continue with the default Alauda template without waiting:
+
+> Note: 内容看起来更适合 `<name>` 模板。说一声如果想换；否则我继续用默认 Alauda 模板。
 
 This is a hint, not a question — do NOT block, do NOT require an answer. Skip the hint entirely when the match is weak or ambiguous.
 

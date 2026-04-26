@@ -27,7 +27,7 @@ import sys
 import time
 from pathlib import Path
 
-# _ensure_deps.py 位于 ppt-master/skills/ppt-master/scripts/
+# _ensure_deps.py 位于 ppt-master/skills/make/scripts/
 # v1.0.0：requirements.txt 已迁入 skill 内部（与 scripts/ 同处 skill root，1 级 parent）。
 # 旧名 _PLUGIN_ROOT 改名为 _SKILL_DIR，与 ai-image 同款 layout（旧两份 parent 深度差异已消除）。
 _SCRIPTS_DIR = Path(__file__).resolve().parent

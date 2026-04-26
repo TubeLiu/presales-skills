@@ -125,7 +125,7 @@ Built-in library contains 6700+ icons across three libraries:
 >    - **Light, refined, minimal showcases** (screen-only) → `tabler-outline` — stroke-only forms match the airy, elegant tone
 >    - When content tone doesn't cleanly match any row above, pick the library whose visual character best serves the deck — explain the choice in the Design Spec.
 >    - ⚠️ **One presentation = one library.** Mixing icons from different libraries is FORBIDDEN. If a chosen library lacks an exact icon, find the closest alternative **within that same library**.
-> 2. Search for icon availability: `ls skills/ppt-master/templates/icons/<chosen-library>/ | grep <keyword>`
+> 2. Search for icon availability: `ls skills/make/templates/icons/<chosen-library>/ | grep <keyword>`
 > 3. Use the verified filename (without `.svg`) as the icon name
 > 4. Always include the library prefix (e.g., `chunk/home` or `tabler-filled/home`)
 > 5. List the final icon inventory and chosen library in the Design Spec; Executor may only use icons from this list

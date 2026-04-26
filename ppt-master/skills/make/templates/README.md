@@ -52,4 +52,4 @@ The `icons/` directory contains 6700+ vector icons across three active libraries
 | `tabler-outline` | stroke / line | 5000+ |
 
 - **Usage & style rules**: [icons/README.md](./icons/README.md)
-- **Search icons**: `ls skills/ppt-master/templates/icons/<library>/ | grep <keyword>`
+- **Search icons**: `ls skills/make/templates/icons/<library>/ | grep <keyword>`

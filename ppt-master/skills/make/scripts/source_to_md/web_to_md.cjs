@@ -8,10 +8,10 @@
  * curl_cffi cannot be installed on your platform.
  *
  * Usage:
- *   node skills/ppt-master/scripts/source_to_md/web_to_md.cjs <url>              # Single URL
- *   node skills/ppt-master/scripts/source_to_md/web_to_md.cjs <url1> <url2> ...  # Multiple URLs
- *   node skills/ppt-master/scripts/source_to_md/web_to_md.cjs -f urls.txt        # Read URLs from file
- *   node skills/ppt-master/scripts/source_to_md/web_to_md.cjs <url> -o output.md # Specify output filename
+ *   node skills/make/scripts/source_to_md/web_to_md.cjs <url>              # Single URL
+ *   node skills/make/scripts/source_to_md/web_to_md.cjs <url1> <url2> ...  # Multiple URLs
+ *   node skills/make/scripts/source_to_md/web_to_md.cjs -f urls.txt        # Read URLs from file
+ *   node skills/make/scripts/source_to_md/web_to_md.cjs <url> -o output.md # Specify output filename
  */
 
 const fs = require("fs").promises;
@@ -745,10 +745,10 @@ async function main() {
     console.log("=".repeat(60));
     console.log("");
     console.log("  Usage:");
-    console.log("    node skills/ppt-master/scripts/source_to_md/web_to_md.cjs <url>");
-    console.log("    node skills/ppt-master/scripts/source_to_md/web_to_md.cjs <url1> <url2> ...");
-    console.log("    node skills/ppt-master/scripts/source_to_md/web_to_md.cjs -f urls.txt");
-    console.log("    node skills/ppt-master/scripts/source_to_md/web_to_md.cjs <url> -o output.md");
+    console.log("    node skills/make/scripts/source_to_md/web_to_md.cjs <url>");
+    console.log("    node skills/make/scripts/source_to_md/web_to_md.cjs <url1> <url2> ...");
+    console.log("    node skills/make/scripts/source_to_md/web_to_md.cjs -f urls.txt");
+    console.log("    node skills/make/scripts/source_to_md/web_to_md.cjs <url> -o output.md");
     console.log("");
     console.log("  Options:");
     console.log("    -f, --file <file>    Read URLs from file (one per line)");

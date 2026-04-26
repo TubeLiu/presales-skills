@@ -1,5 +1,5 @@
 ---
-name: draw-diagram
+name: draw
 description: >
   当用户要求"画图 / 画一张图 / 生成流程图 / 架构图 / 拓扑图 / 时序图 / ER 图 / 类图 /
   网络图 / 线框图 / 原型图"或英文 "create / generate / draw / design diagram /

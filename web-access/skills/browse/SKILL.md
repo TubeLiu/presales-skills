@@ -1,5 +1,5 @@
 ---
-name: web-access
+name: browse
 description: >
   所有联网操作必须通过此 skill 处理，包括：搜索、网页抓取、登录后操作、网络交互、
   浏览器自动化、CDP 远程调试。
