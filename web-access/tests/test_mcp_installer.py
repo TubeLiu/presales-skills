@@ -364,6 +364,34 @@ def test_write_claude_json_chmod_0600(tmp_path, monkeypatch):
     assert mode == 0o600, f"expected 0o600 got {oct(mode)}"
 
 
+def test_write_claude_json_chmod_failure_warns_does_not_raise(tmp_path, monkeypatch, capsys):
+    """chmod 失败（如 Win NTFS / SMB FS）应只 stderr WARN，不让 register 整体失败。
+
+    rationale: tw_config.py 同款设计（line 121-128）— Win 用户 register 不能因
+    chmod 失败而 fail，否则跨平台不可用。
+    """
+    fake = tmp_path / ".claude.json"
+    monkeypatch.setattr(mi, "CLAUDE_JSON", fake)
+
+    def fake_chmod(path, mode, **kwargs):
+        # 接受 follow_symlinks 等 kwarg（shutil.copystat 内部调用会传）
+        raise OSError(13, "Permission denied (mocked)")
+    monkeypatch.setattr(mi.os, "chmod", fake_chmod)
+
+    # write 不应 raise
+    mi.write_claude_json({"mcpServers": {}})
+    err = capsys.readouterr().err
+    assert "WARN" in err
+    assert "chmod 0600 failed" in err
+
+    # 进一步验证：cmd_register 在 chmod 失败时仍 return 0（用户级 happy path 仍走通）
+    capsys.readouterr()  # 清空
+    rc = mi.cmd_register("tavily", "tvly-x", host=None, dry_run=False)
+    assert rc == 0
+    err2 = capsys.readouterr().err
+    assert "WARN" in err2  # 用户能从 stderr 看到权限问题
+
+
 # ════════════════════════════════════════════════════════
 # 10. cmd_test: control flow（mock Popen + send/recv_jsonrpc）
 # ════════════════════════════════════════════════════════

@@ -122,7 +122,9 @@ if os.path.exists(p):
 - 用户决定**先装 web-access 再继续**（`/plugin install web-access@presales-skills` + `/reload-plugins` 后回话）→ 重新跑 4.0
 - 用户决定**跳过 MCP 工具配置**（knowledge-retrieval 用内置 WebSearch 兜底也能跑）→ 直接进步骤 5，不要因此中断整个 wizard
 
-> ⚠️ **AI 注**：本 markdown 内的 ```bash``` 块在每次执行时是独立 subprocess（环境变量不跨 Bash 调用持久）。`$WA_INSTALLER` 是 4.0 解析得到的**绝对路径字符串**，AI 在每次调用 4.1–4.4 各 bash 块时需把 `$WA_INSTALLER` **inline 替换为该绝对路径**，否则会 command not found。
+> ⚠️ **AI 注 1（路径解析）**：本 markdown 内的 ```bash``` 块在每次执行时是独立 subprocess（环境变量不跨 Bash 调用持久）。`$WA_INSTALLER` 是 4.0 解析得到的**绝对路径字符串**，AI 在每次调用 4.1–4.4 各 bash 块时需把 `$WA_INSTALLER` **inline 替换为该绝对路径**，否则会 command not found。
+>
+> ⚠️ **AI 注 2（SKIP 短路）**：若 4.0 输出含 `SKIP_MCP:` 前缀（即 web-access 未装且用户选择不装），**直接跳过 4.1–4.4 整段进步骤 5**；不要继续执行下面任何 bash 块（否则会用空 `$WA_INSTALLER` 跑出 command not found）。
 
 ### 4.1 检测当前已注册状态
 
