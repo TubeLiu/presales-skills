@@ -91,7 +91,7 @@ npx skills add Alauda-io/presales-skills -a <agent>   # vercel-labs/skills CLI
 
 安装完成后：
 
-1. 配置 ai-image：`/ai-image:setup`（首次）或 `/ai-image:set <key> <value>`
+1. 配置 ai-image：对 Claude 说"配置 ai-image"（首次）或"设置 ai-image \<key\> 为 \<value\>"（也可直接运行 `python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" setup` / `set <key> <value>`）
 2. 开始撰写：描述你的项目，比如"写一份 GitOps 蓝绿发布技术方案"——SKILL 会自动触发，从 `brainstorming` 开始
 
 ## 配置

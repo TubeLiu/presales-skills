@@ -44,14 +44,24 @@ For full marketplace install steps see the umbrella [README](https://github.com/
 
 ### Configure AI image generation
 
-```
-/ai-image:setup                              # interactive first-time setup
-/ai-image:set api_keys.gemini <key>          # Google Gemini
-/ai-image:set api_keys.ark <key>             # Volcengine ARK
-/ai-image:validate                           # health check
+Trigger ai-image plugin via natural language (Claude routes to the plugin's setup/set/validate flows):
+
+```text
+say to Claude: "configure ai-image"                              # interactive first-time setup
+say to Claude: "set ai-image api_keys.gemini to <key>"           # Google Gemini
+say to Claude: "set ai-image api_keys.ark to <key>"              # Volcengine ARK
+say to Claude: "validate ai-image API keys"                      # health check
 ```
 
-13 backends supported (volcengine/ark, qwen/dashscope, gemini, openai, minimax, stability, bfl, ideogram, zhipu, siliconflow, fal, replicate, openrouter). See `/ai-image:models` for the full registry.
+Or invoke the underlying script directly (after resolving the ai-image plugin's SKILL_DIR):
+
+```bash
+python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" setup
+python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" set api_keys.gemini <key>
+python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" validate
+```
+
+13 backends supported (volcengine/ark, qwen/dashscope, gemini, openai, minimax, stability, bfl, ideogram, zhipu, siliconflow, fal, replicate, openrouter). Say "list ai-image models" (or run `ai_image_config.py models`) for the full registry.
 
 ---
 

@@ -99,7 +99,7 @@ class TestNormalize:
         # api_keys / ai_image 由 ai-image plugin 管理，normalize 不再主动构造这两块。
 
     def test_api_keys_passthrough(self):
-        # normalize 透传 api_keys 块（让 /ai-image:migrate 能看到它做后续整理）
+        # normalize 透传 api_keys 块（让 ai_image_config.py migrate 能看到它做后续整理）
         cfg = {"api_keys": {"ark": "user-key"}}
         result = normalize(cfg)
         assert result["api_keys"]["ark"] == "user-key"

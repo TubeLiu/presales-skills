@@ -159,7 +159,7 @@ def normalize(cfg: Dict) -> Dict:
     - taa.kb_path -> localkb.path（如果 localkb.path 已设置则忽略）
     - ai_keys.ark_api_key / dashscope_api_key 等老老字段 -> api_keys.* 透传
       （api_keys / ai_image 块由 ai-image plugin 管理，但 normalize 仍把超老字段
-      映射成规范 api_keys，确保 /ai-image:migrate 能看到密钥不会丢）
+      映射成规范 api_keys，确保 ai_image_config.py migrate 能看到密钥不会丢）
     """
     result = {}
 
@@ -195,7 +195,7 @@ def normalize(cfg: Dict) -> Dict:
 
     # 4. api_keys / ai_image 由 ai-image plugin 管理；normalize 不再持有 schema，
     #    仅做两件事：
-    #    (a) 透传现有 api_keys / ai_image 块（让 /ai-image:migrate 看见）
+    #    (a) 透传现有 api_keys / ai_image 块（让 ai_image_config.py migrate 看见）
     #    (b) 把超老字段 ai_keys.ark_api_key / dashscope_api_key 映射成 api_keys.*，
     #        防止从未跑过新 schema 的老用户密钥被静默丢
     api_keys = dict(cfg.get("api_keys") or {})
@@ -213,7 +213,7 @@ def normalize(cfg: Dict) -> Dict:
     if "ai_image" in cfg:
         result["ai_image"] = cfg["ai_image"]
     # 注意：故意不透传 cfg["ai_keys"]——只在上方做一次性 lift。
-    # 如果保留 ai_keys 顶层字段，会与 /ai-image:migrate 形成循环：
+    # 如果保留 ai_keys 顶层字段，会与 ai_image_config.py migrate 形成循环：
     # migrate 抽走 api_keys，下次 normalize 又从 ai_keys 重新生成 api_keys。
 
     # 6. mcp_search
@@ -269,7 +269,7 @@ def load(skill: Optional[str] = None) -> Dict:
 
     注意：skill 视图**不包含** api_keys / ai_image 块（这两块由 ai-image plugin 管理）；
     `get(skill, "api_keys.ark")` 走 deep_get 兜底，正常返回 default。如需访问这两块，
-    使用 `load_raw()` 拿透传后的原始字段（仅供 /ai-image:migrate 检测残留），
+    使用 `load_raw()` 拿透传后的原始字段（仅供 ai_image_config.py migrate 检测残留），
     或调用 ai-image plugin 的入口。
     """
     raw = load_raw()
@@ -369,7 +369,7 @@ def set_value(key: str, value: Any) -> None:
     if key.startswith(("api_keys.", "ai_image.")) or key in ("api_keys", "ai_image"):
         raise ValueError(
             f"'{key}' 由 ai-image plugin 管理，不在 tender-workflow config 范围内。\n"
-            f"请改用：/ai-image:set {key} <value>"
+            f'请对 Claude 说"设置 ai-image {key} 为 <value>"'
         )
     cfg = _read_yaml(CONFIG_PATH)
     _deep_set(cfg, key, value)
@@ -441,12 +441,12 @@ def validate() -> List[str]:
     if not ai_image_cfg.exists():
         issues.append(
             "AI 生图配置文件不存在（~/.config/presales-skills/config.yaml）。"
-            "如需配图请运行 /ai-image:setup"
+            '如需配图请对 Claude 说"配置 ai-image"'
         )
     elif "api_keys" in cfg or "ai_image" in cfg:
         issues.append(
             "~/.config/tender-workflow/config.yaml 仍包含 api_keys / ai_image 块（由 ai-image plugin 管理）。"
-            "请运行 /ai-image:migrate 整理"
+            '请对 Claude 说"迁移 ai-image 配置"整理'
         )
 
     # 检查 AnythingLLM
@@ -481,7 +481,7 @@ def migrate() -> Dict[str, Any]:
     """
     # F-041: 推荐顺序提示
     print(
-        "提示：跑完此命令后，建议跑 /ai-image:migrate 把 tw 配置合并到统一的 presales-skills 路径。",
+        '提示：跑完此命令后，建议对 Claude 说"迁移 ai-image 配置"，把 tw 配置合并到统一的 presales-skills 路径。',
         file=sys.stderr,
     )
     result = {"migrated_keys": [], "deleted_files": [], "skipped": [], "normalized": False}

@@ -267,7 +267,7 @@ def _load_unified_config_into_env() -> None:
     """Bridge ~/.config/presales-skills/config.yaml → os.environ.
 
     Plugin mode's canonical config is the unified YAML written by
-    /ai-image:set, but backends only read os.environ. Without
+    ai_image_config.py, but backends only read os.environ. Without
     this bridge the key disappears between "user set it" and "backend
     asks for it", producing a spurious 401 on the provider call.
 
@@ -396,7 +396,7 @@ def _print_backend_list() -> None:
         print(f"Config fallback file: {ENV_PATH}")
     else:
         print("Plugin mode: set API keys via ~/.config/presales-skills/config.yaml")
-        print("  or environment variables (run /ai-image:setup for guided setup)")
+        print('  or environment variables (say "configure ai-image" to Claude for guided setup)')
 
 
 def _resolve_backend() -> tuple[object, str]:

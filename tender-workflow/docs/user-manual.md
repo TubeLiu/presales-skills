@@ -331,7 +331,7 @@ python3 "$AI_IMAGE_DIR/scripts/image_gen.py" \
 
 成功后将生成测试图片至 `/tmp/test_ark.png`。
 
-> 注：API key 通过 `/ai-image:setup` 写入 `~/.config/presales-skills/config.yaml`，由 ai-image plugin 自包含读取；taw 不持有 API keys。
+> 注：API key 通过对 Claude 说"配置 ai-image"（或直接运行 `python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" setup`）写入 `~/.config/presales-skills/config.yaml`，由 ai-image plugin 自包含读取；taw 不持有 API keys。
 
 ---
 
@@ -1172,7 +1172,8 @@ ls skills/
 **解决方案**：
 ```bash
 # 检查 API Key 配置（由 ai-image plugin 管理）
-/ai-image:show api_keys
+# 对 Claude 说："查看 ai-image 配置 api_keys"
+# 或直接运行：python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" show api_keys
 
 # 测试 AI 生图是否正常（通过 /ai-image:gen 或自然语言触发 ai-image plugin）
 # 或直接调用底层脚本：

@@ -18,7 +18,7 @@ API key 查找优先级：
     1. CLI --api-key 参数
     2. 环境变量（ARK_API_KEY / GEMINI_API_KEY / ...）
     3. ~/.config/presales-skills/config.yaml 的 api_keys.<provider>
-    4. 以上都空 → 报错，提示 /ai-image:setup
+    4. 以上都空 → 报错，提示用户对 Claude 说"配置 ai-image"
 
 本模块通过 tmp 文件 + 原子 rename 保护配置写入；Windows 下 rename 遇到目标被占用时重试一次。
 """
@@ -280,7 +280,7 @@ def cmd_show(section: Optional[str]) -> int:
     cfg = load_config()
     if not cfg:
         print(f"配置文件不存在：{CONFIG_PATH}")
-        print("运行 /ai-image:setup 创建")
+        print('对 Claude 说"配置 ai-image"以创建（或直接运行：python3 {} setup）'.format(__file__))
         return 1
 
     def _mask_api_keys_inplace(d: dict) -> None:
@@ -470,7 +470,7 @@ def cmd_validate(provider_filter: Optional[str]) -> int:
         for issue in issues:
             print(f"  • {issue}")
         print()
-        print("使用 /ai-image:set api_keys.<provider> <key> 配置")
+        print('对 Claude 说"设置 ai-image api_keys.<provider> 为 <key>"配置')
         print(
             "注：本命令仅检查配置字段格式与必填项，不验证 API key 是否真实可用；"
             "如需测试 API 连通性，请触发实际生成（如 image-gen \"test\" -o /tmp/）",
@@ -612,9 +612,9 @@ def cmd_migrate() -> int:
         )
 
     print()
-    print("后续操作：")
-    print("  /ai-image:show     查看合并结果")
-    print("  /ai-image:validate 验证 API key 配置完整性")
+    print("后续操作（对 Claude 说）：")
+    print('  "查看 ai-image 配置"      查看合并结果')
+    print('  "验证 ai-image API key"   验证 API key 配置完整性')
     return 0
 
 

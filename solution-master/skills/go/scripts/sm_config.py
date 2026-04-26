@@ -11,7 +11,7 @@ CLI 用法：
     python3 sm_config.py set <key> <value>
     python3 sm_config.py validate
     python3 sm_config.py models [provider]
-    python3 sm_config.py migrate              # F-048: 转发到 /ai-image:migrate
+    python3 sm_config.py migrate              # 转发到 ai_image_config.py migrate
 """
 
 import json
@@ -196,7 +196,7 @@ def set_value(key: str, value: Any) -> None:
     if key.startswith(("api_keys.", "ai_image.")) or key in ("api_keys", "ai_image"):
         raise ValueError(
             f"'{key}' 由 ai-image plugin 管理，不在 solution-master config 范围内。\n"
-            f"请改用：/ai-image:set {key} <value>"
+            f'请对 Claude 说"设置 ai-image {key} 为 <value>"'
         )
     cfg = load()
     _deep_set(cfg, key, value)
@@ -280,12 +280,12 @@ def validate() -> List[str]:
     if not ai_image_cfg.exists():
         issues.append(
             "AI 生图配置文件不存在（~/.config/presales-skills/config.yaml）。"
-            "如需配图请运行 /ai-image:setup"
+            '如需配图请对 Claude 说"配置 ai-image"'
         )
     elif "api_keys" in cfg or "ai_image" in cfg:
         issues.append(
             "~/.config/solution-master/config.yaml 仍包含 api_keys / ai_image 块（由 ai-image plugin 管理）。"
-            "请运行 /ai-image:migrate 整理"
+            '请对 Claude 说"迁移 ai-image 配置"整理'
         )
 
     # 检查 AnythingLLM

@@ -14,19 +14,22 @@ tender-workflow.
 
 ## Invocation in plugin mode
 
-ppt-master's SKILL.md now calls:
+ppt-master's SKILL.md invokes the ai-image plugin's underlying script directly (after resolving its SKILL_DIR):
 
 ```bash
-image-gen "<prompt>" ...
+python3 "$AI_IMAGE_DIR/scripts/image_gen.py" "<prompt>" ...
 ```
 
-Configuration is unified under `~/.config/presales-skills/config.yaml`.
-Manage via `/ai-image:*` slash commands:
+v1.0.0 dropped the `image-gen` bin entry for cross-agent compatibility (commit c983037).
 
-- `/ai-image:setup` — first-time setup wizard
-- `/ai-image:models` — show model registry (13 providers)
-- `/ai-image:set api_keys.<provider> <key>` — set API key
-- `/ai-image:validate` — health check
+Configuration is unified under `~/.config/presales-skills/config.yaml`. Manage via natural language (Claude routes to the ai-image plugin) or by calling `ai_image_config.py` directly:
+
+| Natural language (say to Claude) | Underlying script |
+|------|------|
+| "configure ai-image" | `python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" setup` |
+| "list ai-image models" | `python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" models` |
+| "set ai-image api_keys.\<provider\> to \<key\>" | `python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" set api_keys.<provider> <key>` |
+| "validate ai-image API key" | `python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" validate` |
 
 ## Source-mode invocation
 
@@ -48,4 +51,4 @@ Tiered:
 - **Extended**: bfl, ideogram, stability
 - **Experimental**: fal, minimax, openrouter, replicate, siliconflow
 
-See `ai-image/README.md` and `/ai-image:models` for details.
+See `ai-image/README.md` (or run `ai_image_config.py models`) for details.
