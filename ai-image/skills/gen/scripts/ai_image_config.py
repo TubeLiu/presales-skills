@@ -124,11 +124,15 @@ def _safe_load(path: Path, ctx_name: str = "") -> dict[str, Any]:
 
 
 def _chmod_600(path: Path) -> None:
-    """API key 明文文件最低权限保护（F-011）；非 POSIX FS 失败时静默忽略。"""
+    """API key 明文文件最低权限保护（F-011）；F-030 失败时 stderr warn。"""
     try:
         os.chmod(path, 0o600)
-    except OSError:
-        pass
+    except OSError as e:
+        sys.stderr.write(
+            f"[ai_image_config] WARN: chmod 0600 failed on {path}: {e}\n"
+            f"  config 文件含 API keys 明文，但权限保护未启用（同机多用户可见）。\n"
+            f"  常见原因：Windows NTFS / FAT / SMB 等非 POSIX 文件系统。\n"
+        )
 
 
 def _save_yaml(path: Path, data: dict[str, Any]) -> None:
@@ -146,11 +150,15 @@ def _save_yaml(path: Path, data: dict[str, Any]) -> None:
                 time.sleep(0.1)
             else:
                 raise
-    # F-011: API key 明文存盘的最低权限保护（同机多用户可见性）；非 POSIX FS（Windows/FAT）失败时 silent 忽略
+    # F-011: API key 明文存盘的最低权限保护（同机多用户可见性）
+    # F-030: 失败时 stderr warn（之前 silent pass），让 Windows / 异构 FS 用户能感知
     try:
         os.chmod(path, 0o600)
-    except OSError:
-        pass
+    except OSError as e:
+        sys.stderr.write(
+            f"[ai_image_config] WARN: chmod 0600 failed on {path}: {e}\n"
+            f"  config 文件含 API keys 明文，但权限保护未启用。\n"
+        )
 
 
 def _mask_api_key(value: str) -> str:

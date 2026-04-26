@@ -31,24 +31,37 @@ const CONFIG_CANDIDATES = [
   path.join(os.homedir(), '.config', 'solution-master', 'config.yaml'),
 ];
 
-function parseAnythingllmBlock(text) {
-  // Minimal YAML subset parser — only the `anythingllm:` block's scalar fields.
+function parseAnythingllmBlock(text, sourcePath) {
+  // Minimal YAML subset parser — only the `anythingllm:` block's flat scalar fields.
   // Avoids adding a YAML dep (MCP must stay zero-deps).
   //
-  // F-023 WARNING: only flat scalars supported. Nested keys like `anythingllm.proxy.host`
-  // will be silently ignored (no error). If schema grows nested fields, replace with a
-  // proper YAML lib (mind the zero-deps constraint — this MCP server has no node_modules).
+  // F-023 / F-029: only flat scalars supported. Nested keys (如 `proxy:` 子 block)
+  // 之前会静默忽略；现在 console.error 到 stderr（不污染 stdout MCP protocol）让用户
+  // 知道配置项被丢弃。如 schema 长出嵌套字段需用真 YAML lib（违反 zero-deps 约束）。
   const result = {};
   const lines = text.split('\n');
   let inBlock = false;
+  let lineNo = 0;
   for (const raw of lines) {
+    lineNo++;
     const line = raw.replace(/\r$/, '');
     if (/^anythingllm\s*:\s*$/.test(line)) { inBlock = true; continue; }
     if (inBlock) {
       if (/^\S/.test(line)) { inBlock = false; continue; }  // dedented to top-level key
       const m = line.match(/^\s{2,}(\w+)\s*:\s*(.*?)\s*$/);
       if (m) {
-        let v = m[2];
+        const v_raw = m[2];
+        // F-029: 嵌套 block detection — value 为空（trailing colon 后无 scalar）说明是 nested key，
+        // 接下来的更深缩进行会被丢弃。warn 一次。
+        if (v_raw === '' || v_raw === '|' || v_raw === '>') {
+          process.stderr.write(
+            `[anythingllm-mcp] WARN: ${sourcePath || '<config>'}:${lineNo} ` +
+            `nested key 'anythingllm.${m[1]}' 的子字段不被支持（只识别 flat scalar）。` +
+            `如需此能力请提 issue。\n`
+          );
+          continue;
+        }
+        let v = v_raw;
         if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
           v = v.slice(1, -1);
         }
@@ -65,7 +78,7 @@ function readConfigFallback() {
   for (const p of [...CONFIG_CANDIDATES].reverse()) {
     if (!fs.existsSync(p)) continue;
     try {
-      const parsed = parseAnythingllmBlock(fs.readFileSync(p, 'utf8'));
+      const parsed = parseAnythingllmBlock(fs.readFileSync(p, 'utf8'), p);
       for (const [k, v] of Object.entries(parsed)) {
         if (v !== '' && v !== undefined) merged[k] = v;
       }
