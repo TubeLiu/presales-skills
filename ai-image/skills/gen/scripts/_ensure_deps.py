@@ -97,25 +97,28 @@ def ensure_deps(quiet: bool = True) -> None:
 
         try:
             subprocess.check_call(args)
+            print(f"[{_PLUGIN_LABEL}] Dependencies installed.", file=sys.stderr)
         except subprocess.CalledProcessError as e:
+            # PEP 668 (Homebrew Python on macOS / system Python on Debian) / 权限不足等
+            # "环境锁定"错误重试无用，每次重试只会持续骚扰用户。打一次警告就够了——
+            # 如果依赖真缺会被脚本自身的 ImportError 暴露；如果用户已通过 pipx / venv /
+            # --break-system-packages / 系统包管理器 装好了，那就皆大欢喜。
             print(
                 f"[{_PLUGIN_LABEL}] WARN: pip install failed (exit {e.returncode}). "
-                f"Run manually: pip install -r {_REQ}",
+                f"Marker touched anyway to suppress retries; if imports fail later, "
+                f"run manually: pip install -r {_REQ}",
                 file=sys.stderr,
             )
             print(
-                f"  Set {_SKIP_ENV}=1 to suppress this attempt on future runs.",
+                f"  Set {_SKIP_ENV}=1 to bypass this bootstrap on future runs.",
                 file=sys.stderr,
             )
-            return
 
         try:
             _MARKER.touch()
         except OSError:
             # 缓存目录可能只读（极端场景）；不 fatal，仅下次会重试
             pass
-
-        print(f"[{_PLUGIN_LABEL}] Dependencies installed.", file=sys.stderr)
     finally:
         # 仅当本进程拿到锁时才清，避免误删他人的锁
         if lock_acquired:
