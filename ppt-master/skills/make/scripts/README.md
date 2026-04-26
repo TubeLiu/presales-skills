@@ -99,6 +99,17 @@ python3 scripts/update_repo.py
 python3 scripts/update_repo.py --skip-pip
 ```
 
+依赖验证（**AI 不要手写 `python3 -c "import X; import Y"`** 来猜包名 —— 真实依赖以 `requirements.txt` 为准）：
+
+```bash
+# 唯一 canonical 入口：直接跑 _ensure_deps.py，按 requirements.txt 检查并按需 pip install
+python3 scripts/_ensure_deps.py
+```
+
+> 历史教训：`cssutils` / `cairosvg` 都**不是 requirements.txt 列出的依赖**（前者根本未用，
+> 后者是 `svglib` 的更优替代品但仅在 SVG 含复杂渐变/滤镜时才需要）。手写 import 验证会
+> 因 AI 训练数据陈旧而虚报"依赖缺失"。
+
 ## Recommendations
 
 - Keep one user-facing entry point per workflow at the top level of `scripts/`
