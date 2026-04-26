@@ -283,3 +283,131 @@ def test_subagent_prompt_bodies_have_tool_limit_block():
         if "subagent-tool-limit-block" not in _read(path):
             failures.append(f"{rel}: 缺少 <!-- subagent-tool-limit-block --> marker")
     assert not failures, "subagent 工具限制铁律段缺失：\n" + "\n".join(failures)
+
+
+# ──────────────────────────────────────────────────────────────────────
+# taw 重构（C8 新 lint）：标题去编号 / reviewer STATUS / image_plan 字段
+# / 单章节模式声明 / SKILL ≤500 行 / docs 已删 / 无残链
+# ──────────────────────────────────────────────────────────────────────
+
+
+def test_taw_writer_emits_correct_heading_format():
+    """taw writer.md 必须强约束 ### {h3_title} 起跳、不写编号。
+
+    背景：subagent 自起 `# 1.2` 会让 Word 把 H3 渲染成 H1 / Title；
+    多级列表自动加编号时若 heading text 含编号会双重叠加。
+
+    `{h3_numbering}` 占位符可出现在 task description / 上下文识别（让
+    subagent 知道自己负责的是哪一节），但**不得**出现在"输出格式"
+    指令里——即不得作为标题文本的一部分。
+    """
+    p = REPO_ROOT / "tender-workflow/skills/taw/agents/writer.md"
+    assert p.exists(), f"{p} 不存在"
+    content = _read(p)
+    assert "### {h3_title}" in content, "writer.md 缺 `### {h3_title}` 输出格式约束"
+    # 不允许把 numbering 写进输出标题模板
+    bad_patterns = ["### {h3_numbering} {h3_title}", "### {h3_numbering}"]
+    for bp in bad_patterns:
+        assert bp not in content, (
+            f"writer.md 含输出格式 `{bp}`（应删除编号；编号由 docx 多级列表自动生成）"
+        )
+    assert "禁止使用 `#` 或 `##`" in content, "writer.md 缺禁用 # / ## 顶级标题的强约束"
+
+
+def test_taw_review_subagents_have_status_protocol():
+    """spec/quality reviewer 必须输出 STATUS: DONE / NEEDS_REVISION 协议。"""
+    failures = []
+    for name in ("spec-reviewer.md", "quality-reviewer.md"):
+        p = REPO_ROOT / "tender-workflow/skills/taw/agents" / name
+        if not p.exists():
+            failures.append(f"{name}: 文件不存在")
+            continue
+        text = _read(p)
+        if "STATUS: DONE" not in text:
+            failures.append(f"{name}: 缺 `STATUS: DONE`")
+        if "STATUS: NEEDS_REVISION" not in text:
+            failures.append(f"{name}: 缺 `STATUS: NEEDS_REVISION`")
+    assert not failures, "reviewer STATUS 协议缺失：\n" + "\n".join(failures)
+
+
+def test_taw_image_plan_field_structure():
+    """writing_brief_template.yaml 的 image_plan 列必须用字段化格式
+    （path/caption/placement_hint），example 中无图改用空数组 `[]`。
+    """
+    p = REPO_ROOT / "tender-workflow/skills/taw/prompts/writing_brief_template.yaml"
+    assert p.exists()
+    content = _read(p)
+    assert "path" in content and "caption" in content and "placement_hint" in content, (
+        "image_plan 描述缺 path/caption/placement_hint 字段"
+    )
+    # example 行（| 1.3.x | ... |）中不得用 "无图" / "无" / "待生成" 等字符串
+    # 占位（应改为空数组 [] 或字段化对象）
+    in_example = False
+    for line in content.splitlines():
+        if line.strip().startswith("example:"):
+            in_example = True
+            continue
+        if in_example and line.strip().startswith("|"):
+            cells = line.split("|")
+            if cells:
+                last = cells[-2].strip() if len(cells) >= 2 else ""
+                bad = ("无图", "无", "待生成", "drawio:待生成", "KB:")
+                if last and any(last.startswith(b) for b in bad):
+                    raise AssertionError(
+                        f"image_plan example 行第 N 列仍用字符串占位 `{last}`，应改为字段化对象或 `[]`"
+                    )
+        if in_example and line and not line.startswith(" ") and not line.startswith("|"):
+            in_example = False
+
+
+def test_tender_workflow_readme_documents_single_chapter_test_only():
+    """tender-workflow/README.md 必须含'单章节模式仅供测试'类说明，
+    避免用户在生产用 --chapter 1.3 standalone 然后纠结编号不对。
+    """
+    p = REPO_ROOT / "tender-workflow/README.md"
+    assert p.exists()
+    content = _read(p)
+    assert "单章" in content and ("测试" in content or "预览" in content), (
+        "README 缺单章节 standalone 模式 = 测试/预览 用途的说明"
+    )
+
+
+def test_taw_skill_md_under_500_lines():
+    """taw SKILL.md 必须 ≤ 500 行（Anthropic 官方 progressive disclosure 准则）。"""
+    p = REPO_ROOT / "tender-workflow/skills/taw/SKILL.md"
+    assert p.exists()
+    line_count = len(_read(p).splitlines())
+    assert line_count <= 500, (
+        f"taw SKILL.md {line_count} 行 > 500（按 chujianyun/skill-optimizer 准则需 progressive disclosure 拆分到 references/）"
+    )
+
+
+def test_no_docs_directory_in_tender_workflow():
+    """tender-workflow/docs/ 必须不存在（user 要求轻量化 + 删 docs/）。"""
+    docs_dir = REPO_ROOT / "tender-workflow/docs"
+    assert not docs_dir.exists(), (
+        f"{docs_dir} 应已删除（运行时必需信息已迁入 SKILL.md / README.md / docx_writer.py）"
+    )
+
+
+def test_no_dangling_docs_refs_in_tender_workflow():
+    """tender-workflow 内任何 .md/.py/.yaml 不得再含 'docs/<name>.md' 或类似残链。
+
+    例外：根 README 列其它 plugin 的链接（不属于 tender-workflow），不在本检查内。
+    """
+    failures = []
+    tw_root = REPO_ROOT / "tender-workflow"
+    pat = re.compile(r"docs/[A-Za-z0-9_\-\.]+\.md")
+    for p in tw_root.rglob("*"):
+        if not p.is_file() or p.suffix not in {".md", ".py", ".yaml"}:
+            continue
+        try:
+            text = _read(p)
+        except Exception:
+            continue
+        for m in pat.finditer(text):
+            # 跳过：路径里有 'examples/' / 'tests/'（非生产文档）；
+            # 跳过 .py 注释里偶发的 docs 提示
+            ctx_line = next((l for l in text.splitlines() if m.group() in l), "")
+            failures.append(f"{p.relative_to(REPO_ROOT)}: 残链 `{m.group()}` ({ctx_line.strip()[:80]})")
+    assert not failures, "tender-workflow 内残留 docs/ 链接：\n" + "\n".join(failures)
