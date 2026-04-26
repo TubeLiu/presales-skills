@@ -614,7 +614,7 @@ def main():
         # 改为重定向到 ai-image plugin 的对应 skill 直接调用。
         print(
             "[tender-workflow] 子命令 'models' 已转交给 ai-image plugin。\n"
-            "请运行 Skill(skill=\"ai-image:image-gen\") 子命令 models，\n"
+            "请运行 Skill(skill=\"ai-image:gen\") 子命令 models，\n"
             "或自然语言触发：'列出图片模型'。",
             file=sys.stderr,
         )

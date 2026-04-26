@@ -306,14 +306,14 @@ def validate() -> List[str]:
     # 候选路径覆盖本地 marketplace + 远程 marketplace（后者 cache 带版本号层级）:
     drawio_candidates = [
         # 1. 本地 marketplace sibling（_SKILLS_ROOT.parent.parent = monorepo 根）
-        _SKILLS_ROOT.parent.parent / "drawio" / "skills" / "drawio" / "SKILL.md",
+        _SKILLS_ROOT.parent.parent / "drawio" / "skills" / "draw" / "SKILL.md",
         # 2. 用户 home 全局安装
         Path.home() / ".claude" / "skills" / "drawio" / "SKILL.md",
     ]
     # 3. 远程 marketplace cache（版本号在路径里，glob 匹配）
     cache_dir = Path.home() / ".claude" / "plugins" / "cache"
     if cache_dir.exists():
-        drawio_candidates.extend(cache_dir.glob("*/drawio/*/skills/drawio/SKILL.md"))
+        drawio_candidates.extend(cache_dir.glob("*/drawio/*/skills/draw/SKILL.md"))
     drawio_skill_installed = any(p.exists() for p in drawio_candidates)
 
     if not drawio_skill_installed:
@@ -400,7 +400,7 @@ def main():
         # 改为重定向到 ai-image plugin 的对应 skill 直接调用。
         print(
             f"[solution-master] 子命令 {cmd!r} 已转交给 ai-image plugin。\n"
-            f"请运行 Skill(skill=\"ai-image:image-gen\") 子命令 {cmd}，\n"
+            f"请运行 Skill(skill=\"ai-image:gen\") 子命令 {cmd}，\n"
             f"或自然语言触发：'{'列出图片模型' if cmd == 'models' else '迁移 ai-image 配置'}'。",
             file=sys.stderr,
         )
