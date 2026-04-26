@@ -68,7 +68,7 @@ AI：好的，先确认设计规范：
 
 输出：两个带时间戳的文件保存到 `exports/` —— 原生形状版 `.pptx`（可直接编辑）和 `_svg.pptx` 快照版（视觉参考备份）。需要 Office 2016+。
 
-如果 AI 中途丢失上下文，让它先读 `skills/ppt-master/SKILL.md`。
+如果 AI 中途丢失上下文，让它先读 `skills/make/SKILL.md`。
 
 ---
 
@@ -93,7 +93,7 @@ AI：好的，先确认设计规范：
 
 ## SVG 技术约束
 
-PPT Master 用 SVG 作为中间格式，再转换为原生 DrawingML 供 PowerPoint 使用。部分 SVG 特性被禁用，因为它们无法回环到原生 PPTX 形状。完整规范见 [`CLAUDE.md`](./CLAUDE.md) 与 `skills/ppt-master/SKILL.md`。
+PPT Master 用 SVG 作为中间格式，再转换为原生 DrawingML 供 PowerPoint 使用。部分 SVG 特性被禁用，因为它们无法回环到原生 PPTX 形状。完整规范见 [`CLAUDE.md`](./CLAUDE.md) 与 `skills/make/SKILL.md`。
 
 **速查表**：
 
@@ -128,7 +128,7 @@ PPT Master 用 SVG 作为中间格式，再转换为原生 DrawingML 供 PowerPo
 | [`docs/zh/windows-installation.md`](./docs/zh/windows-installation.md) | Windows 用户手把手安装教程 |
 | [`docs/zh/technical-design.md`](./docs/zh/technical-design.md) | 架构、设计哲学、为什么选 SVG |
 | [`docs/zh/faq.md`](./docs/zh/faq.md) | 模型选择、费用、排版问题排查、自定义模板 |
-| [`skills/ppt-master/SKILL.md`](./skills/ppt-master/SKILL.md) | 核心流程与规则 |
+| [`skills/make/SKILL.md`](./skills/make/SKILL.md) | 核心流程与规则 |
 
 ---
 

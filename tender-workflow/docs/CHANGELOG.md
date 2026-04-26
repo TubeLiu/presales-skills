@@ -98,7 +98,7 @@ tpl v2.0 聚焦两项输出：**招标技术规格与要求** + **评标办法**
   - `library.format` 配置项已移除（仅保留 Local-KnowledgeBase 格式）
 
 ### 修改文件
-- `tools/tw_config.py` — 配置键 `library` → `localkb`，移除 `format` 字段
+- `skills/twc/tools/tw_config.py` — 配置键 `library` → `localkb`，移除 `format` 字段
 - `.claude/skills/taw/tools/kb_indexer.py` — 配置读取和路径回退更新
 - `.claude/skills/taw/SKILL.md` — 新增 `--kb-source local` 选项，移除 `library` 选项
 - `.claude/skills/twc/SKILL.md` — 配置示例更新
@@ -142,7 +142,7 @@ tpl v2.0 聚焦两项输出：**招标技术规格与要求** + **评标办法**
 - `.claude/skills/taw/prompts/chapter_image_quota.yaml` — `h3_allocation_rules` + `matching_priority` 标记 deprecated
 - `.claude/skills/taw/prompts/writing_brief_template.yaml` — 新增 image_plan 字段
 - `.claude/skills/taw/prompts/parallel_writer_agent.yaml` — 新增 image_plan 字段
-- `tools/tw_config.py` — 新增 `library.format: "knowledgebase"` 默认值
+- `skills/twc/tools/tw_config.py` — 新增 `library.format: "knowledgebase"` 默认值
 
 ### 新参数
 ```bash

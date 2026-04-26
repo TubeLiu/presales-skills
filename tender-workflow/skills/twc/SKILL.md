@@ -126,27 +126,27 @@ trv:
 
 ## 工具定义
 
-配置读写通过 `skills/twc/tools/tw_config.py` 执行：
+配置读写通过 `skills/twc/skills/twc/tools/tw_config.py` 执行：
 ```bash
-python3 $SKILL_DIR/tools/tw_config.py show [skill]          # 显示配置
-python3 $SKILL_DIR/tools/tw_config.py get <skill> <key>     # 获取单个值
-python3 $SKILL_DIR/tools/tw_config.py set <key> <value>     # 设置值
-python3 $SKILL_DIR/tools/tw_config.py models [provider]     # 列出 AI 生图模型
-python3 $SKILL_DIR/tools/tw_config.py validate              # 验证
-python3 $SKILL_DIR/tools/tw_config.py migrate               # 迁移旧配置
-python3 $SKILL_DIR/tools/tw_config.py normalize             # 规范化 schema
+python3 $SKILL_DIR/skills/twc/tools/tw_config.py show [skill]          # 显示配置
+python3 $SKILL_DIR/skills/twc/tools/tw_config.py get <skill> <key>     # 获取单个值
+python3 $SKILL_DIR/skills/twc/tools/tw_config.py set <key> <value>     # 设置值
+python3 $SKILL_DIR/skills/twc/tools/tw_config.py models [provider]     # 列出 AI 生图模型
+python3 $SKILL_DIR/skills/twc/tools/tw_config.py validate              # 验证
+python3 $SKILL_DIR/skills/twc/tools/tw_config.py migrate               # 迁移旧配置
+python3 $SKILL_DIR/skills/twc/tools/tw_config.py normalize             # 规范化 schema
 ```
 
 ## 执行流程
 
 ### /twc show [skill]
 
-1. 执行 `python3 $SKILL_DIR/tools/tw_config.py show [skill]`
+1. 执行 `python3 $SKILL_DIR/skills/twc/tools/tw_config.py show [skill]`
 2. 将输出格式化为表格展示给用户
 
 ### /twc set \<key\> \<value\>
 
-1. 执行 `python3 $SKILL_DIR/tools/tw_config.py set <key> <value>`
+1. 执行 `python3 $SKILL_DIR/skills/twc/tools/tw_config.py set <key> <value>`
 2. 显示变更确认
 
 ### /twc models [provider] / --refresh
@@ -154,14 +154,14 @@ python3 $SKILL_DIR/tools/tw_config.py normalize             # 规范化 schema
 转发到 ai-image plugin 的统一模型注册表入口：
 
 ```bash
-python3 $SKILL_DIR/tools/tw_config.py models [provider | --refresh]
+python3 $SKILL_DIR/skills/twc/tools/tw_config.py models [provider | --refresh]
 ```
 
 `tw_config.py` 内部会调用 `ai-image-config models …`，由 ai-image plugin 提供注册表渲染与联网刷新逻辑。请确保 ai-image plugin 已安装（`/plugin install ai-image@presales-skills`）。
 
 ### /twc validate
 
-1. 执行 `python3 $SKILL_DIR/tools/tw_config.py validate`
+1. 执行 `python3 $SKILL_DIR/skills/twc/tools/tw_config.py validate`
 2. 对每个问题给出修复建议
 
 ### /twc migrate
@@ -169,7 +169,7 @@ python3 $SKILL_DIR/tools/tw_config.py models [provider | --refresh]
 1. 检查旧配置文件是否存在：
    - `~/.config/taw/config.yaml`
    - `~/.config/taa/config.yaml`
-2. 执行 `python3 $SKILL_DIR/tools/tw_config.py migrate`
+2. 执行 `python3 $SKILL_DIR/skills/twc/tools/tw_config.py migrate`
 3. 显示迁移结果（哪些 key 被迁移、哪些文件被删除）
 
 ### /twc reset

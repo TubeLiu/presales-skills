@@ -116,4 +116,4 @@ AI 代理会自动完成后续工作 — 分析截图、构建布局定义、注
 
 ---
 
-> 更多问题可先查看 [skills/ppt-master/SKILL.md](../../skills/ppt-master/SKILL.md) 与 [AGENTS.md](../../AGENTS.md)
+> 更多问题可先查看 [skills/make/SKILL.md](../../skills/make/SKILL.md) 与 [AGENTS.md](../../AGENTS.md)

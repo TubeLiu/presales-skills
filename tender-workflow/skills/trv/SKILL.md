@@ -168,7 +168,7 @@ fi
 
 读取统一配置文件获取默认审核级别（可被 `--level` 参数覆盖）：
 ```bash
-python3 $SKILL_DIR/../twc/tools/tw_config.py get trv default_level
+python3 $SKILL_DIR/../twc/skills/twc/tools/tw_config.py get trv default_level
 ```
 
 - 若未指定 `--level` 且配置中 `trv.default_level` 有值 → 使用配置值
@@ -231,7 +231,7 @@ python3 $SKILL_DIR/../twc/tools/tw_config.py get trv default_level
 
 **步骤**：
 
-1. 执行 `python3 $SKILL_DIR/../twc/tools/docx_encoding_check.py --fix <file_path> --max-retries 3`
+1. 执行 `python3 $SKILL_DIR/../twc/skills/twc/tools/docx_encoding_check.py --fix <file_path> --max-retries 3`
 
 2. 根据退出码和输出判断结果：
 
@@ -977,7 +977,7 @@ python3 $SKILL_DIR/../twc/tools/tw_config.py get trv default_level
 
 3. **执行修订工具**：
    ```bash
-   python3 $SKILL_DIR/../twc/tools/trv_docx_reviser.py \
+   python3 $SKILL_DIR/../twc/skills/twc/tools/trv_docx_reviser.py \
      --input <file> \
      --instructions “${OUTPUT_DIR}/.revision_instructions_${TIMESTAMP}.json” \
      --output-dir “${OUTPUT_DIR}”
@@ -986,7 +986,7 @@ python3 $SKILL_DIR/../twc/tools/tw_config.py get trv default_level
 4. **修订后编码检查**：
    - 若修订成功，继续执行：
      ```bash
-     python3 $SKILL_DIR/../twc/tools/docx_encoding_check.py --fix <revised_docx> --max-retries 3
+     python3 $SKILL_DIR/../twc/skills/twc/tools/docx_encoding_check.py --fix <revised_docx> --max-retries 3
      ```
    - 若发现残留乱码，将结果写入终端输出，并保留修订版文件供人工处理
 
@@ -1149,7 +1149,7 @@ python3 $SKILL_DIR/../twc/tools/tw_config.py get trv default_level
 **执行流程**：
 1. Phase 0：解析参数并确认已启用自动修订
 2. Phase 1-3：正常完成审核并生成 Markdown 报告
-3. Phase 3.5：基于审核报告生成修订指令 JSON → 调用 `tools/trv_docx_reviser.py` 执行修订 → 编码检查
+3. Phase 3.5：基于审核报告生成修订指令 JSON → 调用 `skills/twc/tools/trv_docx_reviser.py` 执行修订 → 编码检查
 4. Phase 4：同时输出审核报告、修订版文件路径、修订统计
 
 ---
@@ -1235,7 +1235,7 @@ python3 $SKILL_DIR/../twc/tools/tw_config.py get trv default_level
 
 - ✅ 新增 `--revise-docx` 参数：审核完成后自动生成修订版 DOCX
 - ✅ 新增 `--revise-scope <must|all>`：控制自动修订范围
-- ✅ 新增 `tools/trv_docx_reviser.py`：规则驱动的低风险 DOCX 修订工具（v1.5.0 已重构为 AI 驱动）
+- ✅ 新增 `skills/twc/tools/trv_docx_reviser.py`：规则驱动的低风险 DOCX 修订工具（v1.5.0 已重构为 AI 驱动）
 - ✅ 新增 Phase 3.5：审核报告生成后自动执行修订与编码检查
 - ✅ 输出新增修订版文件命名规则：`<原文件名>_修订版_<timestamp>.docx`
 - ✅ 非 DOCX 输入或暂不支持的审核类型自动降级为”跳过修订，不中断审核”

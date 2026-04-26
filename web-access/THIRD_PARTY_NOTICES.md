@@ -7,16 +7,16 @@
 - **项目主页**：https://github.com/eze-is/web-access
 - **许可证**：MIT License © 一泽 Eze
 - **Vendor 源版本**：v2.5.0
-- **Vendor 范围**：`skills/web-access/` 下的所有内容（`SKILL.md` / `README.md` / `scripts/*.mjs` / `references/`）
+- **Vendor 范围**：`skills/browse/` 下的所有内容（`SKILL.md` / `README.md` / `scripts/*.mjs` / `references/`）
 
 ### 本地改写清单
 
 | 本 plugin 路径 | 上游源路径 | 改写程度 | 说明 |
 |---|---|---|---|
-| `skills/web-access/SKILL.md` | `SKILL.md` | 无 | 原样保留 v2.5.0 内容 |
-| `skills/web-access/scripts/*.mjs` | `scripts/*.mjs` | 无 | 原样保留 |
-| `skills/web-access/references/cdp-api.md` | `references/cdp-api.md` | 极小 | 仅把行 6 的 `~/.claude/skills/web-access/...` 硬编码路径改为 `${CLAUDE_SKILL_DIR}/...`（plugin 安装模式下硬编码路径不成立） |
-| `skills/web-access/README.md` | `README.md` | 极小 | 方式四手动安装段落改为 `/plugin install web-access@presales-skills`；删除 `${CLAUDE_SKILL_DIR}` 冗余注释 |
+| `skills/browse/SKILL.md` | `SKILL.md` | 无 | 原样保留 v2.5.0 内容 |
+| `skills/browse/scripts/*.mjs` | `scripts/*.mjs` | 无 | 原样保留 |
+| `skills/browse/references/cdp-api.md` | `references/cdp-api.md` | 极小 | 仅把行 6 的 `~/.claude/skills/browse/...` 硬编码路径改为 `${CLAUDE_SKILL_DIR}/...`（plugin 安装模式下硬编码路径不成立） |
+| `skills/browse/README.md` | `README.md` | 极小 | 方式四手动安装段落改为 `/plugin install web-access@presales-skills`；删除 `${CLAUDE_SKILL_DIR}` 冗余注释 |
 | `bin/web-access-check`、`bin/web-access-match-site` | — | 新增 | 跨 plugin 调用入口（solution-master 通过这两个命令使用本 plugin） |
 
 ### eze-is/web-access 原项目 LICENSE

@@ -1,20 +1,26 @@
-# presales-skills — 售前工作流多 agent SKILL 集
+# presales-skills — 售前工作流 SKILL 集
 
-按职责拆分的 7 个 plugin 通过同一个 marketplace 统一分发。同时兼容 **Claude Code**（marketplace 安装）和 **Cursor / Codex / OpenCode** 等其它 agent（vercel-labs/skills CLI 安装）。
+按职责拆分的 7 个 plugin 通过同一个 marketplace 统一分发。同时兼容 **Claude Code**（marketplace 安装）和 **Cursor / Codex / OpenCode** 等其它 agent（[vercel-labs/skills](https://github.com/vercel-labs/skills) CLI 安装）。
 
-## 包含的 7 个 plugin
+10 个用户可触发 SKILL，覆盖：写方案 / 做 PPT / 招投标 / 画图 / 生图 / 联网 / 知识库。
 
-| plugin | 类型 | 用途 |
-|---|---|---|
-| **solution-master** | 主 plugin | 通用解决方案撰写框架：苏格拉底式需求提取、子智能体驱动撰写、双重审查、多源知识检索、上下文感知配图、Markdown/DOCX 输出 |
-| **ppt-master** | 主 plugin | 从 PDF / DOCX / URL / Markdown 等多源文档生成原生可编辑 PPTX（SVG 流水线） |
-| **tender-workflow** | 主 plugin | 四角色招投标工作流：`tpl`（招标策划）/ `taa`（招标分析）/ `taw`（标书撰稿）/ `trv`（审核）+ `twc`（配置） |
-| **drawio** | 共享 plugin | Draw.io 图表生成（`.drawio` XML + PNG/SVG/PDF 导出）。被 solution-master / tender-workflow 依赖 |
-| **ai-image** | 共享 plugin | 统一 AI 图片生成：13 个后端（volcengine/ark、qwen/dashscope、gemini、openai、minimax、stability、bfl、ideogram、zhipu、siliconflow、fal、replicate、openrouter）+ 共享 YAML 模型注册表。被三个主 plugin 依赖 |
-| **anythingllm-mcp** | 共享 plugin | AnythingLLM MCP server：知识库语义搜索 + workspace 列举。可选——不装则降级为本地 YAML 索引 + 联网检索 |
-| **web-access** | 共享 plugin | 联网操作 + CDP 浏览器自动化（vendored from [eze-is/web-access](https://github.com/eze-is/web-access)）。可选——仅在启用 solution-master 的 `cdp_sites` 登录态站点检索时必需 |
+---
 
-10 个用户可触发 SKILL：`solution-master` / `image-gen` / `draw-diagram` / `ppt-make` / `web-access` / `taa` / `taw` / `trv` / `tpl` / `twc`。
+## 7 个 plugin 一览
+
+| plugin | 类型 | Slash 入口（canonical / 短 alias）| 功能 |
+|---|---|---|---|
+| **solution-master** | 主 | `/solution-master:sm`（短 alias `/solution-master`）| 通用解决方案撰写：苏格拉底式提问 / 子智能体并行撰写 / 双阶段审查 / 多源知识检索 / 配图 / Markdown + DOCX 输出 |
+| **ppt-master** | 主 | `/ppt-master:make`（短 alias `/make`）| 多源文档 → 原生可编辑 PPTX（SVG 流水线 + 真实 PowerPoint shape）。**默认 Alauda 模板** |
+| **tender-workflow** | 主 | `/tender-workflow:taa` / `:taw` / `:tpl` / `:trv` / `:twc` | 四角色招投标：tpl 招标策划 / taa 招标分析 / taw 标书撰稿 / trv 多维度审核 / twc 配置 |
+| **drawio** | 共享 | `/drawio:draw`（短 alias `/draw`）| Draw.io 图表（.drawio XML + PNG/SVG/PDF 导出）。被 solution-master / tender-workflow 依赖 |
+| **ai-image** | 共享 | `/ai-image:gen`（短 alias `/image-gen`）| 13 backend 统一 AI 生图（volcengine/ark、qwen/dashscope、gemini、openai、minimax、stability、bfl、ideogram、zhipu、siliconflow、fal、replicate、openrouter）。被三个主 plugin 依赖 |
+| **anythingllm-mcp** | 共享 | （MCP server，无 slash）| AnythingLLM 知识库语义搜索 + workspace 列举。可选——不装则 solution-master/tender-workflow 降级为本地 YAML 索引 + 联网检索 |
+| **web-access** | 共享 | `/web-access:browse`（短 alias `/browse`）| 联网操作 + CDP 浏览器自动化（搜索 / 抓取 / 登录态 / CDP 远程调试）。可选——仅 solution-master `cdp_sites.enabled=true` 时必需 |
+
+> **Slash 形式说明**：`/<plugin>:<sub-skill>` 是 Claude Code canonical 形式（marketplace 注册）；短 alias 来自 SKILL.md `name:` 字段，由 Claude Code 自动补全为 canonical。Codex/Cursor/OpenCode 通过 vercel CLI 装到 `.agents/skills/<sub-skill>/` 等 flat layout，slash 形式直接是 `/<sub-skill>` 短形式。
+
+> **自然语言 auto-trigger 永远可用**：每个 SKILL.md 的 `description:` 字段含触发关键词，"画一张架构图" / "生成图片" / "做 PPT" / "写方案" 等都能直接触发对应 sub-skill。
 
 ---
 
@@ -42,78 +48,97 @@
 
 也支持本地路径：`/plugin marketplace add /path/to/presales-skills`
 
+#### Granular install 示例
+
+只装一两个 plugin 也完全可行（每个 plugin 独立运行）：
+
+```
+/plugin install drawio@presales-skills              # 仅画图
+/plugin install ai-image@presales-skills            # 仅 AI 生图
+/plugin install ppt-master@presales-skills + ai-image@presales-skills   # 做 PPT 含 AI 配图
+```
+
 ### 路径 B：Cursor / Codex / OpenCode 等其它 agent
 
 ```bash
-npx --yes skills add Alauda-io/presales-skills -a cursor
-npx --yes skills add Alauda-io/presales-skills -a codex
-npx --yes skills add Alauda-io/presales-skills -a opencode
+npx --yes skills add Alauda-io/presales-skills -a cursor   # Cursor
+npx --yes skills add Alauda-io/presales-skills -a codex    # Codex
+npx --yes skills add Alauda-io/presales-skills -a opencode # OpenCode
 ```
 
-vercel-labs/skills CLI 会扫描所有 SKILL.md 并 symlink/copy 到目标 agent 的标准目录（如 `.cursor/skills/` / `.agents/skills/`）。
+vercel-labs/skills CLI 会扫描所有 SKILL.md 并 symlink/copy 到目标 agent 的标准目录。**默认装到 cwd `.agents/skills/`**（项目级），加 `-g` 装到 `~/.agents/skills/`（全局）。
 
-**与 Claude Code 安装的差异**：
-- Cursor 使用 `hooks-cursor.json` 同款 SessionStart 注入；Codex / OpenCode 等无 hook 机制（靠 SKILL description 触发）
-- anythingllm-mcp 不会自动注册——按目标 agent 各自 MCP 注册方式手工配置（如 Cursor 在 `.cursor/mcp.json` 加 anythingllm 条目）
+只装部分 sub-skill：`-s '*'` 装全部，或 `-s image-gen,draw,make` 指定。
 
-> 端到端流程在 Cursor / Codex / OpenCode 上**未经维护者完整验证**——欢迎社区反馈到 issue tracker。
+完整 CLI 参数：`npx --yes skills --help`。
 
 ---
 
-## 配置
+## 快速开始
 
-3 个 plugin 自带交互式配置向导。在会话里直接说自然语言：
+每个 plugin 一个示例。Slash 入口与自然语言 trigger 都列出。
 
-| 你说什么 | Claude 引导你完成 |
-|---|---|
-| `帮我配置 ai-image` | API keys（按需选 13 provider 的任意一个或多个）→ 默认 provider → 默认尺寸 → validate |
-| `帮我配置 solution-master` | localkb 路径 → AnythingLLM（可选）→ MCP 搜索优先级 → CDP 登录态站点（可选）→ draw.io CLI 路径 → validate |
-| `帮我配置 tender-workflow` 或 `配置工作流` | 6 步 tender 专属配置（localkb / anythingllm / drawio CLI / mcp_search / skill 默认值） |
+### `/drawio:draw` 画图
 
-每个向导都会一步步问、立即写入、立即验证，跳过任何"可选"字段都允许。
+```
+> 画一张架构图：用户 → API 网关 → 微服务集群 → 数据库
+> /drawio:draw "GitOps 蓝绿发布流程图"
+```
 
-**其它 plugin 不需要专属配置**：
-- `ppt-master`：API keys 共享自 ai-image；画布尺寸 / 配色 / 行业模板内置
-- `drawio`：仅需 CLI 路径，由 solution-master 向导一并问
-- `web-access`：CDP 启用流程在 SKILL.md 内置前置检查中引导
-- `anythingllm-mcp`：MCP server 自身在 plugin.json 注册；启用与否是 solution-master 的字段
+输出 `.drawio` 源文件；本机若装了 draw.io 桌面版或 `drawio-cli`，同时导出 PNG/SVG/PDF。
 
-### 配置文件
-
-| 文件 | 字段 | 由哪个工具管 |
-|---|---|---|
-| `~/.config/presales-skills/config.yaml` | `api_keys` / `ai_image` / `ai_keys`（共享） | ai-image 的 `ai_image_config.py` |
-| `~/.config/solution-master/config.yaml` | `localkb` / `anythingllm` / `cdp_sites` / `drawio` / `mcp_search` | solution-master 的 `sm_config.py` |
-| `~/.config/tender-workflow/config.yaml` | tender 专属字段 | tender-workflow 的 `tw_config.py` |
-
-升级老用户：之前用过 `~/.config/{solution-master,tender-workflow}/config.yaml` 的 API keys 字段会被 ai-image `setup` 第一次跑时**自动 migrate** 到统一路径，无需手动操作。
-
-### 纯 CLI 配置（不走 Claude，给 power user）
-
+CLI 安装：
 ```bash
-# ai-image 共享配置
-python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" setup            # 含 auto-migrate
-python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" set api_keys.ark <key>
-python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" validate
-
-# solution-master 专属配置
-python3 "$SM_DIR/scripts/sm_config.py" set localkb.path <path>
-python3 "$SM_DIR/scripts/sm_config.py" validate
+brew install --cask drawio          # macOS
+npm install -g @drawio/drawio-desktop-cli   # 跨平台
 ```
 
-`$AI_IMAGE_DIR` 与 `$SM_DIR` 通过各自 SKILL.md 顶部的 §路径自定位 段（`installed_plugins.json` 五段式 fallback）解析。
+### `/ai-image:gen` 生图
 
----
+```
+> 生成一张图：现代简约风的容器云架构示意
+> 用 ark 生成一张 K8s 网络拓扑图
+> /ai-image:gen "futuristic cloud platform dashboard, hi-tech aesthetic"
+```
 
-## 使用
+按 `~/.config/presales-skills/config.yaml` 的 `ai_image.default_provider` 选 provider；可在自然语言中显式指定 provider 名（ark / dashscope / gemini / openai / ...）。
 
-所有触发都是自然语言——没有 slash command。
+子命令通过 description auto-trigger 路由：
+- "配置 ai-image" / "首次配置" → setup workflow
+- "查看图片配置" / "show config" → show
+- "列出图片模型" → models
+- "验证 API key" → validate
 
-### solution-master — 写解决方案
+### `/ppt-master:make` 做 PPT
 
-> 帮我写一份面向金融行业的容器云技术方案。
+```
+> 把这份 PDF 做成 12 页 PPT
+> 把这个微信公众号文章做成演示稿
+> /ppt-master:make /path/to/source.pdf
+```
 
-solution-master SKILL（在 SM 项目内 cwd 时由 SessionStart hook 自动注入铁律）按工作流走：
+**默认套 Alauda 模板**（v1.0.0 起的 default path）。如需别的，明说：
+
+```
+> 用 mckinsey 模板做这份 PPT          # 切换到 mckinsey 模板
+> 自由设计，不要模板，做个艺术风       # 退出模板路径
+> 有哪些模板可以用                    # 列模板
+```
+
+**全局默认覆盖**（在 `~/.config/presales-skills/config.yaml` 加）：
+```yaml
+ppt_master:
+  default_layout: china_telecom_template   # 或别的内置模板名
+```
+
+### `/solution-master:sm` 写方案
+
+```
+> 帮我写一份面向金融行业的容器云技术方案
+> /solution-master:sm "GitOps 蓝绿发布技术方案"
+```
+
+solution-master 在 SM 项目目录（含 `drafts/` / `docs/specs/` / 装了 `solution-master:sm` 的 SKILL）触发 SessionStart hook 自动注入铁律，按工作流走：
 
 ```
 brainstorming（苏格拉底式提问）
@@ -127,56 +152,99 @@ spec-review（内容审查）+ quality-review（写作审查）
 docx 输出
 ```
 
-工作流文件：`solution-master/skills/solution-master/workflow/{brainstorming,planning,writing,spec-review,quality-review,knowledge-retrieval,docx,config}.md`，按需 Read。子智能体角色定义：`agents/{writer,spec-reviewer,quality-reviewer}.md`。
+详细工作流见 `solution-master/skills/sm/workflow/{brainstorming,planning,writing,spec-review,quality-review,knowledge-retrieval,docx,config}.md`，按需 Read。
 
-### ppt-master — 生成 PPT
+### `/tender-workflow:*` 招投标
 
-> 把这份 PDF 做成 10 页 PPT。
-> 把这个微信公众号文章做成演示。
+四角色 + 一个配置入口，按场景触发：
 
-工作流：`源文档 → 项目初始化 → 模板选择 → 策略师 → 图片生成器 → 执行者 → 后处理 → 导出 PPTX`。
-
-详细规则见 `ppt-master/skills/ppt-master/SKILL.md`。
-
-### tender-workflow — 招投标文档
-
-四个 SKILL 按场景触发：
-
-| SKILL | 角色 | 服务对象 | 触发示例 |
-|---|---|---|---|
-| `tpl` | 策划者 | 甲方 | "根据这份产品功能清单生成招标技术规格 + 评标办法" |
-| `taa` | 分析者 | 乙方 | "分析这份招标文件" / "看看这份招标文件" |
-| `taw` | 撰稿者 | 乙方 | "帮我写标书 / 写投标方案" |
-| `trv` | 审核者 | 甲乙双方 | "审一下这份标书 / 检查投标文件" |
-
-配置由 `twc` SKILL 引导（"配置工作流"）。
-
-### drawio — 画图
-
-> 画一张架构图：用户 → 网关 → 微服务。
-> 生成一张数据库 ER 图。
-
-生成 `.drawio` 源文件；若本机装了 draw.io 桌面版或 `drawio-cli`，同时导出 PNG/SVG/PDF。
-
-安装 CLI：
-```bash
-brew install --cask drawio          # macOS
-npm install -g @drawio/drawio-desktop-cli   # 跨平台
+```
+> 看看这份招标文件                       # → /tender-workflow:taa 招标分析
+> 帮我写标书的第三章                      # → /tender-workflow:taw 撰稿
+> 根据这份产品功能清单生成招标技术规格      # → /tender-workflow:tpl 策划（甲方）
+> 审一下这份投标方案                      # → /tender-workflow:trv 审核
+> 配置工作流                             # → /tender-workflow:twc 配置
 ```
 
-### ai-image — 生图
+### `/web-access:browse` 联网 / CDP
 
-> 生成一张图：xxx 主题。
-> 用 ark 生成一张 K8s 架构示意图。
+```
+> 帮我搜一下 X 的最新动态
+> 抓一下这个小红书帖子的内容（需要登录态）
+> /web-access:browse "https://www.example.com/page"
+```
 
-按 `~/.config/presales-skills/config.yaml` 的 `ai_image.default_provider` 选 provider；可在自然语言中显式指定 provider 名（ark / dashscope / gemini / openai / ...）。
+详细 CDP 启用流程见 `web-access/skills/browse/SKILL.md`。
 
-### web-access — 联网 / CDP
+### anythingllm-mcp（MCP server）
 
-> 帮我搜一下 X 的最新动态。
-> 抓一下这个小红书帖子的内容（需要登录态）。
+无 slash —— 装上后自动注册 `anythingllm` MCP server，主 plugin（solution-master / tender-workflow）通过 `mcp__anythingllm__anythingllm_search` 直接调。
 
-详细 CDP 启用流程见 `web-access/skills/web-access/SKILL.md`。
+未装时 → 自动降级为本地 YAML 索引 + 联网检索（不 hard-fail）。
+
+---
+
+## 跨 agent 兼容性矩阵
+
+| Feature | Claude Code | Cursor (skills CLI) | Codex (skills CLI) | OpenCode (skills CLI) |
+|---|---|---|---|---|
+| `/<plugin>:<sub-skill>` slash 形式 | ✅ canonical | ✅（短形式 `/<sub-skill>`）| ✅（短形式 `/<sub-skill>`）| ✅（短形式 `/<sub-skill>`） |
+| 自然语言 auto-trigger（SKILL.md description）| ✅ | ✅ | ✅ | ✅ |
+| `${CLAUDE_PLUGIN_ROOT}` 占位符 | ✅ | ❌（无替换）| ❌ | ❌ |
+| SessionStart hook（solution-master）| ✅ `hooks.json` | ✅ `hooks-cursor.json` | ❌ | ❌ |
+| MCP server（anythingllm-mcp） | ✅ 自动 `plugin.json mcpServers` | ❌ 需手动 `.cursor/mcp.json` | ❌ 需手动配 | ❌ 需手动配 |
+| `installed_plugins.json` 自定位 | ✅ | ❌（用 `.cursor/skills/` fallback）| ❌（用 `.agents/skills/` fallback）| ❌ |
+| 跨 sub-skill 引用 `$SKILL_DIR/../<other>/` | ✅（同 plugin 内）| ✅（flat layout 兄弟）| ✅（flat layout 兄弟）| ✅ |
+| 跨 plugin 引用 | ✅ 用 `installed_plugins.json` | ⚠ 用自然语言 / `Skill(skill="<plugin>:<sub>")` | ⚠ 同上 | ⚠ 同上 |
+
+> 端到端流程在 Cursor / Codex / OpenCode 上**未经维护者完整验证**——欢迎社区反馈到 issue tracker。
+
+---
+
+## 配置
+
+3 个 plugin 自带交互式配置向导。在会话里直接说自然语言：
+
+| 你说什么 | Claude 引导你完成 |
+|---|---|
+| `配置 ai-image` / `首次配置` | API keys（按需选 13 provider 任一）→ 默认 provider → 默认尺寸 → validate |
+| `配置 solution-master` | localkb 路径 → AnythingLLM（可选）→ MCP 搜索优先级 → CDP 登录态站点（可选）→ draw.io CLI 路径 → validate |
+| `配置工作流` / `配置 tender` | 6 步 tender 专属配置（localkb / anythingllm / drawio CLI / mcp_search / skill 默认值） |
+
+每个向导都会一步步问、立即写入、立即验证；任何"可选"字段都允许跳过。
+
+**其它 plugin 不需要专属配置**：
+- `ppt-master`：API keys 共享自 ai-image；画布尺寸 / 配色 / 行业模板内置
+- `drawio`：仅需 CLI 路径，由 solution-master 向导一并问
+- `web-access`：CDP 启用流程在 SKILL.md 内置前置检查中引导
+- `anythingllm-mcp`：MCP server 自身在 plugin.json 注册；启用与否是 solution-master / tender-workflow 的字段
+
+### 配置文件
+
+| 文件 | 字段 | 由哪个工具管 |
+|---|---|---|
+| `~/.config/presales-skills/config.yaml` | `api_keys` / `ai_image` / `ppt_master.default_layout` / `ai_keys`（共享） | ai-image 的 `ai_image_config.py` |
+| `~/.config/solution-master/config.yaml` | `localkb` / `anythingllm` / `cdp_sites` / `drawio` / `mcp_search` | solution-master 的 `sm_config.py` |
+| `~/.config/tender-workflow/config.yaml` | tender 专属字段 | tender-workflow 的 `tw_config.py` |
+
+### 纯 CLI 配置（不走 Claude，给 power user）
+
+```bash
+# ai-image 共享配置（含 auto-migrate 旧 plugin 配置）
+python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" setup
+python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" set api_keys.ark <key>
+python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" validate
+
+# solution-master 专属配置
+python3 "$SM_DIR/scripts/sm_config.py" set localkb.path <path>
+python3 "$SM_DIR/scripts/sm_config.py" validate
+
+# tender-workflow 专属配置
+python3 "$TW_DIR/skills/twc/tools/tw_config.py" set localkb.path <path>
+python3 "$TW_DIR/skills/twc/tools/tw_config.py" validate
+```
+
+`$AI_IMAGE_DIR` / `$SM_DIR` / `$TW_DIR` 通过各自 SKILL.md 顶部的 §路径自定位 段（`installed_plugins.json` 五段式 fallback）解析。
 
 ---
 
@@ -209,22 +277,13 @@ apt install pandoc libcairo2-dev
 
 ### 自动依赖安装
 
-所有 Python 依赖由入口脚本首次调用时自动 `pip install`（每个脚本开头调 `_ensure_deps.py`：检查 `<plugin>/.deps-installed` marker，不存在则装）。Plugin 升级时 cache 路径带版本号，marker 不跨版本继承，自动触发新依赖重装。
+所有 Python 依赖由入口脚本首次调用时自动 `pip install`（每个脚本开头调 `_ensure_deps.py`：检查 `<skill>/.deps-installed` marker，不存在则装）。Plugin 升级时 cache 路径带版本号，marker 不跨版本继承，自动触发新依赖重装。
 
 设 `PRESALES_SKILLS_SKIP_AUTO_INSTALL=1` 可禁用自动 pip（适合 CI / 容器 / 自管 venv）：
 
 ```bash
-pip install -r ~/.claude/plugins/cache/presales-skills/ppt-master/*/requirements.txt
-pip install -r ~/.claude/plugins/cache/presales-skills/ai-image/*/requirements.txt
-```
-
----
-
-## 更新
-
-```
-/plugin marketplace update presales-skills
-/reload-plugins
+pip install -r ~/.claude/plugins/cache/presales-skills/ppt-master/*/skills/make/requirements.txt
+pip install -r ~/.claude/plugins/cache/presales-skills/ai-image/*/skills/gen/requirements.txt
 ```
 
 ---
@@ -236,26 +295,27 @@ presales-skills/
 ├── .claude-plugin/marketplace.json    # 7 个 plugin 入口 + 顶层版本
 ├── README.md
 ├── tests/
-│   └── test_skill_format.py           # SKILL.md 格式自动化检查
+│   └── test_skill_format.py           # SKILL.md 格式自动化检查（10 项断言）
 │
 ├── drawio/
 │   ├── .claude-plugin/plugin.json
-│   ├── skills/drawio/
-│   │   ├── SKILL.md                   # 名为 draw-diagram
-│   │   └── xml-reference.md
-│   └── scripts/drawio_generator.py
+│   └── skills/draw/                   # 注册为 drawio:draw
+│       ├── SKILL.md                   # name: draw
+│       ├── xml-reference.md
+│       └── scripts/drawio_generator.py
 │
 ├── ai-image/
 │   ├── .claude-plugin/plugin.json
-│   ├── skills/ai-image/
-│   │   ├── SKILL.md                   # 名为 image-gen
-│   │   └── scripts/
-│   │       ├── image_gen.py            # 13 backend 分发器
-│   │       ├── ai_image_config.py      # 配置工具（含 auto-migrate）
-│   │       ├── _ensure_deps.py
-│   │       └── image_backends/         # 13 backend 实现
-│   ├── prompts/ai_image_models.yaml    # 共享模型注册表
-│   └── requirements.txt
+│   └── skills/gen/                    # 注册为 ai-image:gen
+│       ├── SKILL.md                   # name: image-gen（短 alias）
+│       ├── setup.md
+│       ├── prompts/ai_image_models.yaml   # 共享模型注册表
+│       ├── requirements.txt
+│       └── scripts/
+│           ├── image_gen.py           # 13 backend 分发器
+│           ├── ai_image_config.py     # 配置工具（含 auto-migrate）
+│           ├── _ensure_deps.py
+│           └── image_backends/        # 13 backend 实现
 │
 ├── anythingllm-mcp/
 │   ├── .claude-plugin/plugin.json     # mcpServers.anythingllm（无前缀，统一注册）
@@ -263,8 +323,8 @@ presales-skills/
 │
 ├── web-access/
 │   ├── .claude-plugin/plugin.json
-│   └── skills/web-access/
-│       ├── SKILL.md
+│   └── skills/browse/                 # 注册为 web-access:browse
+│       ├── SKILL.md                   # name: browse
 │       ├── scripts/                   # CDP proxy / find-url / match-site / check-deps
 │       └── references/cdp-api.md
 │
@@ -276,54 +336,103 @@ presales-skills/
 │   │   ├── hooks-cursor.json          # 同款 (Cursor)
 │   │   ├── session-start              # 注入主 SKILL.md 内容到 additionalContext
 │   │   └── run-hook.cmd               # Windows 跨平台 wrapper
-│   └── skills/solution-master/
-│       ├── SKILL.md                   # 主入口（铁律 + 文件导航 + 子智能体调度）
+│   └── skills/sm/                     # 注册为 solution-master:sm
+│       ├── SKILL.md                   # name: solution-master（短 alias）
 │       ├── workflow/                  # 8 个按需 Read 的子流程
-│       │   ├── brainstorming.md
-│       │   ├── planning.md
-│       │   ├── writing.md
-│       │   ├── knowledge-retrieval.md
-│       │   ├── spec-review.md
-│       │   ├── quality-review.md
-│       │   ├── docx.md
-│       │   └── config.md
+│       │   ├── brainstorming.md / planning.md / writing.md
+│       │   ├── knowledge-retrieval.md / spec-review.md / quality-review.md
+│       │   └── docx.md / config.md
 │       ├── agents/                    # Task tool prompt body
-│       │   ├── writer.md
-│       │   ├── spec-reviewer.md
-│       │   └── quality-reviewer.md
+│       │   ├── writer.md / spec-reviewer.md / quality-reviewer.md
 │       ├── scripts/
-│       │   ├── docx_writer.py
-│       │   ├── kb_indexer.py
-│       │   └── sm_config.py
+│       │   ├── docx_writer.py / kb_indexer.py / sm_config.py
 │       └── prompts/                   # YAML 模板（撰写规范、配图护栏、章节模板）
-│           ├── writing_core.yaml
-│           ├── image_guidelines.yaml
-│           ├── source_ranking.yaml
-│           ├── fusion_strategy.yaml
-│           └── section_templates/
-│               ├── business.yaml
-│               ├── consulting.yaml
-│               ├── proposal.yaml
-│               └── technical.yaml
 │
 ├── ppt-master/
 │   ├── .claude-plugin/plugin.json
-│   └── skills/ppt-master/
-│       ├── SKILL.md                   # 名为 ppt-make
+│   └── skills/make/                   # 注册为 ppt-master:make
+│       ├── SKILL.md                   # name: make（短 alias）
+│       ├── requirements.txt
 │       ├── references/                # 角色定义 + 技术规范
 │       ├── scripts/                   # source_to_md / project_manager / svg_* / total_md_split
-│       └── templates/                 # layout / chart / 640+ 图标库
+│       └── templates/                 # layouts/{alauda,china_telecom_template,...} / icons / charts
 │
 └── tender-workflow/
     ├── .claude-plugin/plugin.json
-    ├── skills/
-    │   ├── tpl/SKILL.md
-    │   ├── taa/SKILL.md
-    │   ├── taw/SKILL.md
-    │   ├── trv/SKILL.md
-    │   └── twc/SKILL.md
-    └── tools/tw_config.py
+    ├── git-hooks/pre-commit           # repo dev hook（与 Claude 无关）
+    ├── tools/tw_config.py             # deprecation shim（11 行 stub，转发至 skills/twc/tools/）
+    └── skills/                        # 5 个 sub-skill flat 排布
+        ├── tpl/SKILL.md
+        ├── taa/SKILL.md  + tools/{indexer_v2,docx_outline_template}.py
+        ├── taw/SKILL.md  + tools/{docx_writer,kb_indexer}.py
+        ├── trv/SKILL.md
+        └── twc/SKILL.md  + tools/{tw_config,tpl_docx_writer,trv_docx_reviser,docx_encoding_check}.py
 ```
+
+---
+
+## 架构原理
+
+### 仅用 `skills/`（不用 `commands/` / `agents/`）
+
+5 个有用户入口的 plugin（drawio / ai-image / ppt-master / solution-master / web-access）和 5 个 tender-workflow sub-skill 全部用 `skills/<X>/SKILL.md` 注册。**不用** Claude Code 的 `commands/` 或 `agents/` 机制，原因：
+- `skills/` 是唯一被 [vercel-labs/skills](https://github.com/vercel-labs/skills) CLI 识别 + 拷贝的格式 → 同一 SKILL.md 既给 Claude Code 用又给 Cursor / Codex / OpenCode 用
+- `description:` 字段提供自然语言 auto-trigger，省去用户记忆 slash 名
+- `commands/` 仅 Claude Code 识别，加了它 = Cursor/Codex 用户体验降级
+
+参考：[anthropics/claude-plugins-official](https://github.com/anthropics/claude-plugins-official) 中的 frontend-design / mcp-server-dev / claude-code-setup 都是同款"仅 skills/"设计。
+
+### Skill 命名约定
+
+每个 sub-skill 目录名 ≠ plugin 名（消除 `<plugin>:<plugin>` 双名）。Claude Code 注册形式：
+- canonical = `<plugin>:<dir-name>`（如 `/ai-image:gen`）
+- alias = SKILL.md `name:` 字段（如 `/image-gen` 自动补全到 `/ai-image:gen`）
+
+vercel CLI 装到 Codex/Cursor 时按 SKILL.md `name:` 命名 dir，slash 直接是 `/<name>` 短形式（无 plugin 前缀）。
+
+### 跨 plugin 调用约定
+
+跨 plugin 调用通过查询 `~/.claude/plugins/installed_plugins.json` 拿到对方 plugin 的 `installPath`，再拼脚本绝对路径。**不假设兄弟相对路径**——Claude Code 的 cache 布局是 `<plugin>/<version>/skills/<sub-skill>/`，跨 plugin 不是兄弟。
+
+每个 SKILL.md §路径自定位 段提供五段式 fallback：
+
+1. `~/.claude/plugins/installed_plugins.json`（Claude Code 权威来源，精确指向当前激活版本）
+2. `~/.cursor/skills` / `~/.agents/skills` / `.cursor/skills` / `.agents/skills`（vercel CLI 标准目录）
+3. 用户预设环境变量 `<PLUGIN>_PLUGIN_PATH`（如 `DRAWIO_PLUGIN_PATH`）
+4. cwd 相对 `./` 和 `../`（dev 态）
+5. 全失败 → 输出诊断 + 退出 1（让 Claude 转述给用户，要求 export 环境变量或安装缺失 plugin）
+
+### 跨 sub-skill 引用（同 plugin 内）
+
+同 plugin 内的 sub-skill 之间用 `$SKILL_DIR/../<sibling>/...` 兄弟相对路径。Claude Code marketplace cache 与 Cursor/Codex flat layout 下都成立（同 plugin 的 sub-skill 总是兄弟）。tests/test_skill_format.py 第 10 项断言 `test_cross_skill_refs_within_plugin` 强制此规则。
+
+### SessionStart hook（仅 solution-master）
+
+7 个 plugin 中**仅 solution-master** 注册 SessionStart hook（Claude Code 用 `hooks.json`，Cursor 用 `hooks-cursor.json`）：
+
+- 项目门禁：仅当 cwd 含 `drafts/` / `docs/specs/` / `skills/sm/SKILL.md` / `.claude/skills/sm/SKILL.md` 任一时触发
+- 触发后 cat 主 SKILL.md 全文注入到 additionalContext（铁律 + 文件导航 + 子智能体调度全量）
+- 其它 plugin 不重复注册——多个同步 hook 会让会话启动时间线性叠加；其它 plugin 的提示性内容用 SKILL description 承载即可
+
+其它 agent（Codex / OpenCode）暂无 hook 机制；铁律靠主 SKILL.md description 自然语言匹配触发（best-effort）。
+
+### 子智能体调度（仅 solution-master）
+
+solution-master 的子智能体（writer / spec-reviewer / quality-reviewer）通过 **Task tool** 委派——把 `agents/<role>.md` 完整内容作为 Task prompt body 传入：
+
+```python
+Task(
+  subagent_type="general-purpose",
+  description="撰写章节 N: <章节名>",
+  prompt="""<agents/writer.md 完整内容>
+
+  ## 你的任务
+  ...
+  """
+)
+```
+
+不支持 Task tool 的 agent：在主上下文顺序执行，章节之间显式输出 `---RESET CONTEXT FOR <章节名>---` 边界（近似隔离，非真隔离）。
 
 ---
 
@@ -362,58 +471,21 @@ presales-skills/
 python3 -m pytest tests/test_skill_format.py -v
 ```
 
-9 项断言：每个 SKILL.md 必须用 block scalar description / 含 Windows checklist / 含 `<SUBAGENT-STOP>` + Task prompt 判定 / 不引用已删 slash / 不含 `${CLAUDE_*}` 占位符（仅 anythingllm-mcp plugin.json 豁免）/ 不用 `command -v` / vercel CLI 实测识别 10 skills。
+10 项断言：
+1. 每个 SKILL.md 必须用 block scalar description（`description: >`），避免 vercel CLI 解析单行长 description 失败
+2. 含 §跨平台兼容性 checklist 段
+3. 含 `<SUBAGENT-STOP>` 段，且文案含 "Task prompt" 判定条件
+4. 不引用已删的 `commands/` 路径
+5. 不含 `${CLAUDE_PLUGIN_ROOT}` / `${CLAUDE_SKILL_DIR}` 占位符（仅 anythingllm-mcp 的 `plugin.json` 豁免）
+6. anythingllm-mcp `plugin.json` 含 `${CLAUDE_PLUGIN_ROOT}`（专门豁免，验证它在）
+7. 不用 `command -v <bin>`（应改用 5 段式 installed_plugins.json fallback）
+8. vercel CLI 实测识别 10 skills（draw / image-gen / browse / solution-master / make / taa / taw / tpl / trv / twc）
+9. 全部 `description: >` 段下首行不为空（YAML block scalar 语法要求）
+10. **跨 sub-skill 引用 `$SKILL_DIR/../<sibling>/` 与 `${...:-$SKILL_DIR/..}/skills/<sibling>/` 中 `<sibling>` 必须是同 plugin 的真实 sub-skill 目录**（防回归跨 plugin 假设）
 
 CI / 提 PR 前必跑。
 
 ---
-
-### SKILL.md 统一模板
-
-每个 SKILL.md 顶部按统一模板写，包含：
-- frontmatter：`description: >` block scalar（避免 vercel CLI 解析单行长 description 失败）
-- §跨平台兼容性 checklist：5 项（python 命令名 / 路径自定位 / 可执行检测 / Bash heredoc / 路径分隔符）
-- `<SUBAGENT-STOP>` 标签（含"Task prompt"判定条件，让被分派的子智能体跳过主流程编排）
-- 铁律段（如适用）：`<EXTREMELY-IMPORTANT>` 包裹的不可绕过规则
-- §路径自定位 bootstrap：installed_plugins.json 五段式 fallback 解析 SKILL_DIR
-
-模板文件：`/Users/tubeliu/.claude/plans/SKILL-template.md`（仓库外 maintainer 资料）。
-
-### 跨 plugin 调用约定
-
-跨 plugin 调用通过查询 `~/.claude/plugins/installed_plugins.json` 拿到对方 plugin 的 `installPath`，再拼脚本绝对路径。**不假设兄弟相对路径**——Claude Code 的 cache 布局是 `<plugin>/<version>/skills/<skill>/`，跨 plugin 不是兄弟；Cursor / OpenCode 装出来又是另一种结构。
-
-五段式 fallback（每个 SKILL.md §路径自定位 段提供）：
-
-1. `~/.claude/plugins/installed_plugins.json`（Claude Code 权威来源，精确指向当前激活版本）
-2. `~/.cursor/skills` / `~/.agents/skills` / `.cursor/skills` / `.agents/skills`（vercel CLI 标准目录）
-3. 用户预设环境变量 `<PLUGIN>_PLUGIN_PATH`（如 `DRAWIO_PLUGIN_PATH`）
-4. cwd 相对 `./` 和 `../`（dev 态）
-5. 全失败 → 输出诊断 + 退出 1（让 Claude 转述给用户，要求 export 环境变量或安装缺失 plugin）
-
-### 子智能体调度
-
-solution-master 的子智能体（writer / spec-reviewer / quality-reviewer）通过 **Task tool** 委派——把 `agents/<role>.md` 完整内容作为 Task prompt body 传入：
-
-```python
-Task(
-  subagent_type="general-purpose",
-  description="撰写章节 N: <章节名>",
-  prompt="""<agents/writer.md 完整内容>
-
-  ## 你的任务
-  ...
-  """
-)
-```
-
-不支持 Task tool 的 agent：在主上下文顺序执行，章节之间显式输出 `---RESET CONTEXT FOR <章节名>---` 边界（近似隔离，非真隔离）。
-
-### MCP server 共享
-
-`anythingllm-mcp` 是独立 plugin，注册无前缀的 `anythingllm` MCP server。消费方（solution-master / tender-workflow）的 `plugin.json` 不含 `mcpServers` 字段，直接通过 `mcp__anythingllm__anythingllm_search` / `mcp__anythingllm__anythingllm_list_workspaces` 调用。
-
-未装 `anythingllm-mcp` 时，消费方 SKILL 自动降级为本地 YAML 索引 + 联网检索（不 hard-fail）。
 
 ### 版本号 bump 规则
 
@@ -434,9 +506,10 @@ Task(
 **只改了哪个 plugin 就只 bump 那一个的 entry**，其他 plugin 版本号不动——这样别人升级时只会拿到你改的那个，不会被误更新到别的。
 
 **bump level 规则**：
-- 修 bug / 文档 / 内部重构 = **patch +1**（如 `0.3.0 → 0.3.1`）
-- 破坏性变更（删 SKILL / 改命令字符串 / 改公开入口）= **minor +1**（如 `0.3.0 → 0.4.0`）
-- marketplace 顶层 bump level **至少跟随子 plugin 最高级别**——任一 plugin minor bump 时，顶层也至少 minor。顶层 minor 数字取所有 plugin 当下新 minor 中的最大值
+- 修 bug / 文档 / 内部重构 = **patch +1**（如 `1.0.0 → 1.0.1`）
+- 破坏性变更（删 SKILL / 改命令字符串 / 改 sub-skill dir 名 / 改公开入口）= **minor +1**（如 `1.0.0 → 1.1.0`）
+- 仓库整体大重构（marketplace breaking）= **major +1**（如 `1.x → 2.0.0`）—— 要在 commit message + marketplace.json description 醒目说明
+- marketplace 顶层 bump level **至少跟随子 plugin 最高级别**——任一 plugin minor bump 时，顶层也至少 minor
 
 施工日复核：
 
@@ -445,14 +518,3 @@ grep '"version"' .claude-plugin/marketplace.json */.claude-plugin/plugin.json
 ```
 
 三处版本号必须保持一致：marketplace.json 顶层 `metadata.version` + 各 plugin entry 的 `version` + 各 plugin 自己的 `plugin.json` 的 `version`。
-
-### SessionStart hook（仅 solution-master）
-
-7 个 plugin 中**仅 solution-master** 注册 SessionStart hook（Claude Code 用 `hooks.json`，Cursor 用 `hooks-cursor.json`）：
-
-- 项目门禁：仅当 cwd 含 `drafts/` / `docs/specs/` / `skills/solution-master/SKILL.md` / `.claude/skills/solution-master/SKILL.md` 任一时触发
-- 触发后 cat 主 SKILL.md 全文注入到 additionalContext（铁律 + 文件导航 + 子智能体调度全量）
-- 其它 plugin 不重复注册——多个同步 hook 会让会话启动时间线性叠加；其它 plugin 的提示性内容用 SKILL description 承载即可
-
-其它 agent（Codex / OpenCode）暂无 hook 机制；铁律靠主 SKILL.md description 自然语言匹配触发（best-effort）。
-

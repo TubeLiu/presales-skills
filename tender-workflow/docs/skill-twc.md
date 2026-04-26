@@ -93,22 +93,22 @@ CLI 参数 > 环境变量 > 统一配置(skill 节) > 统一配置(全局节) > 
 
 ### 3.1 tw_config.py
 
-位于 `tools/tw_config.py`，是配置读写的唯一后端工具，同时支持 CLI 调用和 Python import。
+位于 `skills/twc/tools/tw_config.py`，是配置读写的唯一后端工具，同时支持 CLI 调用和 Python import。
 
 ```bash
 # CLI 调用方式
-python3 tools/tw_config.py show [skill]          # 显示配置
-python3 tools/tw_config.py get <skill> <key>     # 获取单个值（支持 dot notation）
-python3 tools/tw_config.py set <key> <value>     # 设置值
-python3 tools/tw_config.py models [provider]     # 列出 AI 生图模型
-python3 tools/tw_config.py validate              # 健康检查
-python3 tools/tw_config.py migrate               # 迁移旧配置
-python3 tools/tw_config.py normalize             # 规范化 schema
+python3 skills/twc/tools/tw_config.py show [skill]          # 显示配置
+python3 skills/twc/tools/tw_config.py get <skill> <key>     # 获取单个值（支持 dot notation）
+python3 skills/twc/tools/tw_config.py set <key> <value>     # 设置值
+python3 skills/twc/tools/tw_config.py models [provider]     # 列出 AI 生图模型
+python3 skills/twc/tools/tw_config.py validate              # 健康检查
+python3 skills/twc/tools/tw_config.py migrate               # 迁移旧配置
+python3 skills/twc/tools/tw_config.py normalize             # 规范化 schema
 ```
 
 所有 Skill 的 SKILL.md 中需要读取配置时，统一通过此工具：
 ```bash
-python3 tools/tw_config.py get taw localkb.path
+python3 skills/twc/tools/tw_config.py get taw localkb.path
 ```
 
 ---

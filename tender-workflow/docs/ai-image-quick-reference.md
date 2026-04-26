@@ -64,4 +64,4 @@ image-gen "<prompt>" --aspect_ratio 16:9 --image_size 2K -o <output_dir>
 ## 文档链接
 
 - 详细文档：[`docs/ai-image-generation.md`](./ai-image-generation.md)
-- ai-image plugin SKILL.md：`<presales-skills>/ai-image/skills/ai-image/SKILL.md`
+- ai-image plugin SKILL.md：`<presales-skills>/ai-image/skills/gen/SKILL.md`

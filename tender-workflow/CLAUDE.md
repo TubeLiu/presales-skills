@@ -96,11 +96,11 @@ tender-workflow/
 /twc migrate            # 迁移旧配置
 ```
 
-**配置工具**：`tools/tw_config.py`（供 SKILL.md 调用）
+**配置工具**：`skills/twc/tools/tw_config.py`（供 SKILL.md 调用）
 ```bash
-python3 tools/tw_config.py get taw localkb.path    # 获取值
-python3 tools/tw_config.py set localkb.path /data  # 设置值
-python3 tools/tw_config.py show                     # 显示全部配置
+python3 skills/twc/tools/tw_config.py get taw localkb.path    # 获取值
+python3 skills/twc/tools/tw_config.py set localkb.path /data  # 设置值
+python3 skills/twc/tools/tw_config.py show                     # 显示全部配置
 ```
 
 **配置解析优先级**：CLI 参数 > 环境变量 > 统一配置(skill 节) > 统一配置(全局节) > 默认值

@@ -74,7 +74,7 @@ digraph solution_writing {
 3. 创建任务跟踪列表（使用 TaskCreate）
 4. 确认用户选择的输出格式（Markdown / DOCX）
 5. **draw.io 可用性前置检查**：
-   - drawio 技能已作为 solution-master 插件的一部分捆绑分发，**默认情况下始终可用**（plugin 模式经由插件 skill 自动发现，npx 模式经由 `.claude/skills/drawio/` 复制）
+   - drawio 技能已作为 solution-master 插件的一部分捆绑分发，**默认情况下始终可用**（plugin 模式经由插件 skill 自动发现，npx 模式经由 `.claude/skills/draw/` 复制）
    - 如果用户明确自定义了 drawio 覆盖（例如 `/solution-config` 安装了本地版本），检测顺序为：
      ```python
      python3 -c "
@@ -82,8 +82,8 @@ digraph solution_writing {
      # drawio 已捆绑在 solution-master 插件中，默认可用
      # 此处仅检测用户是否提供了本地覆盖版本
      overrides = [
-         Path('.claude/skills/drawio/SKILL.md'),          # npx 项目模式覆盖
-         Path.home() / '.claude/skills/drawio/SKILL.md',  # 全局覆盖
+         Path('.claude/skills/draw/SKILL.md'),          # npx 项目模式覆盖
+         Path.home() / '.claude/skills/draw/SKILL.md',  # 全局覆盖
      ]
      for p in overrides:
          if p.exists():
@@ -213,7 +213,7 @@ writer 子智能体必须将上述每个图片引用/占位符插入到对应段
 cat "$SKILL_DIR/prompts/section_templates/technical.yaml"
 ```
 
-`$SKILL_DIR` 由主 SKILL.md 顶部的 §路径自定位 bootstrap 解析（installed_plugins.json 五段式 fallback），指向 `<plugin-install-path>/skills/solution-master/`。不要使用 `prompts/section_templates/...` 这样的 cwd-相对路径——Claude 的 cwd 是用户项目，不是 skill 所在目录。
+`$SKILL_DIR` 由主 SKILL.md 顶部的 §路径自定位 bootstrap 解析（installed_plugins.json 五段式 fallback），指向 `<plugin-install-path>/skills/sm/`。不要使用 `prompts/section_templates/...` 这样的 cwd-相对路径——Claude 的 cwd 是用户项目，不是 skill 所在目录。
 
 ## 红线
 

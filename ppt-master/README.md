@@ -68,7 +68,7 @@ AI:  Sure. Let's confirm the design spec:
 
 Output: two timestamped files saved to `exports/` — a native-shapes `.pptx` (directly editable) and an `_svg.pptx` snapshot for visual reference. Requires Office 2016+.
 
-If the AI loses context mid-flow, ask it to read `skills/ppt-master/SKILL.md`.
+If the AI loses context mid-flow, ask it to read `skills/make/SKILL.md`.
 
 ---
 
@@ -93,7 +93,7 @@ If the AI loses context mid-flow, ask it to read `skills/ppt-master/SKILL.md`.
 
 ## SVG technical constraints
 
-PPT Master generates SVG as the intermediate format, then converts to native DrawingML for PowerPoint. Some SVG features are banned because they can't round-trip to native PPTX shapes. Full reference in [`CLAUDE.md`](./CLAUDE.md) and `skills/ppt-master/SKILL.md`.
+PPT Master generates SVG as the intermediate format, then converts to native DrawingML for PowerPoint. Some SVG features are banned because they can't round-trip to native PPTX shapes. Full reference in [`CLAUDE.md`](./CLAUDE.md) and `skills/make/SKILL.md`.
 
 **Quick reference**:
 
@@ -128,7 +128,7 @@ The following docs are inherited from the upstream PPT Master project and have n
 | [`docs/windows-installation.md`](./docs/windows-installation.md) | Step-by-step setup for Windows |
 | [`docs/technical-design.md`](./docs/technical-design.md) | Architecture, design philosophy, why SVG |
 | [`docs/faq.md`](./docs/faq.md) | Model selection, cost, layout troubleshooting, custom templates |
-| [`skills/ppt-master/SKILL.md`](./skills/ppt-master/SKILL.md) | Core workflow and rules |
+| [`skills/make/SKILL.md`](./skills/make/SKILL.md) | Core workflow and rules |
 
 ---
 

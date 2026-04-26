@@ -386,7 +386,7 @@ review_report:
 
 ### 修订指令格式 (trv Phase 3.5 中间产物)
 
-Claude 在审核时生成、`tools/trv_docx_reviser.py` 消费的修订指令 JSON：
+Claude 在审核时生成、`skills/twc/tools/trv_docx_reviser.py` 消费的修订指令 JSON：
 
 ```json
 {

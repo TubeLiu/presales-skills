@@ -197,8 +197,8 @@ python3 "$SM_CONFIG" set cdp_sites.enabled false
 
 按下面步骤走：
 
-1. Read `<web-access plugin path>/skills/web-access/SKILL.md` → 学习 §路径自定位 + §配置
-2. Read `<web-access plugin path>/skills/web-access/setup.md` → 走完整 wizard
+1. Read `<web-access plugin path>/skills/browse/SKILL.md` → 学习 §路径自定位 + §配置
+2. Read `<web-access plugin path>/skills/browse/setup.md` → 走完整 wizard
 3. web-access setup.md 通过后回到本步骤 5.1
 
 ### 5.1 站点配置循环
@@ -267,7 +267,7 @@ cdp_sites:
 WA_PATH=$(...)
 
 # 2. 启动/复用 cdp-proxy（idempotent）
-node "$WA_PATH/skills/web-access/scripts/check-deps.mjs"
+node "$WA_PATH/skills/browse/scripts/check-deps.mjs"
 
 # 3. URL-encode 替换 {query}
 SEARCH_URL=$(python3 -c "
