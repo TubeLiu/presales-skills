@@ -9,8 +9,8 @@ import os
 import sys
 
 # 兼容 plugin install 模式（PATH 注入）+ 本地开发（相对路径）
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts", "image_backends"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "skills", "gen", "scripts"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "skills", "gen", "scripts", "image_backends"))
 from backend_common import sanitize_error  # noqa: E402
 
 
