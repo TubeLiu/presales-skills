@@ -24,6 +24,18 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 # 测试文件
 TENDER_FILE = Path(os.environ.get('TENDER_TEST_FILE', str(PROJECT_ROOT / 'tests' / '水网智科.md')))
 
+# Module-level skip：本组 e2e 测试需要真实招标文件作为 input + spawn `claude -p` 子进程
+# 实际跑 taa/taw skill。仓库 .gitignore 已排除 tests/*.md（招标文件含敏感内容）；
+# 且未配置 ai-image API key 时 taw 也跑不通。fixture 缺失时自动 skip 整个 module，
+# 不阻塞 unit / lint 类测试在 CI 中跑。
+# 启用本地 e2e：把招标文件放到 PROJECT_ROOT/tests/水网智科.md，或 export TENDER_TEST_FILE。
+if not TENDER_FILE.exists():
+    pytest.skip(
+        f"e2e fixture 不存在: {TENDER_FILE}（需要真实招标文件 + claude CLI + API keys）。"
+        f"启用方式见模块顶部注释。",
+        allow_module_level=True,
+    )
+
 # 输出目录
 OUTPUT_DIR = PROJECT_ROOT / 'output'
 DRAFTS_DIR = PROJECT_ROOT / 'drafts'
@@ -72,10 +84,8 @@ class TestE2EWorkflow:
     def test_0_environment_setup(self, test_context):
         """Step 0: 环境准备"""
         print("\n=== Step 0: 环境准备 ===")
-
-        # 检查测试文件存在性
-        if not TENDER_FILE.exists():
-            pytest.fail(f"测试文件不存在: {TENDER_FILE}")
+        # TENDER_FILE 缺失检查已上移到 module-level skip（见文件顶部）；
+        # 这里走到说明 fixture 已存在，可以继续。
 
         print(f"✅ 测试文件: {TENDER_FILE}")
         print(f"   大小: {TENDER_FILE.stat().st_size / 1024:.1f} KB")
