@@ -74,9 +74,22 @@ def _read_yaml(path: Path) -> Dict:
 
 
 def _write_yaml(path: Path, data: Dict) -> None:
+    """F-021: tmp + os.replace 原子写。半截写入崩溃不会让用户 config 损坏。"""
+    import time
     path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
+    tmp_path = path.with_suffix(path.suffix + ".tmp")
+    with open(tmp_path, "w", encoding="utf-8") as f:
         yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+    # Windows: MoveFileEx 遇到目标被另一进程占用会 PermissionError，重试一次
+    for attempt in range(2):
+        try:
+            tmp_path.replace(path)
+            break
+        except PermissionError:
+            if attempt == 0:
+                time.sleep(0.1)
+            else:
+                raise
     # F-011: API key 明文存盘的最低权限保护（同机多用户可见性）；非 POSIX FS 失败时 silent 忽略
     try:
         os.chmod(path, 0o600)
