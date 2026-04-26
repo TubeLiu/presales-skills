@@ -251,3 +251,33 @@ def test_skill_name_matches_dir():
                 f"{rel}: name={name!r} != dir={dir_name!r}（如有意 mismatch 请加白名单）"
             )
     assert not failures, "name vs dir 一致性违反：\n" + "\n".join(failures)
+
+
+# 期望含 <!-- subagent-tool-limit-block --> marker 的 subagent prompt body 文件
+# （注册表式 enforce，未来增减 subagent 时改这里 + 加 marker，二者必须同步）
+_SUBAGENT_PROMPT_BODIES = [
+    "solution-master/skills/go/agents/writer.md",
+    "solution-master/skills/go/agents/spec-reviewer.md",
+    "solution-master/skills/go/agents/quality-reviewer.md",
+    "tender-workflow/skills/taw/prompts/parallel_writer_agent.yaml",
+]
+
+
+def test_subagent_prompt_bodies_have_tool_limit_block():
+    """所有 subagent prompt body 文件必须含 <!-- subagent-tool-limit-block --> marker
+    （工具限制铁律段）。
+
+    背景：Claude Code background subagent pre-approval 机制下，未声明的 Skill /
+    mcp__* / WebFetch / WebSearch 调用会 auto-deny。subagent prompt body 必须自检
+    声明工具限制 + 报告 NEEDS_CONTEXT，避免 subagent 自己 try 浪费一轮。
+    详见 solution-master/skills/go/SKILL.md §子智能体工具限制。
+    """
+    failures = []
+    for rel in _SUBAGENT_PROMPT_BODIES:
+        path = REPO_ROOT / rel
+        if not path.exists():
+            failures.append(f"{rel}: 文件不存在（_SUBAGENT_PROMPT_BODIES 注册表过时？）")
+            continue
+        if "subagent-tool-limit-block" not in _read(path):
+            failures.append(f"{rel}: 缺少 <!-- subagent-tool-limit-block --> marker")
+    assert not failures, "subagent 工具限制铁律段缺失：\n" + "\n".join(failures)
