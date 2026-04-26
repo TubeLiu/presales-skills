@@ -6,7 +6,7 @@
 #
 # Changes from upstream:
 #   - Variable rename: PLUGIN_ROOT -> SM_ROOT
-#   - Read skills/sm/SKILL.md (the unified main SKILL after M4 11→1 merge)
+#   - Read skills/go/SKILL.md (the unified main SKILL after M4 11→1 merge)
 #   - Injected text adapted to Solution Master context
 #   - Added project-gate: only fires in Solution Master projects
 #     (presence of drafts/, docs/specs/, or solution-master skill marker)
@@ -24,13 +24,13 @@ SM_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$PWD}"
 if [ ! -d "${PROJECT_DIR}/drafts" ] && \
    [ ! -d "${PROJECT_DIR}/docs/specs" ] && \
-   [ ! -f "${PROJECT_DIR}/skills/sm/SKILL.md" ] && \
-   [ ! -f "${PROJECT_DIR}/.claude/skills/sm/SKILL.md" ]; then
+   [ ! -f "${PROJECT_DIR}/skills/go/SKILL.md" ] && \
+   [ ! -f "${PROJECT_DIR}/.claude/skills/go/SKILL.md" ]; then
   exit 0
 fi
 
 # Read main solution-master SKILL content (post M4 11→1 merge: iron rules now live here)
-using_sm_content=$(cat "${SM_ROOT}/skills/sm/SKILL.md" 2>&1 || echo "Error reading solution-master skill")
+using_sm_content=$(cat "${SM_ROOT}/skills/go/SKILL.md" 2>&1 || echo "Error reading solution-master skill")
 
 # Escape string for JSON embedding using bash parameter substitution.
 # Each ${s//old/new} is a single C-level pass - orders of magnitude

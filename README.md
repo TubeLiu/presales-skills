@@ -10,7 +10,7 @@
 
 | plugin | 类型 | Slash 入口（canonical / 短 alias）| 功能 |
 |---|---|---|---|
-| **solution-master** | 主 | `/solution-master:sm`（短 alias `/solution-master`）| 通用解决方案撰写：苏格拉底式提问 / 子智能体并行撰写 / 双阶段审查 / 多源知识检索 / 配图 / Markdown + DOCX 输出 |
+| **solution-master** | 主 | `/solution-master:go`（短 alias `/solution-master`）| 通用解决方案撰写：苏格拉底式提问 / 子智能体并行撰写 / 双阶段审查 / 多源知识检索 / 配图 / Markdown + DOCX 输出 |
 | **ppt-master** | 主 | `/ppt-master:make`（短 alias `/make`）| 多源文档 → 原生可编辑 PPTX（SVG 流水线 + 真实 PowerPoint shape）。**默认 Alauda 模板** |
 | **tender-workflow** | 主 | `/tender-workflow:taa` / `:taw` / `:tpl` / `:trv` / `:twc` | 四角色招投标：tpl 招标策划 / taa 招标分析 / taw 标书撰稿 / trv 多维度审核 / twc 配置 |
 | **drawio** | 共享 | `/drawio:draw`（短 alias `/draw`）| Draw.io 图表（.drawio XML + PNG/SVG/PDF 导出）。被 solution-master / tender-workflow 依赖 |
@@ -131,14 +131,14 @@ ppt_master:
   default_layout: china_telecom_template   # 或别的内置模板名
 ```
 
-### `/solution-master:sm` 写方案
+### `/solution-master:go` 写方案
 
 ```
 > 帮我写一份面向金融行业的容器云技术方案
-> /solution-master:sm "GitOps 蓝绿发布技术方案"
+> /solution-master:go "GitOps 蓝绿发布技术方案"
 ```
 
-solution-master 在 SM 项目目录（含 `drafts/` / `docs/specs/` / 装了 `solution-master:sm` 的 SKILL）触发 SessionStart hook 自动注入铁律，按工作流走：
+solution-master 在 SM 项目目录（含 `drafts/` / `docs/specs/` / 装了 `solution-master:go` 的 SKILL）触发 SessionStart hook 自动注入铁律，按工作流走：
 
 ```
 brainstorming（苏格拉底式提问）
@@ -152,7 +152,7 @@ spec-review（内容审查）+ quality-review（写作审查）
 docx 输出
 ```
 
-详细工作流见 `solution-master/skills/sm/workflow/{brainstorming,planning,writing,spec-review,quality-review,knowledge-retrieval,docx,config}.md`，按需 Read。
+详细工作流见 `solution-master/skills/go/workflow/{brainstorming,planning,writing,spec-review,quality-review,knowledge-retrieval,docx,config}.md`，按需 Read。
 
 ### `/tender-workflow:*` 招投标
 
@@ -336,7 +336,7 @@ presales-skills/
 │   │   ├── hooks-cursor.json          # 同款 (Cursor)
 │   │   ├── session-start              # 注入主 SKILL.md 内容到 additionalContext
 │   │   └── run-hook.cmd               # Windows 跨平台 wrapper
-│   └── skills/sm/                     # 注册为 solution-master:sm
+│   └── skills/go/                     # 注册为 solution-master:go
 │       ├── SKILL.md                   # name: solution-master（短 alias）
 │       ├── workflow/                  # 8 个按需 Read 的子流程
 │       │   ├── brainstorming.md / planning.md / writing.md
@@ -410,7 +410,7 @@ vercel CLI 装到 Codex/Cursor 时按 SKILL.md `name:` 命名 dir，slash 直接
 
 7 个 plugin 中**仅 solution-master** 注册 SessionStart hook（Claude Code 用 `hooks.json`，Cursor 用 `hooks-cursor.json`）：
 
-- 项目门禁：仅当 cwd 含 `drafts/` / `docs/specs/` / `skills/sm/SKILL.md` / `.claude/skills/sm/SKILL.md` 任一时触发
+- 项目门禁：仅当 cwd 含 `drafts/` / `docs/specs/` / `skills/go/SKILL.md` / `.claude/skills/go/SKILL.md` 任一时触发
 - 触发后 cat 主 SKILL.md 全文注入到 additionalContext（铁律 + 文件导航 + 子智能体调度全量）
 - 其它 plugin 不重复注册——多个同步 hook 会让会话启动时间线性叠加；其它 plugin 的提示性内容用 SKILL description 承载即可
 

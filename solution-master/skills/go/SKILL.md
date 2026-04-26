@@ -252,7 +252,7 @@ solution-master 的配置分**两个文件分工**：
 **项目门禁**：仅当 cwd 含以下任一时触发，全局安装下不会污染非 SM 项目：
 1. `drafts/` 目录
 2. `docs/specs/` 目录
-3. `skills/sm/SKILL.md`（本文件存在即触发）
-4. `.claude/skills/sm/SKILL.md`（npx 安装模式）
+3. `skills/go/SKILL.md`（本文件存在即触发）
+4. `.claude/skills/go/SKILL.md`（npx 安装模式）
 
 其它 agent（vercel CLI 装到 Codex / OpenCode 等）无 hook 机制；用户首句若不含触发词，需手动调用 SKILL。Cursor 用 `hooks-cursor.json` 同款机制。

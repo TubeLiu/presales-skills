@@ -76,7 +76,7 @@
     {
       "name": "solution-master",
       "source": "./solution-master",
-      "description": "AI 辅助通用解决方案撰写框架（技术方案 / 业务方案 / 咨询报告 / 项目建议书 / 招投标方案）。覆盖头脑风暴 → 任务分解 → 子智能体并行撰写 → 双阶段审查 → DOCX 输出全流程。slash 调用 /solution-master:sm 或自然语言触发（'写方案' / '撰写技术方案'）。依赖 drawio、ai-image plugin；anythingllm-mcp、web-access 可选。Claude Code + Cursor 用户额外有 SessionStart hook 自动注入铁律防脱轨。",
+      "description": "AI 辅助通用解决方案撰写框架（技术方案 / 业务方案 / 咨询报告 / 项目建议书 / 招投标方案）。覆盖头脑风暴 → 任务分解 → 子智能体并行撰写 → 双阶段审查 → DOCX 输出全流程。slash 调用 /solution-master:go 或自然语言触发（'写方案' / '撰写技术方案'）。依赖 drawio、ai-image plugin；anythingllm-mcp、web-access 可选。Claude Code + Cursor 用户额外有 SessionStart hook 自动注入铁律防脱轨。",
       "version": "1.0.0",
       "author": {
         "name": "LiuZiJiao"

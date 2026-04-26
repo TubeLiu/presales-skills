@@ -8,7 +8,7 @@
 - **子智能体隔离 + 双阶段审查**：每个章节由独立子智能体撰写，然后由 **spec-reviewer** 审内容正确性、**quality-reviewer** 审写作质量；审查者被强制"**不信任报告**"——必须亲自用 Read 打开 draft 文件逐条核对，而不是看撰写者的自述（`agents/spec-reviewer.md` · `agents/quality-reviewer.md`）
 - **四路知识融合**：本地知识库 + AnythingLLM 语义检索 + Web 搜索（Tavily/Exa）+ CDP 登录态浏览器（可进 Confluence 等企业内网），按相关性/权威性/完整性/时效性四维打分、跨源语义去重、缺口补检（`skills/knowledge-retrieval`）
 - **7 条铁律 + SessionStart Hook 自动注入**：每次会话启动（含 `/clear`、`/compact`）自动把铁律、红线清单、技能路由表注入 Claude 上下文——无法被遗忘、无法被"合理化"绕过（`skills/using-solution-master` · `hooks/session-start`）
-- **上下文感知配图 + 多供应商 AI 生图**：架构图走 draw.io、概念图走 AI 生图、产品截图走本地资产，按章节语义自动选型；AI 生图支持**多供应商多模型**（ByteDance、阿里、Google 等），通过 /ai-image:gen 子命令 models 管理模型注册表，可联网刷新；图源不可用时报警而非静默失败（`ai-image plugin` · `skills/draw` · `skills/sm/scripts/sm_config.py`）
+- **上下文感知配图 + 多供应商 AI 生图**：架构图走 draw.io、概念图走 AI 生图、产品截图走本地资产，按章节语义自动选型；AI 生图支持**多供应商多模型**（ByteDance、阿里、Google 等），通过 /ai-image:gen 子命令 models 管理模型注册表，可联网刷新；图源不可用时报警而非静默失败（`ai-image plugin` · `skills/draw` · `skills/go/scripts/sm_config.py`）
 - **企业级 DOCX 一键产出**：Markdown 默认输出，DOCX 输出遵循中英文分离字体、H1–H5 多级自动编号、draw.io PNG 自动嵌入——省去手工调格式（`skills/docx-formatting`）
 
 **工作流**：`solution-brainstorming`（问清楚）→ `solution-planning`（拆任务 + 验收标准）→ 每章 `knowledge-retrieval` + ai-image plugin（跨 plugin 引用）+ writer 子智能体 → `spec-reviewing` → `quality-reviewing` → 组装 → `docx-formatting` → 完成。
