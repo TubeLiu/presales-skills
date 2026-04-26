@@ -313,3 +313,145 @@ def test_check_uv_missing(monkeypatch, capsys):
     monkeypatch.setattr(mi.shutil, "which", lambda name: None)
     assert mi.cmd_check("uv") == 1
     assert "MISSING" in capsys.readouterr().out
+
+
+# ════════════════════════════════════════════════════════
+# 8. read_claude_json 损坏 → 抛 ClaudeJsonCorrupted（不再 sys.exit）
+# ════════════════════════════════════════════════════════
+
+def test_read_claude_json_corrupted_raises(tmp_path, monkeypatch):
+    fake = tmp_path / ".claude.json"
+    fake.write_text("{not valid json", encoding="utf-8")
+    monkeypatch.setattr(mi, "CLAUDE_JSON", fake)
+    with pytest.raises(mi.ClaudeJsonCorrupted, match="解析失败"):
+        mi.read_claude_json()
+
+
+def test_read_claude_json_missing_returns_empty(tmp_path, monkeypatch):
+    fake = tmp_path / ".claude.json"  # 不存在
+    monkeypatch.setattr(mi, "CLAUDE_JSON", fake)
+    assert mi.read_claude_json() == {}
+
+
+def test_register_returns_3_on_corrupt_claude_json(tmp_path, monkeypatch, capsys):
+    fake = tmp_path / ".claude.json"
+    fake.write_text("garbage{", encoding="utf-8")
+    monkeypatch.setattr(mi, "CLAUDE_JSON", fake)
+    rc = mi.cmd_register("tavily", "tvly-x", host=None, dry_run=False)
+    assert rc == 3
+    assert "解析失败" in capsys.readouterr().err
+
+
+def test_unregister_returns_3_on_corrupt_claude_json(tmp_path, monkeypatch):
+    fake = tmp_path / ".claude.json"
+    fake.write_text("garbage{", encoding="utf-8")
+    monkeypatch.setattr(mi, "CLAUDE_JSON", fake)
+    assert mi.cmd_unregister("tavily") == 3
+
+
+# ════════════════════════════════════════════════════════
+# 9. write_claude_json: chmod 0600 实际生效（POSIX 平台）
+# ════════════════════════════════════════════════════════
+
+def test_write_claude_json_chmod_0600(tmp_path, monkeypatch):
+    if sys.platform == "win32":
+        pytest.skip("Windows NTFS 不支持 POSIX chmod 语义")
+    fake = tmp_path / ".claude.json"
+    monkeypatch.setattr(mi, "CLAUDE_JSON", fake)
+    mi.write_claude_json({"mcpServers": {"tavily": {"env": {"TAVILY_API_KEY": "sensitive"}}}})
+    import stat
+    mode = stat.S_IMODE(fake.stat().st_mode)
+    assert mode == 0o600, f"expected 0o600 got {oct(mode)}"
+
+
+# ════════════════════════════════════════════════════════
+# 10. cmd_test: control flow（mock Popen + send/recv_jsonrpc）
+# ════════════════════════════════════════════════════════
+
+class _FakePopenForTest:
+    """模拟 subprocess.Popen 但不真起进程。
+
+    reader thread 会调 iter(stdout.readline, "")；用空 stdout 让 thread 立即 EOF 退出。
+    cmd_test 真正的 control flow 通过 monkeypatch send_jsonrpc / recv_jsonrpc 验证。
+    """
+    def __init__(self, *args, **kwargs):
+        import io
+        self.stdin = io.StringIO()
+        self.stdout = io.StringIO()  # readline() → ""，reader thread 立即退出
+        self.stderr = io.StringIO()
+    def terminate(self): pass
+    def wait(self, timeout=None): pass
+    def kill(self): pass
+
+
+@pytest.fixture
+def mocked_test_proc(monkeypatch):
+    """让 cmd_test 不真起 server；recv_jsonrpc 由测试逐项 push response。"""
+    monkeypatch.setattr(mi.subprocess, "Popen", _FakePopenForTest)
+    sent: list[dict] = []
+    monkeypatch.setattr(mi, "send_jsonrpc", lambda proc, msg: sent.append(msg))
+    return sent
+
+
+def test_cmd_test_unknown_provider(capsys):
+    assert mi.cmd_test("doesnotexist", key="k", host=None) == 2
+
+
+def test_cmd_test_no_key_fails(tmp_path, monkeypatch, capsys):
+    fake = tmp_path / ".claude.json"
+    monkeypatch.setattr(mi, "CLAUDE_JSON", fake)  # 不存在 → no key from json
+    assert mi.cmd_test("tavily", key=None, host=None) == 1
+    assert "no key" in capsys.readouterr().err
+
+
+def test_cmd_test_invalid_minimax_key_returns_2(tmp_path, monkeypatch):
+    fake = tmp_path / ".claude.json"
+    monkeypatch.setattr(mi, "CLAUDE_JSON", fake)
+    assert mi.cmd_test("minimax", key="wrong-prefix", host=None) == 2
+
+
+def test_cmd_test_minimax_full_pass(mocked_test_proc, monkeypatch, capsys):
+    """minimax test 跑 initialize + 2 tool/call 全 PASS → 返回 0"""
+    sent = mocked_test_proc
+    responses = iter([
+        {"jsonrpc": "2.0", "id": 1, "result": {"protocolVersion": "2024-11-05"}},  # initialize
+        {"jsonrpc": "2.0", "id": 2, "result": {"content": [{"type": "text", "text": "search ok"}]}},
+        {"jsonrpc": "2.0", "id": 3, "result": {"content": [{"type": "text", "text": "image ok"}]}},
+    ])
+    monkeypatch.setattr(mi, "recv_jsonrpc", lambda q, expected_id, timeout: next(responses))
+    rc = mi.cmd_test("minimax", key="sk-cp-test", host=None)
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "PASS web_search" in out
+    assert "PASS understand_image" in out
+    # 验证发送顺序：initialize → notif → 2 tool/call
+    methods = [m.get("method") for m in sent]
+    assert methods == ["initialize", "notifications/initialized", "tools/call", "tools/call"]
+
+
+def test_cmd_test_minimax_partial_fail_continues(mocked_test_proc, monkeypatch, capsys):
+    """web_search PASS 但 understand_image isError → 仍跑两个 tool，最终返回 1"""
+    responses = iter([
+        {"jsonrpc": "2.0", "id": 1, "result": {}},
+        {"jsonrpc": "2.0", "id": 2, "result": {"content": [{"type": "text", "text": "ok"}]}},
+        {"jsonrpc": "2.0", "id": 3, "result": {"isError": True,
+                                                "content": [{"type": "text", "text": "image too large"}]}},
+    ])
+    monkeypatch.setattr(mi, "recv_jsonrpc", lambda q, expected_id, timeout: next(responses))
+    rc = mi.cmd_test("minimax", key="sk-cp-test", host=None)
+    assert rc == 1
+    out = capsys.readouterr().out
+    assert "PASS web_search" in out
+    assert "FAIL understand_image" in out
+    assert "image too large" in out
+
+
+def test_cmd_test_initialize_error_returns_1(mocked_test_proc, monkeypatch, capsys):
+    """initialize 阶段 server 报错 → 不再继续 tool/call，立即返回 1"""
+    responses = iter([
+        {"jsonrpc": "2.0", "id": 1, "error": {"code": -32600, "message": "bad request"}},
+    ])
+    monkeypatch.setattr(mi, "recv_jsonrpc", lambda q, expected_id, timeout: next(responses))
+    rc = mi.cmd_test("tavily", key="tvly-x", host=None)
+    assert rc == 1
+    assert "initialize" in capsys.readouterr().out

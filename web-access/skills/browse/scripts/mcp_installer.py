@@ -209,7 +209,11 @@ def cmd_register(provider: str, key: str, host: Optional[str], dry_run: bool) ->
     if dry_run:
         print(json.dumps({provider: server_cfg}, indent=2, ensure_ascii=False))
         return 0
-    cfg = read_claude_json()
+    try:
+        cfg = read_claude_json()
+    except ClaudeJsonCorrupted as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        return 3
     if CLAUDE_JSON.exists():
         bak = CLAUDE_JSON.with_suffix(f".json.bak.{int(time.time())}")
         try:
@@ -225,7 +229,11 @@ def cmd_register(provider: str, key: str, host: Optional[str], dry_run: bool) ->
 
 
 def cmd_unregister(provider: str) -> int:
-    cfg = read_claude_json()
+    try:
+        cfg = read_claude_json()
+    except ClaudeJsonCorrupted as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        return 3
     servers = cfg.get("mcpServers", {})
     if provider not in servers:
         print(f"OK {provider} not in mcpServers (already absent)")
@@ -236,14 +244,21 @@ def cmd_unregister(provider: str) -> int:
     return 0
 
 
+class ClaudeJsonCorrupted(RuntimeError):
+    """~/.claude.json 损坏抛此异常，由 caller 决策（不在 read_claude_json 里 sys.exit
+    避免 setup wizard 中途强退、丢失 runtime 安装等已完成的副作用状态）。"""
+
+
 def read_claude_json() -> dict:
     if not CLAUDE_JSON.exists():
         return {}
     try:
         return json.loads(CLAUDE_JSON.read_text(encoding="utf-8"))
     except json.JSONDecodeError as e:
-        print(f"ERROR: ~/.claude.json 解析失败 ({e})。请先修复，避免覆盖丢数据。", file=sys.stderr)
-        sys.exit(1)
+        raise ClaudeJsonCorrupted(
+            f"~/.claude.json 解析失败 ({e})。请先修复（用编辑器打开校正 JSON 语法），"
+            f"避免覆盖丢数据；修好后重新跑本命令。"
+        ) from e
 
 
 def write_claude_json(cfg: dict) -> None:
@@ -253,11 +268,20 @@ def write_claude_json(cfg: dict) -> None:
     for attempt in range(3):
         try:
             tmp.replace(CLAUDE_JSON)
-            return
+            break
         except PermissionError:
             if attempt == 2:
                 raise
             time.sleep(0.1)
+    # 含三 provider API key 明文，最低权限保护（同机多用户可见性）
+    # 失败时仅 stderr warn（Windows NTFS / FAT / SMB 等非 POSIX 文件系统常见）
+    try:
+        os.chmod(CLAUDE_JSON, 0o600)
+    except OSError as e:
+        sys.stderr.write(
+            f"[mcp_installer] WARN: chmod 0600 failed on {CLAUDE_JSON}: {e}\n"
+            f"  ~/.claude.json 含 API keys 明文，但权限保护未启用（同机多用户可见）。\n"
+        )
 
 
 # ════════════════════════════════════════════════════════
@@ -275,7 +299,11 @@ def cmd_test(provider: str, key: Optional[str], host: Optional[str]) -> int:
         return 2
     # key 取来源：CLI > ~/.claude.json
     if not key:
-        srv = read_claude_json().get("mcpServers", {}).get(provider, {})
+        try:
+            srv = read_claude_json().get("mcpServers", {}).get(provider, {})
+        except ClaudeJsonCorrupted as e:
+            print(f"ERROR: {e}", file=sys.stderr)
+            return 3
         env = srv.get("env", {})
         key = env.get(KEY_ENV[provider])
         if not host and provider == "minimax":
