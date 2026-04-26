@@ -71,3 +71,7 @@ CLI 不可用时，本 skill 自动降级为 **browser fallback**：生成 diagr
 - 导出 PNG/SVG/PDF/JPG **不内嵌 XML metadata** — 用户必须保留 source `.drawio` 文件以便后续编辑（双击 PNG 不能直接在 draw.io 打开）
 - Self-check（vision-based）需 vision-enabled 模型（Claude Sonnet/Opus 等）；不支持时 gracefully skip
 - ML 模型图的 tensor shape 标注遵循 PyTorch 风格 `(B, C, H, W)` 约定
+
+## 第三方组件
+
+本 plugin 的 SKILL.md / references / styles / assets vendor 自 [Agents365-ai/drawio-skill](https://github.com/Agents365-ai/drawio-skill) v1.4.0（MIT License）。详细借用清单、改写说明与原项目 LICENSE 见 [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md)。
