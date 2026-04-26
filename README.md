@@ -246,32 +246,6 @@ python3 "$TW_DIR/skills/twc/tools/tw_config.py" validate
 
 `$AI_IMAGE_DIR` / `$SM_DIR` / `$TW_DIR` 通过各自 SKILL.md 顶部的 §路径自定位 段（`installed_plugins.json` 五段式 fallback）解析。
 
-### Subagent 工具权限（高级）
-
-solution-master / tender-workflow 的 workflow 默认把 `Skill(skill="ai-image:gen")` / `mcp__*` / `WebFetch` / `WebSearch` 调用全部前置在主 session（subagent 收已准备好的素材）——**这是默认推荐路径，零额外配置**。
-
-> 背景：Claude Code background subagent（Task tool 派发）有 pre-approval 机制，启动后未在 allowlist 中的 Skill/MCP/Web* 调用 auto-deny。详见 [Claude Code 官方文档 sub-agents](https://code.claude.com/docs/en/sub-agents.md)。
-
-如果你希望 background subagent 也能直接调这些工具（节省一轮主 session 扛素材，但 token 用得更激进），在 `~/.claude/settings.json` 加 `permissions.allow` 预批准：
-
-```json
-{
-  "permissions": {
-    "allow": [
-      "Skill(skill=ai-image:gen)",
-      "mcp__plugin_anythingllm-mcp_anythingllm__anythingllm_search",
-      "mcp__plugin_anythingllm-mcp_anythingllm__anythingllm_list_workspaces",
-      "mcp__tavily__tavily_search",
-      "mcp__exa__web_search_exa",
-      "WebFetch",
-      "WebSearch"
-    ]
-  }
-}
-```
-
-加完后 Claude Code 启动 subagent 时按预批准列表放行，subagent 工具不再被 auto-deny。
-
 ---
 
 ## 跨平台
