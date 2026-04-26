@@ -141,3 +141,7 @@ If you want to run the pipeline scripts manually without going through Claude Co
 ## Acknowledgments
 
 [SVG Repo](https://www.svgrepo.com/) · [Tabler Icons](https://github.com/tabler/tabler-icons) · [Robin Williams](https://en.wikipedia.org/wiki/Robin_Williams_(author)) (CRAP principles) · McKinsey, BCG, Bain
+
+## Third-party components
+
+This plugin is vendored from [hugohe3/ppt-master](https://github.com/hugohe3/ppt-master) (MIT License © 2025-2026 Hugo He). For the full list of borrowed files, modifications relative to upstream, and the original LICENSE text, see [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md).
