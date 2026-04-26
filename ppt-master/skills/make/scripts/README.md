@@ -78,11 +78,17 @@ python3 scripts/finalize_svg.py <project_path>
 python3 scripts/svg_to_pptx.py <project_path> -s final
 ```
 
-Image generation (delegated to the ai-image plugin — `image-gen` on PATH after `/plugin install ai-image@presales-skills` + `/reload-plugins`):
+Image generation (delegated to the ai-image plugin — v1.0.0 c983037 删了 `image-gen` PATH bin 入口，改为下列两种调用方式之一）：
 
+**Claude Code**（推荐）：
+```
+Skill(skill="ai-image:gen")
+```
+
+**跨 agent / 直接脚本**：先按 ai-image SKILL.md §路径自定位 解析 `$AI_IMAGE_SKILL_DIR`：
 ```bash
-image-gen "A modern futuristic workspace"
-image-gen --list-backends
+python3 "$AI_IMAGE_SKILL_DIR/scripts/image_gen.py" "A modern futuristic workspace"
+python3 "$AI_IMAGE_SKILL_DIR/scripts/image_gen.py" --list-backends
 python3 scripts/analyze_images.py <project_path>/images
 ```
 

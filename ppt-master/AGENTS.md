@@ -40,7 +40,10 @@ python3 skills/make/scripts/project_manager.py validate <project_path>
 
 # Image tools
 python3 skills/make/scripts/analyze_images.py <project_path>/images
-image-gen "prompt" --aspect_ratio 16:9 --image_size 1K -o <project_path>/images
+# AI 生图通过 ai-image plugin 触发（v1.0.0 已删 image-gen bin，c983037）。
+# 自然语言或 Skill tool 触发 ai-image SKILL；跨 agent fallback 走底层脚本：
+# python3 "$AI_IMAGE_SKILL_DIR/scripts/image_gen.py" "prompt" --aspect_ratio 16:9 --image_size 1K -o <project_path>/images
+# 详见 skills/make/SKILL.md Step 5
 
 # SVG quality check
 python3 skills/make/scripts/svg_quality_checker.py <project_path>

@@ -317,15 +317,9 @@ export ARK_API_KEY="ark-xxxx"
 
 **步骤 3**：验证配置
 
-```bash
-image-gen \
-  --type architecture \
-  --topic "容器云平台总体架构" \
-  --components "基础设施层,K8s编排层,平台层" \
-  --output /tmp/test_ark.png
-```
+直接对 Claude 说："用 ai-image 生成测试图：容器云平台总体架构（包含基础设施层 / K8s 编排层 / 平台层，16:9）"。Claude 会调用 ai-image plugin 出图——成功生成图片即说明 API key 配置正确。
 
-成功后将生成测试图片至 `/tmp/test_ark.png`。
+也可以更简单：对 Claude 说"验证 ai-image API key"——它会跑配置完整性检查（不消耗额度，但也不验证 key 真实可用）。
 
 ---
 
@@ -1164,14 +1158,14 @@ ls .claude/skills/
 
 **原因**：API Key 未配置，或余额不足。
 
-**解决方案**：
+**解决方案**（在 Claude 会话中说）：
+
+- "查看 ai-image 配置 api_keys" — 检查哪些 provider 的 key 已配
+- "用 ai-image 生成测试图：一只红苹果" — 实测 API 是否能用
+
+如果想绕开 AI 生图：
+
 ```bash
-# 检查 API Key 配置
-cat ~/.config/tender-workflow/config.yaml
-
-# 测试 AI 生图是否正常
-image-gen --type architecture --topic "测试" --output /tmp/test.png
-
 # 改用 draw.io（本地生成，零费用）
 /taw output/ --chapter 1.3 --image-source drawio
 

@@ -278,9 +278,16 @@ Read `references/image-generator.md`
 
 1. Extract all images with status "pending generation" from the design spec
 2. Generate prompt document → `<project_path>/images/image_prompts.md`
-3. Generate images (CLI tool recommended):
+3. Generate images via the ai-image plugin (v1.0.0 已删 `image-gen` bin，c983037）。Claude Code 推荐用 Skill tool：
+   ```
+   Skill(skill="ai-image:gen")
+   ```
+   或自然语言："使用 ai-image 生成 <主题> 的 <16:9 / 1K> 图片到 `<project_path>/images/`"。
+
+   跨 agent fallback（Cursor / Codex 等）：先按 ai-image SKILL.md §路径自定位 解析 `$AI_IMAGE_SKILL_DIR`，再调底层脚本：
    ```bash
-   image-gen "prompt" --aspect_ratio 16:9 --image_size 1K -o <project_path>/images
+   python3 "$AI_IMAGE_SKILL_DIR/scripts/image_gen.py" "<prompt>" \
+     --aspect_ratio 16:9 --image_size 1K -o <project_path>/images
    ```
 
 **✅ Checkpoint — Confirm all images are ready, proceed to Step 6**:
