@@ -8,7 +8,7 @@ import pytest
 from pathlib import Path
 from unittest.mock import patch
 
-sys.path.insert(0, str(Path(__file__).parent.parent / 'tools'))
+sys.path.insert(0, str(Path(__file__).parent.parent / 'skills' / 'twc' / 'tools'))
 from tw_config import (
     _deep_get, _deep_set, _parse_value, normalize, validate,
     show, get, load, load_raw, set_value, CONFIG_PATH, DEFAULTS,

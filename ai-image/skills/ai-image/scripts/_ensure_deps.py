@@ -30,12 +30,12 @@ import time
 from pathlib import Path
 
 _SCRIPTS_DIR = Path(__file__).resolve().parent
-# scripts/ 位于 ai-image/skills/ai-image/scripts/ 下（3 级深）。requirements.txt 在
-# plugin 根目录 ai-image/。M1-M5 跨 agent 重构后路径深度由 1→3，必须 3 级 parent。
-_PLUGIN_ROOT = _SCRIPTS_DIR.parent.parent.parent
-_REQ = _PLUGIN_ROOT / "requirements.txt"
-_MARKER = _PLUGIN_ROOT / ".deps-installed"
-_LOCK = _PLUGIN_ROOT / ".deps-installing.lock"
+# v1.0.0：requirements.txt 已迁入 skill 内部（与 scripts/ 同处 skill root，1 级 parent）。
+# 旧名 _PLUGIN_ROOT 改名为 _SKILL_DIR，反映 vercel CLI 装到 Codex 时拷贝单元是 skill/。
+_SKILL_DIR = _SCRIPTS_DIR.parent
+_REQ = _SKILL_DIR / "requirements.txt"
+_MARKER = _SKILL_DIR / ".deps-installed"
+_LOCK = _SKILL_DIR / ".deps-installing.lock"
 
 # 允许环境变量强制跳过（CI、容器、用户已手动管理依赖等场景）
 _SKIP_ENV = "PRESALES_SKILLS_SKIP_AUTO_INSTALL"
@@ -72,7 +72,7 @@ def ensure_deps(quiet: bool = True) -> None:
                 pass
         else:
             print(
-                f"[{_PLUGIN_ROOT.name}] WARN: 锁等待 30s 超时，可能另一进程卡住未清理。"
+                f"[{_SKILL_DIR.name}] WARN: 锁等待 30s 超时，可能另一进程卡住未清理。"
                 f"继续无锁尝试 install 兜底（pip 内部锁会兜底，worst case 二者都成功 install 同一份依赖，幂等）。",
                 file=sys.stderr,
             )
@@ -83,7 +83,7 @@ def ensure_deps(quiet: bool = True) -> None:
 
     try:
         print(
-            f"[{_PLUGIN_ROOT.name}] First-time setup: installing Python dependencies from {_REQ.name}…",
+            f"[{_SKILL_DIR.name}] First-time setup: installing Python dependencies from {_REQ.name}…",
             file=sys.stderr,
         )
         args = [sys.executable, "-m", "pip", "install", "-r", str(_REQ)]
@@ -94,7 +94,7 @@ def ensure_deps(quiet: bool = True) -> None:
             subprocess.check_call(args)
         except subprocess.CalledProcessError as e:
             print(
-                f"[{_PLUGIN_ROOT.name}] WARN: pip install failed (exit {e.returncode}). "
+                f"[{_SKILL_DIR.name}] WARN: pip install failed (exit {e.returncode}). "
                 f"Run manually: pip install -r {_REQ}",
                 file=sys.stderr,
             )
@@ -110,7 +110,7 @@ def ensure_deps(quiet: bool = True) -> None:
             # 缓存目录可能只读（极端场景）；不 fatal，仅下次会重试
             pass
 
-        print(f"[{_PLUGIN_ROOT.name}] Dependencies installed.", file=sys.stderr)
+        print(f"[{_SKILL_DIR.name}] Dependencies installed.", file=sys.stderr)
     finally:
         # 仅当本进程拿到锁时才清，避免误删他人的锁
         if lock_acquired:

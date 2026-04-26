@@ -56,11 +56,11 @@ CONFIG_PATH = CONFIG_DIR / "config.yaml"
 USER_MODELS_PATH = CONFIG_DIR / "models-user.yaml"
 
 # 脚本所在目录（plugin install 时由 Claude Code 管控位置，__file__ 可靠）
-# scripts/ 在 ai-image/skills/ai-image/scripts/ 下（3 级深）；prompts/ 与 requirements.txt
-# 在 plugin 根目录 ai-image/，需 3 级 parent。
+# v1.0.0：prompts/ 与 requirements.txt 已迁入 skill 内部（与 scripts/ 同处 skill root，1 级 parent）。
+# 旧名 PLUGIN_ROOT 改名为 SKILL_DIR，反映新 layout。
 SCRIPT_DIR = Path(__file__).resolve().parent
-PLUGIN_ROOT = SCRIPT_DIR.parent.parent.parent  # ai-image/
-PLUGIN_REGISTRY = PLUGIN_ROOT / "prompts" / "ai_image_models.yaml"
+SKILL_DIR = SCRIPT_DIR.parent
+PLUGIN_REGISTRY = SKILL_DIR / "prompts" / "ai_image_models.yaml"
 
 LEGACY_CONFIGS = {
     "solution-master": Path.home() / ".config" / "solution-master" / "config.yaml",
@@ -421,7 +421,7 @@ def cmd_validate(provider_filter: Optional[str]) -> int:
         return 1
     if not PLUGIN_REGISTRY.exists():
         print(f"错误：注册表文件不存在：{PLUGIN_REGISTRY}", file=sys.stderr)
-        print("  这通常是 plugin 安装不完整或 PLUGIN_ROOT 路径解析有误。", file=sys.stderr)
+        print("  这通常是 plugin 安装不完整或 SKILL_DIR 路径解析有误（旧称 PLUGIN_ROOT）。", file=sys.stderr)
         return 1
     registry = _load_yaml(PLUGIN_REGISTRY)
     api_keys = cfg.get("api_keys") or {}

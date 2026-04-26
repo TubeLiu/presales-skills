@@ -395,23 +395,16 @@ def main():
             file=sys.stderr,
         )
 
-    elif cmd == "models":
-        # 转发到 ai-image 统一模型注册表入口；avoid duplicate registry resolution.
-        import subprocess
-        ai_image_config = shutil.which("ai-image-config")
-        if not ai_image_config:
-            print("错误：ai-image-config 命令未找到。请确保 ai-image plugin 已安装。", file=sys.stderr)
-            sys.exit(1)
-        sys.exit(subprocess.call([ai_image_config, "models", *sys.argv[2:]]))
-
-    elif cmd == "migrate":
-        # F-048: 转发到 ai-image 统一 migrate（避免重复实现合并逻辑；保 /solution-config migrate 命令空间对称）
-        import subprocess
-        ai_image_config = shutil.which("ai-image-config")
-        if not ai_image_config:
-            print("错误：ai-image-config 命令未找到。请确保 ai-image plugin 已安装。", file=sys.stderr)
-            sys.exit(1)
-        sys.exit(subprocess.call([ai_image_config, "migrate"]))
+    elif cmd in ("models", "migrate"):
+        # v1.0.0：原 shutil.which("ai-image-config") orphan caller（commit c983037 删 bin 后失效）。
+        # 改为重定向到 ai-image plugin 的对应 skill 直接调用。
+        print(
+            f"[solution-master] 子命令 {cmd!r} 已转交给 ai-image plugin。\n"
+            f"请运行 Skill(skill=\"ai-image:image-gen\") 子命令 {cmd}，\n"
+            f"或自然语言触发：'{'列出图片模型' if cmd == 'models' else '迁移 ai-image 配置'}'。",
+            file=sys.stderr,
+        )
+        sys.exit(0)
 
     else:
         print(f"未知命令: {cmd}", file=sys.stderr)

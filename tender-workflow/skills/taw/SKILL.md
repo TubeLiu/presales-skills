@@ -310,7 +310,7 @@ Phase 3：质量自检与输出
 4. **优先级配置**（可选）：
    读取统一配置 `~/.config/tender-workflow/config.yaml` 中的 `mcp_search.priority`，使用配置的优先级覆盖默认值。
    ```bash
-   python3 $SKILL_DIR/../tools/tw_config.py get taw mcp_search.priority
+   python3 $SKILL_DIR/../twc/tools/tw_config.py get taw mcp_search.priority
    ```
 
 **Step 1.6：AnythingLLM 可用性检测**
@@ -334,7 +334,7 @@ Phase 3：质量自检与输出
    a) `--anythingllm-workspace <值>` 参数 → 在列表中按 slug 或 name 匹配
    b) 统一配置 `~/.config/tender-workflow/config.yaml` 中的 `taw.anythingllm_workspace` 或 `anythingllm.workspace` → 同上匹配
       ```bash
-      python3 $SKILL_DIR/../tools/tw_config.py get taw anythingllm_workspace
+      python3 $SKILL_DIR/../twc/tools/tw_config.py get taw anythingllm_workspace
       ```
    c) 环境变量 `TAW_ANYTHINGLLM_WS` → 直接使用
    d) 以上均无 → 取列表中第一个 workspace
@@ -394,7 +394,7 @@ Phase 3：质量自检与输出
 1. 验证路径存在且为目录
 2. 写入统一配置文件：
    ```bash
-   python3 $SKILL_DIR/../tools/tw_config.py set localkb.path '<路径的绝对路径>'
+   python3 $SKILL_DIR/../twc/tools/tw_config.py set localkb.path '<路径的绝对路径>'
    ```
 3. 输出提示后退出（不继续后续 Phase）：
    ```
@@ -411,7 +411,7 @@ Phase 3：质量自检与输出
    - 若含 `--kb-path <路径>` → 使用该路径
    - 否则 → 从配置文件读取 `localkb.path`：
      ```bash
-     python3 $SKILL_DIR/../tools/tw_config.py get taw localkb.path
+     python3 $SKILL_DIR/../twc/tools/tw_config.py get taw localkb.path
      ```
    - 若均无 → 报错并退出：`请指定 --kb-path 或先通过 /twc set localkb.path 配置知识库路径`
 
@@ -544,7 +544,7 @@ Phase 3：质量自检与输出
 1. 若指定 `--kb <路径>` → 使用该路径（临时覆盖，不修改配置）
 2. 否则读取统一配置：
    ```bash
-   python3 $SKILL_DIR/../tools/tw_config.py get taw localkb.path
+   python3 $SKILL_DIR/../twc/tools/tw_config.py get taw localkb.path
    ```
    - 若返回有效路径 → 使用该路径
    - 若返回空 → 跳过知识库（降级模式）
@@ -654,7 +654,7 @@ for para in doc.paragraphs:
 **KB 目录索引**：
 ```
 KB_CATALOG = null
-KB_ROOT = 从 config 获取 localkb.path（python3 $SKILL_DIR/../tools/tw_config.py get taw localkb.path）
+KB_ROOT = 从 config 获取 localkb.path（python3 $SKILL_DIR/../twc/tools/tw_config.py get taw localkb.path）
 if KB_ROOT/.index/kb_catalog.yaml exists:
   KB_CATALOG = Read(KB_ROOT/.index/kb_catalog.yaml)
   log: "[KB] 已加载目录索引: {len(KB_CATALOG.entries)} 个文档"

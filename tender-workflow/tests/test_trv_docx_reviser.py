@@ -1,12 +1,14 @@
 """tests/test_trv_docx_reviser.py — 指令驱动 DOCX 修订工具单元测试"""
 import json
+import sys
 from pathlib import Path
 
 from docx import Document
 from docx.shared import Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 
-from tools.trv_docx_reviser import revise_docx, apply_instructions, ReviseStats
+sys.path.insert(0, str(Path(__file__).parent.parent / 'skills' / 'twc' / 'tools'))
+from trv_docx_reviser import revise_docx, apply_instructions, ReviseStats
 
 
 # ---------------------------------------------------------------------------

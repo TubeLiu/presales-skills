@@ -22,7 +22,6 @@ Solution Master 在构建过程中从以下第三方开源项目 vendor（借用
 | `skills/subagent-driven-writing/writer-prompt.md` | `skills/subagent-driven-development/implementer-prompt.md` | 小 | 改名 + 措辞从代码改为章节，保留所有反作弊机制（前置自审、DONE_WITH_CONCERNS、文件超规模上报） |
 | `skills/subagent-driven-writing/spec-reviewer-prompt.md` | `skills/subagent-driven-development/spec-reviewer-prompt.md` | 小 | "不要信任报告" 段落原文保留 |
 | `skills/subagent-driven-writing/quality-reviewer-prompt.md` | 新文件（派生自 SKILL.md 中 code-reviewer 角色） | 中 | Solution Master 根据 spec-reviewer-prompt.md 模板派生的质量审查版本 |
-| `bin/solution-master.js` | `bin/superpowers-zh.js` | 中 | 简化为 Claude Code-only 目标；新增 `--global`、`--uninstall` 模式；新增 `.claude/settings.json` 智能合并（SessionStart hook 注册 + 备份） |
 
 ### superpowers-zh 原项目 LICENSE
 

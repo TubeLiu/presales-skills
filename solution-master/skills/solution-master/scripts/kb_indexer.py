@@ -159,10 +159,16 @@ def scan_kb_directory(kb_path: Path) -> list:
 
 
 def get_default_kb_path() -> Optional[Path]:
-    """获取默认 KB 路径（通过 sm_config 读取）"""
+    """获取默认 KB 路径（通过 sm_config 读取）。
+
+    v1.0.0 fix：原路径 `parent.parent.parent / 'solution-config' / 'scripts'` 是
+    0.1.x 残留的死引用（`solution-config` skill 已合并到 mega，且实际解析到不存在的
+    `skills/skills/solution-config/scripts/`，import 永远静默失败 → 本函数永远返回
+    None）。修复为 `parent`：sm_config.py 与 kb_indexer.py 同处 scripts/ 目录。
+    """
     try:
         import sys as _sys
-        _sm_config_dir = str(Path(__file__).resolve().parent.parent.parent / "solution-config" / "scripts")
+        _sm_config_dir = str(Path(__file__).resolve().parent)
         if _sm_config_dir not in _sys.path:
             _sys.path.insert(0, _sm_config_dir)
         from sm_config import get
