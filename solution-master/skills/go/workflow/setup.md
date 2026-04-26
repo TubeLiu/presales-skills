@@ -93,13 +93,13 @@ python3 "$SM_CONFIG" set anythingllm.enabled false
 
 ## 步骤 4：MCP 搜索工具配置（可选）
 
-知识检索可走 MCP 搜索工具补充 web 素材。当前支持三类，全部走 web-access plugin 的 `mcp_installer.py` 统一注册到 `~/.claude.json`：
+知识检索可走 MCP 搜索工具补充 web 素材。当前支持三类，全部走 web-access plugin 的 `mcp_installer.py` 统一注册到 `~/.claude.json`。**`<provider>` 列即下文命令中传给 mcp_installer.py 的短名**（不要传完整品牌名）：
 
-| Provider | Runtime | 包 | 提供 tool |
-|---|---|---|---|
-| **tavily** | node | `tavily-mcp@latest` | `tavily_search` |
-| **exa** | node | `exa-mcp-server@latest` | `exa_search` |
-| **minimax-token-plan** | uv | `minimax-coding-plan-mcp` | `web_search` + `understand_image`（图理解）；需订阅 [Token Plan](https://platform.minimaxi.com/subscribe/token-plan) 拿 `sk-cp-` 前缀 key |
+| `<provider>` | 完整品牌名 | Runtime | 包 | 提供 tool |
+|---|---|---|---|---|
+| `tavily` | Tavily Search | node | `tavily-mcp@latest` | `tavily_search` |
+| `exa` | Exa Search | node | `exa-mcp-server@latest` | `exa_search` |
+| `minimax` | MiniMax Token Plan | uv | `minimax-coding-plan-mcp` | `web_search` + `understand_image`（图理解）；需订阅 [Token Plan](https://platform.minimaxi.com/subscribe/token-plan) 拿 `sk-cp-` 前缀 key |
 
 ### 4.0 路径自定位 web-access plugin
 
@@ -115,10 +115,14 @@ if os.path.exists(p):
                 print(e['installPath']); sys.exit(0)
 " 2>/dev/null)
 [ -n "$WA_PATH" ] && WA_INSTALLER="$WA_PATH/skills/browse/scripts/mcp_installer.py" \
-  || { echo "MISSING: web-access plugin 未安装，请先 /plugin install web-access@presales-skills 然后 /reload-plugins"; exit 1; }
+  || echo "SKIP_MCP: web-access plugin 未安装"
 ```
 
-未装 → 提示用户安装后回来；阻塞此步。
+**两种处理路径**：
+- 用户决定**先装 web-access 再继续**（`/plugin install web-access@presales-skills` + `/reload-plugins` 后回话）→ 重新跑 4.0
+- 用户决定**跳过 MCP 工具配置**（knowledge-retrieval 用内置 WebSearch 兜底也能跑）→ 直接进步骤 5，不要因此中断整个 wizard
+
+> ⚠️ **AI 注**：本 markdown 内的 ```bash``` 块在每次执行时是独立 subprocess（环境变量不跨 Bash 调用持久）。`$WA_INSTALLER` 是 4.0 解析得到的**绝对路径字符串**，AI 在每次调用 4.1–4.4 各 bash 块时需把 `$WA_INSTALLER` **inline 替换为该绝对路径**，否则会 command not found。
 
 ### 4.1 检测当前已注册状态
 
