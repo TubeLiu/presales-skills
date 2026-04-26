@@ -8,6 +8,13 @@
   "license": "MIT",
   "homepage": "https://github.com/Alauda-io/presales-skills",
   "repository": "https://github.com/Alauda-io/presales-skills.git",
+  "category": "productivity",
+  "tags": [
+    "mcp",
+    "anythingllm",
+    "knowledge-base",
+    "shared"
+  ],
   "keywords": [
     "mcp",
     "anythingllm",

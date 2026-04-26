@@ -1,13 +1,20 @@
 {
   "name": "web-access",
-  "description": "联网操作 + CDP 浏览器自动化 skill。独立 plugin，solution-master 可选依赖（cdp_sites.enabled=true 时必需）；其它 skill 通过 SKILL description 自然语言触发或 installed_plugins.json 自定位脚本调用。",
+  "description": "联网操作 + CDP 浏览器自动化 skill（搜索、网页抓取、登录后操作、浏览器自动化、CDP 远程调试）。slash 调用 /web-access:browse 或自然语言触发。独立 plugin，solution-master 可选依赖（cdp_sites.enabled=true 时必需）。",
   "version": "1.0.0",
   "author": {
     "name": "LiuZiJiao"
   },
   "license": "MIT",
-  "homepage": "https://github.com/eze-is/web-access",
-  "repository": "https://github.com/eze-is/web-access",
+  "homepage": "https://github.com/Alauda-io/presales-skills",
+  "repository": "https://github.com/Alauda-io/presales-skills.git",
+  "category": "productivity",
+  "tags": [
+    "web",
+    "cdp",
+    "browser-automation",
+    "claude-code"
+  ],
   "keywords": [
     "web",
     "cdp",

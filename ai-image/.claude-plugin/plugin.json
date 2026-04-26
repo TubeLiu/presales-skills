@@ -1,6 +1,6 @@
 {
   "name": "ai-image",
-  "description": "统一 AI 图片生成：13 个后端（volcengine/ark、qwen/dashscope、gemini、openai、minimax、stability、bfl、ideogram、zhipu、siliconflow、fal、replicate、openrouter）+ 共享 YAML 模型注册表。生图与配置管理通过 SKILL description 自然语言触发。独立共享 plugin，三个主 plugin 都依赖。",
+  "description": "统一 AI 图片生成：13 个后端（volcengine/ark、qwen/dashscope、gemini、openai、minimax、stability、bfl、ideogram、zhipu、siliconflow、fal、replicate、openrouter）+ 共享 YAML 模型注册表。slash 调用 /ai-image:gen 或自然语言触发（'生成图片：xxx' / 'generate image' / '配置 ai-image'）。独立共享 plugin，三个主 plugin（solution-master / ppt-master / tender-workflow）都依赖。",
   "version": "1.0.0",
   "author": {
     "name": "LiuZiJiao"
@@ -8,6 +8,13 @@
   "license": "MIT",
   "homepage": "https://github.com/Alauda-io/presales-skills",
   "repository": "https://github.com/Alauda-io/presales-skills.git",
+  "category": "productivity",
+  "tags": [
+    "ai-image",
+    "image-generation",
+    "gen-ai",
+    "shared"
+  ],
   "keywords": [
     "ai-image",
     "image-generation",
