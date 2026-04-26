@@ -109,14 +109,14 @@ digraph retrieval {
 ### 执行流程
 
 1. **读取站点配置：** `python3 "${CLAUDE_PLUGIN_ROOT:-$SKILL_DIR/..}/skills/go/scripts/sm_config.py" get cdp_sites`，获取站点列表
-2. **启动 CDP Proxy**（前置依赖检查 — F-009）：
+2. **检测 web-access plugin 是否安装**（v1.0.0：删 bin 后探针从 `command -v` 改为 plugin 文件探针）：
    ```bash
-   command -v web-access-check
+   python3 "${CLAUDE_PLUGIN_ROOT:-$SKILL_DIR/..}/skills/go/scripts/sm_config.py" check-plugin web-access
    ```
-   - 命令存在（exit 0）→ 继续执行 `web-access-check` 完成环境自检 + 启动 CDP Proxy；未通过时引导用户完成 Chrome 远程调试设置（参照 web-access plugin 指引）
-   - 命令不存在（exit 127）→ **跳过本第四层，直接进入第五层（智能融合）**；同时打印一行 stderr：`[knowledge-retrieval] web-access plugin 未安装，已跳过 CDP 登录态层（如需启用，运行 /plugin install web-access@presales-skills 后重试）`
+   - exit 0（plugin 已安装）→ **委托给 web-access skill 启动 CDP Proxy + 执行后续每个站点的检索**：在你的 Task / 自然语言交互中明确说"加载 web-access skill 并按其前置检查跑 `node $SKILL_DIR/scripts/check-deps.mjs` 启动 CDP Proxy（端口 3456），然后为下面 N 个站点逐个用 CDP 检索"；web-access SKILL.md 自身会做 Node.js 22+ / Chrome remote-debug 等环境前置检查并引导用户。**不要自己直接调 web-access 的脚本**——SKILL 委托模式更稳，未来 web-access 改启动方式时本 workflow 不用跟着改
+   - exit 1（plugin 未安装）→ **跳过本第四层，直接进入第五层（智能融合）**；同时打印一行 stderr：`[knowledge-retrieval] web-access plugin 未安装，已跳过 CDP 登录态层（如需启用，运行 /plugin install web-access@presales-skills 后重试）`
 3. **对每个站点执行检索（可通过子 Agent 并行）：**
-   a. **加载站点经验：** 通过 `web-access-match-site '<domain>'` 读取该站点的经验内容——stdout 直接返回匹配的站点经验正文；stdout 为空表示没有对应经验文件，继续走通用检索流程
+   a. **加载站点经验：** 委托给 web-access skill 加载该站点经验（参照 web-access SKILL.md §站点经验 段），它会从 `references/site-patterns/<domain>.md` 读取（或调 `node $WEB_ACCESS_SKILL_DIR/scripts/match-site.mjs '<domain>'`）；返回为空表示没有对应经验，继续走通用检索流程
    b. **构造搜索 URL：** 将站点配置的 `search_url` 中的 `{query}` 替换为 URL 编码后的检索关键词（如"服务网格"编码为 `%E6%9C%8D%E5%8A%A1%E7%BD%91%E6%A0%BC`）
    c. **打开搜索页：** `curl -s "http://localhost:3456/new?url={搜索URL}"`
    d. **检测登录状态（结果驱动）：** 用 `/eval` 探测页面 DOM

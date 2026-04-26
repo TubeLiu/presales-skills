@@ -293,37 +293,7 @@ def validate() -> List[str]:
     if allm.get("enabled"):
         if not allm.get("workspace"):
             issues.append("AnythingLLM 已启用但未设置 workspace")
-        # AnythingLLM MCP server 检测：plugin 形态 + 顶层 mcpServers + PATH 三路兜底。
-        # plugin 形态优先（Claude Code 装了 anythingllm-mcp plugin 会把 MCP server
-        # 注册成 `plugin_anythingllm-mcp_anythingllm` 前缀，不是裸 `anythingllm` key，
-        # 直接 `"anythingllm" in mcpServers` 永远 miss）。
-        allm_available = False
-        # 路径 1: plugin 探针（本地 marketplace + 远程 cache + home 全局）
-        allm_plugin_candidates = [
-            _SKILLS_ROOT.parent.parent / "anythingllm-mcp" / "tools" / "mcp-anythingllm" / "index.js",
-            Path.home() / ".claude" / "plugins" / "anythingllm-mcp" / "tools" / "mcp-anythingllm" / "index.js",
-        ]
-        cache_dir = Path.home() / ".claude" / "plugins" / "cache"
-        if cache_dir.exists():
-            allm_plugin_candidates.extend(
-                cache_dir.glob("*/anythingllm-mcp/*/tools/mcp-anythingllm/index.js")
-            )
-        if any(p.exists() for p in allm_plugin_candidates):
-            allm_available = True
-        # 路径 2: 顶层 mcpServers 的 fuzzy key 匹配（兼容用户手动 register 的旧形态）
-        if not allm_available:
-            claude_json = Path.home() / ".claude.json"
-            if claude_json.exists():
-                try:
-                    cj = json.loads(claude_json.read_text())
-                    if any("anythingllm" in k.lower() for k in cj.get("mcpServers", {})):
-                        allm_available = True
-                except Exception:
-                    pass
-        # 路径 3: PATH 上有 mcp-anythingllm 可执行（旧的独立安装形态）
-        if not allm_available and shutil.which("mcp-anythingllm"):
-            allm_available = True
-        if not allm_available:
+        if not is_plugin_installed("anythingllm-mcp"):
             issues.append("AnythingLLM MCP 未注册（安装独立 plugin：/plugin install anythingllm-mcp@presales-skills）")
 
     # 检查 CDP 站点配置
@@ -340,38 +310,11 @@ def validate() -> List[str]:
                     issues.append(f"cdp_sites.sites[{i}] 缺少 search_url 字段")
                 elif "{query}" not in site.get("search_url", ""):
                     issues.append(f"cdp_sites.sites[{i}].search_url 中缺少 {{query}} 占位符")
-        # 检查 web-access plugin 是否已随 umbrella marketplace 安装
-        # web-access 自本次起已抽为独立 plugin；solution-master/skills/web-access/ 不再存在
-        # 候选路径覆盖本地 marketplace + 远程 marketplace（后者 cache 带版本号层级）:
-        wa_candidates = [
-            # 1. 本地 marketplace sibling（_SKILLS_ROOT.parent.parent = monorepo 根）
-            _SKILLS_ROOT.parent.parent / "web-access" / "skills" / "browse" / "SKILL.md",
-            # 2. 用户 home 全局安装
-            Path.home() / ".claude" / "skills" / "web-access" / "SKILL.md",
-        ]
-        # 3. 远程 marketplace cache（版本号在路径里，glob 匹配）
-        cache_dir = Path.home() / ".claude" / "plugins" / "cache"
-        if cache_dir.exists():
-            wa_candidates.extend(cache_dir.glob("*/web-access/*/skills/browse/SKILL.md"))
-        if not any(p.exists() for p in wa_candidates):
+        if not is_plugin_installed("web-access"):
             issues.append("web-access plugin 未安装（CDP 站点检索依赖此 plugin）。请执行 /plugin install web-access@presales-skills")
 
     # 检查 drawio plugin 是否已随 umbrella marketplace 安装
-    # drawio 自 Milestone C 起已抽为独立 plugin；solution-master/skills/drawio/ 不再存在
-    # 候选路径覆盖本地 marketplace + 远程 marketplace（后者 cache 带版本号层级）:
-    drawio_candidates = [
-        # 1. 本地 marketplace sibling（_SKILLS_ROOT.parent.parent = monorepo 根）
-        _SKILLS_ROOT.parent.parent / "drawio" / "skills" / "draw" / "SKILL.md",
-        # 2. 用户 home 全局安装
-        Path.home() / ".claude" / "skills" / "drawio" / "SKILL.md",
-    ]
-    # 3. 远程 marketplace cache（版本号在路径里，glob 匹配）
-    cache_dir = Path.home() / ".claude" / "plugins" / "cache"
-    if cache_dir.exists():
-        drawio_candidates.extend(cache_dir.glob("*/drawio/*/skills/draw/SKILL.md"))
-    drawio_skill_installed = any(p.exists() for p in drawio_candidates)
-
-    if not drawio_skill_installed:
+    if not is_plugin_installed("drawio"):
         # F-035: 删除"降级为 AI 生成"的错误承诺（SKILL 没实现此分支）
         issues.append("drawio plugin 未安装（架构图/流程图功能将不可用）。请执行 /plugin install drawio@presales-skills")
     else:
@@ -385,6 +328,59 @@ def validate() -> List[str]:
     return issues
 
 
+# ── Plugin 探针 ─────────────────────────────────────────
+# v1.0.0 删除了所有 bin/ 目录后，跨 plugin 检测从 PATH 探针（如 `command -v
+# web-access-check`）改为文件存在性探针。三种安装形态：
+#   - 本地 marketplace（in-place 加载）：<monorepo_root>/<plugin>/...
+#   - 远程 marketplace cache：~/.claude/plugins/cache/*/<plugin>/<version>/...
+#   - 用户 home 全局：~/.claude/plugins/<plugin>/...
+
+# 各 plugin 的 marker 相对路径（marker 必须是 plugin 安装后必然存在的文件）
+_PLUGIN_MARKERS: Dict[str, str] = {
+    "web-access": "skills/browse/SKILL.md",
+    "drawio": "skills/draw/SKILL.md",
+    "anythingllm-mcp": "tools/mcp-anythingllm/index.js",
+    "ai-image": "skills/gen/SKILL.md",
+    "ppt-master": "skills/make/SKILL.md",
+    "tender-workflow": "skills/twc/SKILL.md",
+    "solution-master": "skills/go/SKILL.md",
+}
+
+
+def is_plugin_installed(plugin_name: str) -> bool:
+    """检测指定 plugin 是否已通过任何形态安装。"""
+    marker_rel = _PLUGIN_MARKERS.get(plugin_name)
+    if not marker_rel:
+        return False
+    candidates = [
+        # 1. 本地 marketplace sibling（_SKILLS_ROOT.parent.parent = monorepo 根）
+        _SKILLS_ROOT.parent.parent / plugin_name / marker_rel,
+        # 2. 用户 home 全局
+        Path.home() / ".claude" / "plugins" / plugin_name / marker_rel,
+    ]
+    cache_dir = Path.home() / ".claude" / "plugins" / "cache"
+    if cache_dir.exists():
+        # 3. 远程 marketplace cache（版本号在路径里，glob 匹配）
+        candidates.extend(cache_dir.glob(f"*/{plugin_name}/*/{marker_rel}"))
+    if any(p.exists() for p in candidates):
+        return True
+    # 4. anythingllm-mcp 的特殊 fallback：顶层 mcpServers fuzzy key + PATH executable
+    #    （Claude Code 装了 anythingllm-mcp plugin 会注册成
+    #    `plugin_anythingllm-mcp_anythingllm` 前缀，不是裸 `anythingllm` key）
+    if plugin_name == "anythingllm-mcp":
+        claude_json = Path.home() / ".claude.json"
+        if claude_json.exists():
+            try:
+                cj = json.loads(claude_json.read_text())
+                if any("anythingllm" in k.lower() for k in cj.get("mcpServers", {})):
+                    return True
+            except Exception:
+                pass
+        if shutil.which("mcp-anythingllm"):
+            return True
+    return False
+
+
 # ── CLI 入口 ─────────────────────────────────────────
 
 def main():
@@ -394,6 +390,7 @@ def main():
         print("  python3 sm_config.py get <key> [default]")
         print("  python3 sm_config.py set <key> <value>")
         print("  python3 sm_config.py validate")
+        print("  python3 sm_config.py check-plugin <plugin-name>")
         print("  python3 sm_config.py models [provider]")
         sys.exit(1)
 
@@ -449,6 +446,23 @@ def main():
             "如需测试 API 连通性，请触发实际生成（如 image-gen \"test\" -o /tmp/）",
             file=sys.stderr,
         )
+
+    elif cmd == "check-plugin":
+        if len(sys.argv) < 3:
+            print("用法: python3 sm_config.py check-plugin <plugin-name>", file=sys.stderr)
+            print(f"可选 plugin: {', '.join(sorted(_PLUGIN_MARKERS))}", file=sys.stderr)
+            sys.exit(2)
+        pname = sys.argv[2]
+        if pname not in _PLUGIN_MARKERS:
+            print(f"未知 plugin: {pname}", file=sys.stderr)
+            print(f"可选: {', '.join(sorted(_PLUGIN_MARKERS))}", file=sys.stderr)
+            sys.exit(2)
+        if is_plugin_installed(pname):
+            print(f"{pname}: installed")
+            sys.exit(0)
+        else:
+            print(f"{pname}: not installed", file=sys.stderr)
+            sys.exit(1)
 
     elif cmd in ("models", "migrate"):
         # v1.0.0：原 shutil.which("ai-image-config") orphan caller（commit c983037 删 bin 后失效）。
