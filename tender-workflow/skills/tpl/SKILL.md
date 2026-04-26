@@ -268,8 +268,8 @@ tpl v2.0 - 招标技术规格与评标办法生成工具
 
 读取统一配置文件获取默认值（可被命令行参数覆盖）：
 ```bash
-python3 $SKILL_DIR/../twc/skills/twc/tools/tw_config.py get tpl default_template
-python3 $SKILL_DIR/../twc/skills/twc/tools/tw_config.py get tpl default_level
+python3 $SKILL_DIR/../twc/tools/tw_config.py get tpl default_template
+python3 $SKILL_DIR/../twc/tools/tw_config.py get tpl default_level
 ```
 
 - 若未指定 `--template` 且配置中 `tpl.default_template` 有值 → 使用配置值作为默认模板
@@ -543,7 +543,7 @@ python3 $SKILL_DIR/../twc/skills/twc/tools/tw_config.py get tpl default_level
 **步骤二：调用渲染工具**
 
 ```bash
-python3 $SKILL_DIR/../twc/skills/twc/tools/tpl_docx_writer.py <content.json> <output.docx>
+python3 $SKILL_DIR/../twc/tools/tpl_docx_writer.py <content.json> <output.docx>
 ```
 
 渲染工具会自动清理 JSON 中因 Write 传输产生的 U+FFFD 字符碎片，确保 DOCX 内容干净。
@@ -551,7 +551,7 @@ python3 $SKILL_DIR/../twc/skills/twc/tools/tpl_docx_writer.py <content.json> <ou
 **步骤三：编码完整性校验**
 
 ```bash
-python3 $SKILL_DIR/../twc/skills/twc/tools/docx_encoding_check.py --fix <output.docx> --max-retries 3
+python3 $SKILL_DIR/../twc/tools/docx_encoding_check.py --fix <output.docx> --max-retries 3
 ```
 
 - `ENCODING_OK` 或 `FIX_OK` → 通过，继续交付

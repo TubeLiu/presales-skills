@@ -168,7 +168,7 @@ fi
 
 读取统一配置文件获取默认审核级别（可被 `--level` 参数覆盖）：
 ```bash
-python3 $SKILL_DIR/../twc/skills/twc/tools/tw_config.py get trv default_level
+python3 $SKILL_DIR/../twc/tools/tw_config.py get trv default_level
 ```
 
 - 若未指定 `--level` 且配置中 `trv.default_level` 有值 → 使用配置值
@@ -231,7 +231,7 @@ python3 $SKILL_DIR/../twc/skills/twc/tools/tw_config.py get trv default_level
 
 **步骤**：
 
-1. 执行 `python3 $SKILL_DIR/../twc/skills/twc/tools/docx_encoding_check.py --fix <file_path> --max-retries 3`
+1. 执行 `python3 $SKILL_DIR/../twc/tools/docx_encoding_check.py --fix <file_path> --max-retries 3`
 
 2. 根据退出码和输出判断结果：
 
@@ -977,7 +977,7 @@ python3 $SKILL_DIR/../twc/skills/twc/tools/tw_config.py get trv default_level
 
 3. **执行修订工具**：
    ```bash
-   python3 $SKILL_DIR/../twc/skills/twc/tools/trv_docx_reviser.py \
+   python3 $SKILL_DIR/../twc/tools/trv_docx_reviser.py \
      --input <file> \
      --instructions “${OUTPUT_DIR}/.revision_instructions_${TIMESTAMP}.json” \
      --output-dir “${OUTPUT_DIR}”
@@ -986,7 +986,7 @@ python3 $SKILL_DIR/../twc/skills/twc/tools/tw_config.py get trv default_level
 4. **修订后编码检查**：
    - 若修订成功，继续执行：
      ```bash
-     python3 $SKILL_DIR/../twc/skills/twc/tools/docx_encoding_check.py --fix <revised_docx> --max-retries 3
+     python3 $SKILL_DIR/../twc/tools/docx_encoding_check.py --fix <revised_docx> --max-retries 3
      ```
    - 若发现残留乱码，将结果写入终端输出，并保留修订版文件供人工处理
 

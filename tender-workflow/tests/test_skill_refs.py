@@ -30,11 +30,13 @@ PATTERNS = [
     # Read 引用（反引号包裹的路径）
     re.compile(r'Read\s+`(\$\{CLAUDE_SKILL_DIR\}/[^`]+?)`'),
     re.compile(r'Read\s+`(\$\{CLAUDE_PLUGIN_ROOT\}/[^`]+?)`'),
+    re.compile(r'Read\s+`(\$SKILL_DIR/[^`]+?)`'),
     re.compile(r'Read\s+`(prompts/[^`]+?)`'),
     re.compile(r'Read\s+工具读取\s+`(prompts/[^`]+?)`'),
     # python3/python 脚本调用
     re.compile(r'python3?\s+(\$\{CLAUDE_SKILL_DIR\}/\S+\.py)'),
     re.compile(r'python3?\s+(\$\{CLAUDE_PLUGIN_ROOT\}/\S+\.py)'),
+    re.compile(r'python3?\s+"?(\$SKILL_DIR/\S+?\.py)"?'),
     re.compile(r'python3?\s+(tools/\S+\.py)'),
 ]
 
@@ -43,14 +45,22 @@ def resolve_path(raw_path, skill_dir):
     """把 SKILL.md 里带占位的路径转成仓库内绝对路径，用于存在性校验。
 
     skill_dir: 当前 SKILL.md 所在目录（skills/<name>/）
+
+    支持的占位形式：
+      - ${CLAUDE_SKILL_DIR}/X / ${CLAUDE_SKILL_DIR}/../<other>/X — Claude Code runtime 替换
+      - ${CLAUDE_PLUGIN_ROOT}/X — Claude Code runtime 替换
+      - $SKILL_DIR/X / $SKILL_DIR/../<other>/X — taw/twc/etc. bootstrap bash 变量
+        （runtime 由 SKILL.md 顶部的 §路径自定位 段解析；测试里等价于 ${CLAUDE_SKILL_DIR}）
+      - prompts/X / tools/X — 相对路径
     """
-    # ${CLAUDE_SKILL_DIR}/../<other>/X → skills/<other>/X
-    m = re.match(r'\$\{CLAUDE_SKILL_DIR\}/\.\./([^/]+)/(.+)', raw_path)
+    # ${CLAUDE_SKILL_DIR}/../<other>/X 或 $SKILL_DIR/../<other>/X → skills/<other>/X
+    m = re.match(r'(?:\$\{CLAUDE_SKILL_DIR\}|\$SKILL_DIR)/\.\./([^/]+)/(.+)', raw_path)
     if m:
         return os.path.join(SKILLS_DIR, m.group(1), m.group(2))
-    # ${CLAUDE_SKILL_DIR}/X → skills/<self>/X
-    if raw_path.startswith("${CLAUDE_SKILL_DIR}/"):
-        return os.path.join(skill_dir, raw_path[len("${CLAUDE_SKILL_DIR}/"):])
+    # ${CLAUDE_SKILL_DIR}/X 或 $SKILL_DIR/X → skills/<self>/X
+    for prefix in ("${CLAUDE_SKILL_DIR}/", "$SKILL_DIR/"):
+        if raw_path.startswith(prefix):
+            return os.path.join(skill_dir, raw_path[len(prefix):])
     # ${CLAUDE_PLUGIN_ROOT}/X → tender-workflow/X
     if raw_path.startswith("${CLAUDE_PLUGIN_ROOT}/"):
         return os.path.join(REPO_ROOT, raw_path[len("${CLAUDE_PLUGIN_ROOT}/"):])

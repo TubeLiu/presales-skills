@@ -71,7 +71,7 @@ python3 -c "import shutil; n=shutil.which('node'); print(f'node: {n}') if n else
 知识库目录包含公司技术文档（Markdown 格式）。
 目录名称和位置不固定，可在项目内或外部（如 OneDrive 同步目录）。
 
-1. 读取已有配置 `python3 $SKILL_DIR/skills/twc/tools/tw_config.py get global localkb.path`
+1. 读取已有配置 `python3 $SKILL_DIR/tools/tw_config.py get global localkb.path`
 2. 若已有配置且路径存在：
    - 告知用户"当前知识库目录：<路径>"，询问是否保留
    - 用户确认 → 跳到步骤 5
@@ -80,7 +80,7 @@ python3 -c "import shutil; n=shutil.which('node'); print(f'node: {n}') if n else
 4. 验证路径存在
 5. 检查 `<路径>/.index/` 是否存在
    - 若不存在 → 提示：索引尚未生成，建议运行 `/taw --build-kb-index` 构建
-6. 执行 `python3 $SKILL_DIR/skills/twc/tools/tw_config.py set localkb.path <路径>`
+6. 执行 `python3 $SKILL_DIR/tools/tw_config.py set localkb.path <路径>`
 
 #### Step 2：AnythingLLM 配置
 
@@ -99,10 +99,10 @@ python3 -c "import shutil; n=shutil.which('node'); print(f'node: {n}') if n else
       - **Workspace slug 或 UUID**（必填，用户可从 AnythingLLM 界面获取）
    c. 写入统一配置（MCP server 会在启动时从这里读取凭据）：
       ```bash
-      python3 $SKILL_DIR/skills/twc/tools/tw_config.py set anythingllm.enabled true
-      python3 $SKILL_DIR/skills/twc/tools/tw_config.py set anythingllm.workspace <workspace>
-      python3 $SKILL_DIR/skills/twc/tools/tw_config.py set anythingllm.base_url <url>
-      python3 $SKILL_DIR/skills/twc/tools/tw_config.py set anythingllm.api_key <key>
+      python3 $SKILL_DIR/tools/tw_config.py set anythingllm.enabled true
+      python3 $SKILL_DIR/tools/tw_config.py set anythingllm.workspace <workspace>
+      python3 $SKILL_DIR/tools/tw_config.py set anythingllm.base_url <url>
+      python3 $SKILL_DIR/tools/tw_config.py set anythingllm.api_key <key>
       ```
    d. 提示用户：配置完成。MCP server 由 `anythingllm-mcp` plugin 自动注册（plugin.json 的 `mcpServers` 字段），无需手工改 `~/.claude.json`；下次 Claude Code 启动或 `/reload-plugins` 后生效。
 
@@ -207,9 +207,9 @@ taw 撰写章节时可通过 MCP 搜索工具（tavily_search、exa_search）从
    - 若只配置了一个 → 自动设置该工具为唯一优先
    - 写入示例：
      ```bash
-     python3 $SKILL_DIR/skills/twc/tools/tw_config.py set mcp_search.priority '["tavily_search", "exa_search"]'
+     python3 $SKILL_DIR/tools/tw_config.py set mcp_search.priority '["tavily_search", "exa_search"]'
      # 或仅配置了一个：
-     python3 $SKILL_DIR/skills/twc/tools/tw_config.py set mcp_search.priority '["tavily_search"]'
+     python3 $SKILL_DIR/tools/tw_config.py set mcp_search.priority '["tavily_search"]'
      ```
 5. 若用户选择全部跳过 → 保持默认值，提示后续可通过 `/twc set mcp_search.priority [...]` 修改
 
@@ -217,12 +217,12 @@ taw 撰写章节时可通过 MCP 搜索工具（tavily_search、exa_search）从
 
 1. **taa 厂商名**：
    - 当前默认"灵雀云"，询问是否修改
-   - 若修改 → `python3 $SKILL_DIR/skills/twc/tools/tw_config.py set taa.vendor <名称>`
+   - 若修改 → `python3 $SKILL_DIR/tools/tw_config.py set taa.vendor <名称>`
 
 2. **tpl 默认模板**：
    - 显示可选模板：government / finance / soe / enterprise
    - 询问是否设置默认模板（设置后 /tpl 可省略 --template 参数）
-   - 若设置 → `python3 $SKILL_DIR/skills/twc/tools/tw_config.py set tpl.default_template <模板>`
+   - 若设置 → `python3 $SKILL_DIR/tools/tw_config.py set tpl.default_template <模板>`
 
 3. **tpl 默认细致程度**：
    - 显示可选级别：detailed / standard / general / brief
@@ -230,14 +230,14 @@ taw 撰写章节时可通过 MCP 搜索工具（tavily_search、exa_search）从
 
 #### Step 6：写入配置并验证
 
-1. 执行 `python3 $SKILL_DIR/skills/twc/tools/tw_config.py validate`
-2. 显示配置摘要表格（调用 `python3 $SKILL_DIR/skills/twc/tools/tw_config.py show`）
+1. 执行 `python3 $SKILL_DIR/tools/tw_config.py validate`
+2. 显示配置摘要表格（调用 `python3 $SKILL_DIR/tools/tw_config.py show`）
 3. 若存在旧配置文件：
    ```python
    python3 -c "from pathlib import Path; taw=Path.home()/'.config/taw/config.yaml'; taa=Path.home()/'.config/taa/config.yaml'; print(f'taw: {taw.exists()}, taa: {taa.exists()}')"
    ```
    - 若存在 → 询问是否迁移删除（推荐）
-   - 若确认 → 执行 `python3 $SKILL_DIR/skills/twc/tools/tw_config.py migrate`
+   - 若确认 → 执行 `python3 $SKILL_DIR/tools/tw_config.py migrate`
 4. 若 setup 过程中新增了 MCP Server（AnythingLLM / Tavily / Exa），在完成提示中**统一提醒**重启：
    ```
    配置完成！配置文件保存在：~/.config/tender-workflow/config.yaml
