@@ -74,6 +74,10 @@ LEGACY_PATHS = {
 DEFAULTS = {
     "localkb": {"path": None},
     "anythingllm": {"enabled": False, "base_url": "http://localhost:3001", "workspace": None},
+    # mcp_search.priority 接受字符串候选：
+    #   "tavily_search" / "exa_search" / "minimax_search"
+    # 由 web-access plugin 的 mcp_installer.py 注册到 ~/.claude.json mcpServers；
+    # 默认值不含 minimax（避免老用户更新被注入），需手动加入或走 /twc setup。
     "mcp_search": {"priority": ["tavily_search", "exa_search"]},
     "drawio": {},  # cli_path 字段已废弃（v1.0.0 删 drawio-gen bin 后由 drawio plugin 自定位）；保留空 dict 兼容旧 config
     "taa": {"vendor": "灵雀云", "kb_source": "auto", "anythingllm_workspace": None},
