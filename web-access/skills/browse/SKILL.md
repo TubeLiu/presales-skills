@@ -2,10 +2,11 @@
 name: browse
 description: >
   所有联网操作必须通过此 skill 处理，包括：搜索、网页抓取、登录后操作、网络交互、
-  浏览器自动化、CDP 远程调试。
+  浏览器自动化、CDP 远程调试，以及 chrome-devtools / tavily / exa 等 MCP server 调用。
   触发场景：用户要求搜索信息 / web search / 查看网页内容 / 抓取网页 / 访问需要登录的网站 /
   操作网页界面 / browser automation / 抓取社交媒体内容（小红书、微博、推特、知乎等）/
-  读取动态渲染页面 / dynamic page / 以及任何需要真实浏览器环境的网络任务。
+  读取动态渲染页面 / dynamic page / 用 chrome-devtools 调试页面 / 用 tavily 深度研究 /
+  以及任何需要真实浏览器环境或 web MCP 工具的网络任务。
 allowed-tools: Read, Write, Bash, Glob, WebSearch, WebFetch
 ---
 

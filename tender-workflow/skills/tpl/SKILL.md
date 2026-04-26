@@ -2,8 +2,11 @@
 name: tpl
 description: >
   当用户提供产品功能清单或描述，要求生成招标技术规格与要求时自动调用。
-  。将产品功能清单转换为无控标痕迹的招标技术规格与评标办法，
-  输出 DOCX 格式。支持 --template 指定行业模板，--level 控制细致程度。
+  将产品功能清单转换为无控标痕迹的招标技术规格与评标办法，输出 DOCX 格式。
+  触发关键词：写招标文件 / 生成招标技术规格 / 招标策划 / 写技术规格与评标办法 /
+  仅写技术规格不要评标办法（--no-scoring）/ 不含评标办法的招标文件 /
+  tender planning。支持 --template 指定行业模板（government/finance/soe/enterprise），
+  --level 控制细致程度（brief/standard/detailed），--no-scoring 跳过评标办法生成。
 disable-model-invocation: false
 allowed-tools: Read, Write, Bash, Glob
 ---
