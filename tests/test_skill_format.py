@@ -204,3 +204,50 @@ def test_cross_skill_refs_within_plugin():
         "跨 sub-skill 引用违反同 plugin 限制（或写错 sibling 名）：\n"
         + "\n".join(violations)
     )
+
+
+# 故意 name != dir 的 SKILL（distinctive Codex/Cursor slash 优先于 dir 一致性）
+# key: SKILL.md 相对路径（POSIX）；value: 期望的 name 字段值（不能改成其它任意值）
+_ALLOWED_NAME_DIR_MISMATCH = {
+    "ai-image/skills/gen/SKILL.md": "image-gen",
+    "solution-master/skills/go/SKILL.md": "solution-master",
+}
+
+
+def test_skill_name_matches_dir():
+    """v1.0.0 物理改名后强约束：每个 SKILL.md frontmatter `name:` 字段必须等于
+    父目录名。否则 vercel CLI 装到 Codex 时按 name 创建 .agents/skills/<name>/，
+    与 Claude Code canonical /<plugin>:<dir> 割裂。
+
+    白名单 _ALLOWED_NAME_DIR_MISMATCH 列出故意 mismatch 的 SKILL（理由：Codex 端
+    distinctive slash 优先于 dir 一致性）。每条豁免锁定到 (path, expected_name)
+    pair —— 改这两个 SKILL 的 name 也会被 lint 拦下，确保 mismatch 是有意识的。
+    """
+    failures = []
+    for skill in SKILL_FILES:
+        text = _read(skill)
+        m = re.match(r"^---\n(.*?)\n---", text, re.DOTALL)
+        if not m:
+            continue
+        front = m.group(1)
+        name = None
+        for line in front.splitlines():
+            if line.startswith("name:"):
+                name = line.split(":", 1)[1].strip().strip('"').strip("'")
+                break
+        if name is None:
+            continue
+        rel = skill.relative_to(REPO_ROOT).as_posix()
+        dir_name = skill.parent.name
+        if rel in _ALLOWED_NAME_DIR_MISMATCH:
+            expected = _ALLOWED_NAME_DIR_MISMATCH[rel]
+            if name != expected:
+                failures.append(
+                    f"{rel}: 白名单要求 name={expected!r}，实际 name={name!r}（"
+                    f"如需改 name 请同步更新 _ALLOWED_NAME_DIR_MISMATCH 并写明理由）"
+                )
+        elif name != dir_name:
+            failures.append(
+                f"{rel}: name={name!r} != dir={dir_name!r}（如有意 mismatch 请加白名单）"
+            )
+    assert not failures, "name vs dir 一致性违反：\n" + "\n".join(failures)
