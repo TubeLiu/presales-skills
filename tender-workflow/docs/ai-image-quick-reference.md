@@ -51,11 +51,15 @@
 
 ## 调用底层
 
+通过 `Skill(skill="ai-image:gen")` 触发，或直接调用 ai-image plugin 的 Python 脚本：
+
 ```bash
-image-gen "<prompt>" --aspect_ratio 16:9 --image_size 2K -o <output_dir>
+# 解析 ai-image plugin 的 SKILL_DIR 后：
+python3 "$AI_IMAGE_DIR/scripts/image_gen.py" "<prompt>" \
+  --aspect_ratio 16:9 --image_size 2K -o <output_dir>
 ```
 
-`image-gen` 是 ai-image plugin 的 bin 入口（plugin 安装后自动加入 PATH）。
+v1.0.0 已删除 `image-gen` bin 入口（cross-agent 兼容性），所有调用走 SKILL.md 自然语言或 Skill() 显式触发。
 
 ## 配置迁移
 

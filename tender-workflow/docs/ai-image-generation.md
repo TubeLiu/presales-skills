@@ -1,6 +1,6 @@
 # AI 图片生成
 
-taw 在章节配图时通过子进程调用 `image-gen` 命令；AI 生图能力由 ai-image plugin 提供，taw 不持有 API keys。
+taw 在章节配图时通过 `Skill(skill="ai-image:gen")` 调用 ai-image plugin；AI 生图能力由 ai-image plugin 提供，taw 不持有 API keys。
 
 ## 在 taw 中的用法
 
@@ -11,17 +11,19 @@ taw 在章节配图时通过子进程调用 `image-gen` 命令；AI 生图能力
 | `--image-source auto` | 按 H3 子节上下文自动选择最合适来源 | 逐级降级 |
 | `--image-source local` | 本地知识库图片（图文共生匹配） | 占位符 |
 | `--image-source drawio` | draw.io 生成图表 | 占位符 |
-| `--image-source ai` | AI 生图（调用 image-gen） | 占位符 |
+| `--image-source ai` | AI 生图（通过 Skill(skill="ai-image:gen") 调用 ai-image plugin） | 占位符 |
 | `--image-source web` | 互联网下载图片 | 占位符 |
 | `--image-source placeholder` | 占位符（默认） | - |
 
-`ai` 模式底层调用：
+`ai` 模式底层通过 Skill 工具调用 ai-image plugin，或直接调用 Python 脚本：
 
 ```bash
-image-gen "<prompt>" --aspect_ratio 16:9 --image_size 2K -o <output_dir>
+# 解析 ai-image plugin 的 SKILL_DIR 后：
+python3 "$AI_IMAGE_DIR/scripts/image_gen.py" "<prompt>" \
+  --aspect_ratio 16:9 --image_size 2K -o <output_dir>
 ```
 
-`image-gen` 是 ai-image plugin 的 bin 入口（plugin 安装后自动加入 PATH），转发到 `ai-image/scripts/image_gen.py`，自包含读取 `~/.config/presales-skills/config.yaml` 中的 API keys 与默认 provider。
+v1.0.0 已删除 `image-gen` bin 入口（cross-agent 兼容性，commit c983037）；底层脚本 `ai-image/skills/gen/scripts/image_gen.py` 自包含读取 `~/.config/presales-skills/config.yaml` 中的 API keys 与默认 provider。
 
 ## 配置
 

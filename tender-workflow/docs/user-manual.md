@@ -317,9 +317,14 @@ export ARK_API_KEY="ark-xxxx"
 
 **步骤 3**：验证配置
 
+通过自然语言或 slash 触发 ai-image plugin 测试生图：
+- 自然语言："生成图片：容器云平台总体架构示意图，包含基础设施层 / K8s 编排层 / 平台层"
+- slash：`/ai-image:gen` 子命令 validate
+
+或直接调用底层脚本（需先解析 ai-image plugin SKILL_DIR）：
 ```bash
-# 通过 ai-image plugin 的 image-gen 命令测试
-image-gen "容器云平台总体架构示意图，包含基础设施层 / K8s 编排层 / 平台层" \
+python3 "$AI_IMAGE_DIR/scripts/image_gen.py" \
+  "容器云平台总体架构示意图，包含基础设施层 / K8s 编排层 / 平台层" \
   --aspect_ratio 16:9 --image_size 2K \
   -o /tmp --filename test_ark.png
 ```
@@ -1169,8 +1174,9 @@ ls skills/
 # 检查 API Key 配置（由 ai-image plugin 管理）
 /ai-image:show api_keys
 
-# 测试 AI 生图是否正常（通过 ai-image plugin 的 image-gen）
-image-gen "测试图片" --aspect_ratio 16:9 -o /tmp --filename test.png
+# 测试 AI 生图是否正常（通过 /ai-image:gen 或自然语言触发 ai-image plugin）
+# 或直接调用底层脚本：
+# python3 "$AI_IMAGE_DIR/scripts/image_gen.py" "测试图片" --aspect_ratio 16:9 -o /tmp --filename test.png
 
 # 改用 draw.io（本地生成，零费用）
 /taw output/ --chapter 1.3 --image-source drawio

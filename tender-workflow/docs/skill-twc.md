@@ -130,7 +130,7 @@ python3 skills/twc/tools/tw_config.py get taw localkb.path
 
 ### 4.2 `/twc models [provider]`
 
-**数据来源**：`skills/taw/prompts/ai_image_models.yaml`（模型注册表）
+**数据来源**：`ai-image/skills/gen/prompts/ai_image_models.yaml`（模型注册表，由 ai-image plugin 提供）
 
 工作流程：
 1. 调用 `tw_config.py models [provider]` 生成 Markdown 表格
