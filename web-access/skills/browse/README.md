@@ -115,6 +115,21 @@ node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs"
 # $CLAUDE_SKILL_DIR 是 skill 加载时自动设置的环境变量
 ```
 
+## MCP 注册工具（presales-skills 集成）
+
+`scripts/mcp_installer.py` 用于把搜索类 MCP server（tavily / exa / minimax-token-plan）注册到 `~/.claude.json`。被 [tender-workflow](https://github.com/Alauda-io/presales-skills) 与 [solution-master](https://github.com/Alauda-io/presales-skills) 的 setup wizard 调用，也可单独 CLI 使用。
+
+```bash
+python3 "${CLAUDE_SKILL_DIR}/scripts/mcp_installer.py" check uv
+python3 "${CLAUDE_SKILL_DIR}/scripts/mcp_installer.py" auto-install uv
+python3 "${CLAUDE_SKILL_DIR}/scripts/mcp_installer.py" probe minimax
+python3 "${CLAUDE_SKILL_DIR}/scripts/mcp_installer.py" register minimax --key=sk-cp-xxxx
+python3 "${CLAUDE_SKILL_DIR}/scripts/mcp_installer.py" test minimax        # stdio 实测 web_search + understand_image
+python3 "${CLAUDE_SKILL_DIR}/scripts/mcp_installer.py" unregister minimax
+```
+
+`auto-install` 走用户级路径（uv 用 astral.sh install.sh / install.ps1；node 优先 fnm/brew/winget），不需要 sudo；只有兜底场景才输出 `NEEDS_USER_ACTION` 让 wizard 转发命令。`test` 子命令 spawn server 跑 MCP JSON-RPC 握手（initialize → notifications/initialized → tools/call），**不依赖 reload-plugins**，配置写入后立即可验。minimax key 强制要求 `sk-cp-` 前缀（普通 chat key 不能给 MCP 用，见 MiniMax-AI/MiniMax-M2 issue #96）。
+
 ## CDP Proxy API
 
 Proxy 通过 WebSocket 直连 Chrome（兼容 `chrome://inspect` 方式，无需命令行参数启动），提供 HTTP API：
