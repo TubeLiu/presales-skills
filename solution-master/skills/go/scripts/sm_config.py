@@ -210,20 +210,35 @@ def show() -> str:
     lines.append(f"# 配置文件: {CONFIG_PATH}")
     lines.append("")
 
-    # 敏感 key 名集合
-    sensitive_keys = {"ark", "dashscope", "gemini"}
+    # 敏感 key 名集合（F-024：原仅 3 个，扩到全 13 ai-image provider 覆盖）
+    sensitive_keys = {
+        "ark", "dashscope", "gemini",                    # 原 3 个
+        "openai", "minimax", "stability", "bfl",         # F-024 扩展
+        "ideogram", "zhipu", "siliconflow",
+        "fal", "replicate", "openrouter",
+    }
 
-    def _format(data: Dict, indent: int = 0) -> None:
+    # F-024 兜底：父节点是 api_keys 时，其下任意 string 子节点都视为敏感（防漏覆盖
+    # 用户自定义 provider 名）。沿调用链传 path 实现。
+    def _is_sensitive(path_segs: list, k: str) -> bool:
+        if k in sensitive_keys:
+            return True
+        if path_segs and path_segs[-1] == "api_keys":
+            return True
+        return False
+
+    def _format(data: Dict, indent: int = 0, path_segs: list = None) -> None:
+        path_segs = path_segs or []
         prefix = "  " * indent
         for k, v in data.items():
             if isinstance(v, dict):
                 lines.append(f"{prefix}{k}:")
-                _format(v, indent + 1)
+                _format(v, indent + 1, path_segs + [k])
             elif isinstance(v, list):
                 lines.append(f"{prefix}{k}: [{', '.join(str(i) for i in v)}]")
             elif v is None:
                 lines.append(f"{prefix}{k}: (未设置)")
-            elif isinstance(v, str) and k in sensitive_keys:
+            elif isinstance(v, str) and _is_sensitive(path_segs, k):
                 if len(v) > 8:
                     lines.append(f"{prefix}{k}: {v[:4]}...{v[-4:]}")
                 else:
