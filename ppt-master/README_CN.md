@@ -44,24 +44,15 @@ ppt-master 作为 `presales-skills` umbrella marketplace 的成员 plugin 分发
 
 ### 配置 AI 图片生成
 
-通过自然语言触发 ai-image plugin（Claude 自动调用 plugin 的 setup/set/validate 流程）：
+直接用自然语言告诉 Claude——Claude 会自动调用 ai-image plugin 的 setup/set/validate 流程：
 
-```text
-对 Claude 说："配置 ai-image"                              # 交互式首次配置
-对 Claude 说："设置 ai-image api_keys.gemini 为 <key>"     # Google Gemini
-对 Claude 说："设置 ai-image api_keys.ark 为 <key>"        # 火山方舟
-对 Claude 说："验证 ai-image API key"                      # 健康检查
-```
+- "配置 ai-image" — 交互式首次配置向导
+- "设置 ai-image api_keys.gemini 为 \<key\>" — Google Gemini
+- "设置 ai-image api_keys.ark 为 \<key\>" — 火山方舟
+- "验证 ai-image API key" — 健康检查
+- "列出 ai-image 模型" — 13 后端的完整注册表
 
-或直接调用底层脚本（解析 ai-image plugin 的 SKILL_DIR 后）：
-
-```bash
-python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" setup
-python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" set api_keys.gemini <key>
-python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" validate
-```
-
-支持 13 个后端（volcengine/ark、qwen/dashscope、gemini、openai、minimax、stability、bfl、ideogram、zhipu、siliconflow、fal、replicate、openrouter）。对 Claude 说"列出 ai-image 模型"（或运行 `ai_image_config.py models`）查看完整注册表。
+支持 13 个后端：volcengine/ark、qwen/dashscope、gemini、openai、minimax、stability、bfl、ideogram、zhipu、siliconflow、fal、replicate、openrouter。
 
 ---
 

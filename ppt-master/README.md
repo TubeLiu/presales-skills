@@ -44,24 +44,15 @@ For full marketplace install steps see the umbrella [README](https://github.com/
 
 ### Configure AI image generation
 
-Trigger ai-image plugin via natural language (Claude routes to the plugin's setup/set/validate flows):
+Just talk to Claude in natural language — Claude routes to the ai-image plugin's setup/set/validate flows automatically:
 
-```text
-say to Claude: "configure ai-image"                              # interactive first-time setup
-say to Claude: "set ai-image api_keys.gemini to <key>"           # Google Gemini
-say to Claude: "set ai-image api_keys.ark to <key>"              # Volcengine ARK
-say to Claude: "validate ai-image API keys"                      # health check
-```
+- "configure ai-image" — interactive first-time setup wizard
+- "set ai-image api_keys.gemini to \<key\>" — Google Gemini
+- "set ai-image api_keys.ark to \<key\>" — Volcengine ARK
+- "validate ai-image API keys" — health check
+- "list ai-image models" — full registry across 13 backends
 
-Or invoke the underlying script directly (after resolving the ai-image plugin's SKILL_DIR):
-
-```bash
-python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" setup
-python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" set api_keys.gemini <key>
-python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" validate
-```
-
-13 backends supported (volcengine/ark, qwen/dashscope, gemini, openai, minimax, stability, bfl, ideogram, zhipu, siliconflow, fal, replicate, openrouter). Say "list ai-image models" (or run `ai_image_config.py models`) for the full registry.
+13 backends supported: volcengine/ark, qwen/dashscope, gemini, openai, minimax, stability, bfl, ideogram, zhipu, siliconflow, fal, replicate, openrouter.
 
 ---
 

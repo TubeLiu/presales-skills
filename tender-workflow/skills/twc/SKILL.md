@@ -157,7 +157,7 @@ python3 $SKILL_DIR/tools/tw_config.py normalize             # 规范化 schema
 python3 $SKILL_DIR/tools/tw_config.py models [provider | --refresh]
 ```
 
-v1.0.0：tw_config.py 的 `models` 子命令已不再调用旧 `ai-image-config` bin（c983037 已删），运行后会直接转交给 ai-image plugin。请用户改为对 Claude 说"列出图片模型"（触发 ai-image SKILL），或直接运行 `python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" models [provider]`。请确保 ai-image plugin 已安装（`/plugin install ai-image@presales-skills`）。
+v1.0.0：tw_config.py 的 `models` 子命令已不再调用旧 `ai-image-config` bin（c983037 已删），运行后会直接转交给 ai-image plugin。当用户想看图片模型时，识别意图后委托给 ai-image plugin 处理（用户用自然语言说"列出图片模型"即可触发 ai-image SKILL）。请确保 ai-image plugin 已安装（`/plugin install ai-image@presales-skills`）。
 
 ### /twc validate
 

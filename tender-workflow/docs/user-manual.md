@@ -317,21 +317,11 @@ export ARK_API_KEY="ark-xxxx"
 
 **步骤 3**：验证配置
 
-通过自然语言或 slash 触发 ai-image plugin 测试生图：
-- 自然语言："生成图片：容器云平台总体架构示意图，包含基础设施层 / K8s 编排层 / 平台层"
-- slash：`/ai-image:gen` 子命令 validate
+直接对 Claude 说："用 ai-image 生成测试图：容器云平台总体架构示意图，包含基础设施层 / K8s 编排层 / 平台层（16:9, 2K）"。Claude 会调用 ai-image plugin 出图——成功生成图片即说明 API key 配置正确。
 
-或直接调用底层脚本（需先解析 ai-image plugin SKILL_DIR）：
-```bash
-python3 "$AI_IMAGE_DIR/scripts/image_gen.py" \
-  "容器云平台总体架构示意图，包含基础设施层 / K8s 编排层 / 平台层" \
-  --aspect_ratio 16:9 --image_size 2K \
-  -o /tmp --filename test_ark.png
-```
+也可以更简单：对 Claude 说"验证 ai-image API key"——它会跑配置完整性检查（不消耗额度，但也不验证 key 真实可用）。
 
-成功后将生成测试图片至 `/tmp/test_ark.png`。
-
-> 注：API key 通过对 Claude 说"配置 ai-image"（或直接运行 `python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" setup`）写入 `~/.config/presales-skills/config.yaml`，由 ai-image plugin 自包含读取；taw 不持有 API keys。
+> 注：API key 通过对 Claude 说"配置 ai-image"写入 `~/.config/presales-skills/config.yaml`，由 ai-image plugin 自包含读取；taw 不持有 API keys。
 
 ---
 
@@ -1169,16 +1159,14 @@ ls skills/
 
 **原因**：API Key 未配置，或余额不足。
 
-**解决方案**：
+**解决方案**（在 Claude 会话中说）：
+
+- "查看 ai-image 配置 api_keys" — 检查哪些 provider 的 key 已配
+- "用 ai-image 生成测试图片：一只红苹果" — 实测 API 是否能用
+
+如果想绕开 AI 生图：
+
 ```bash
-# 检查 API Key 配置（由 ai-image plugin 管理）
-# 对 Claude 说："查看 ai-image 配置 api_keys"
-# 或直接运行：python3 "$AI_IMAGE_DIR/scripts/ai_image_config.py" show api_keys
-
-# 测试 AI 生图是否正常（通过 /ai-image:gen 或自然语言触发 ai-image plugin）
-# 或直接调用底层脚本：
-# python3 "$AI_IMAGE_DIR/scripts/image_gen.py" "测试图片" --aspect_ratio 16:9 -o /tmp --filename test.png
-
 # 改用 draw.io（本地生成，零费用）
 /taw output/ --chapter 1.3 --image-source drawio
 
