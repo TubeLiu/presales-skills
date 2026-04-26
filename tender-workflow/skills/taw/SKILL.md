@@ -263,19 +263,19 @@ Phase 2B subagent **只能**用 prompt 已提供的素材，**不得**自调 Ski
 
 ## Phase 2.5R：审核 subagent（NEW）
 
-每章 Phase 2 完成后、Phase 3 输出前，**并行**分派两个审核 subagent：
+每章 Phase 2 完成后、Phase 3 输出前，**并行**分派两个审核 subagent。详细 dispatch 占位符 packaging 见 `prompts/parallel_writer_agent.yaml::phase_2_5r_dispatch`。
 
 ```
-单条消息内同时 Task：
-  Read $SKILL_DIR/agents/spec-reviewer.md → 填占位符 → Task(prompt=...)
-  Read $SKILL_DIR/agents/quality-reviewer.md → 填占位符 → Task(prompt=...)
+主 session 单条消息内同时 Task：
+  Read $SKILL_DIR/agents/spec-reviewer.md → 按 spec_reviewer_packaging 填占位符 → Task(prompt=...)
+  Read $SKILL_DIR/agents/quality-reviewer.md → 按 quality_reviewer_packaging 填占位符 → Task(prompt=...)
 ```
 
-收两个 STATUS 后：
+收两个 STATUS 后按 `result_handling` 处理：
 
 - 全 `STATUS: DONE` → 进 Phase 3
-- 任一 `STATUS: NEEDS_REVISION` → 主 session 应用修订列表（直接 Edit docx 或回 writer 重写对应 H3）→ 重跑两个 reviewer
-- 最多 2 轮；2 轮仍 NEEDS_REVISION → 写 audit log（章节文件旁 `.audit.md`），不阻塞，进 Phase 3 但提示用户人工审
+- 任一 `STATUS: NEEDS_REVISION` → 主 session 应用修订（Edit docx 或回 writer 重写对应 H3）→ 重跑两个 reviewer，最多 2 轮
+- 2 轮仍 NEEDS_REVISION → 写 audit log（`<章节>.audit.md` 与 docx 同目录），进 Phase 3 但终端提示用户人工审，不阻塞
 
 输出：
 
@@ -406,6 +406,7 @@ PY
 8. **基础自检 + 双 reviewer**：taw 跑 §3.1 基础检查 + Phase 2.5R 双 reviewer；深度审核仍由 trv 负责
 9. **互联网兜底**：KB 空或当前章节无匹配 → 主动 WebSearch / MCP 检索
 10. **来源标注**：互联网具体数字标 `[互联网来源，请核实]` / `[Tavily来源，请核实]` / `[Exa来源，请核实]`；通用描述无需逐句标注；不得照搬原文
+11. **跨 CLI 兼容**：并行写作 / 双 reviewer 依赖 Claude Code Task tool，Codex / OpenCode 等无 Task tool → 自动降级为顺序模式（USE_PARALLEL_WRITING=false）+ 跳过 Phase 2.5R 审核（仍跑 §3.1 基础自检）；docx_writer 多级列表 / TOC / 字体 / 段距等所有底层渲染跨 CLI 一致
 
 ---
 

@@ -420,9 +420,17 @@ def add_picture_cn(doc, img_path, caption=None, width_cm=14.0, cn_font='宋体')
     """插入图片并附带图题（caption 在图下方居中，小五宋体）。
 
     caption 文字应已是 '图 X-Y 说明' 格式（由调用方拼好），本函数不再二次加工。
-    img_path 须为绝对路径或相对于工作目录的路径；文件不存在时降级为占位符。
+    img_path 须为绝对路径或相对于工作目录的路径；文件不存在 / 不可读 / 格式异常
+    时降级为占位符（用 try/except 包裹避免 exists()->add_picture() 间的 race
+    condition + 兼容损坏文件）。
     """
-    if not os.path.exists(img_path):
+    try:
+        doc.add_picture(img_path, width=Cm(width_cm))
+        last_para = doc.paragraphs[-1]
+        last_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        last_para.paragraph_format.first_line_indent = Pt(0)
+    except Exception:
+        # 文件不存在 / 损坏 / 格式不支持 / 权限拒绝 → 占位符段
         p = doc.add_paragraph(style='Normal')
         p.paragraph_format.left_indent = Cm(0.75)
         p.paragraph_format.first_line_indent = Pt(0)
@@ -430,10 +438,6 @@ def add_picture_cn(doc, img_path, caption=None, width_cm=14.0, cn_font='宋体')
         run.italic = True
         apply_run_font(run, cn_font=cn_font)
         return
-    doc.add_picture(img_path, width=Cm(width_cm))
-    last_para = doc.paragraphs[-1]
-    last_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    last_para.paragraph_format.first_line_indent = Pt(0)
     if caption:
         cap_p = doc.add_paragraph(style='Normal')
         cap_p.alignment = WD_ALIGN_PARAGRAPH.CENTER

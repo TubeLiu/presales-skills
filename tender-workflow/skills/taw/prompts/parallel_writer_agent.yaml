@@ -22,43 +22,83 @@ agent_prompt_source: agents/writer.md  # 真正的 prompt 模板位置
 # ============================================================
 
 context_packaging:
-  # 必须传递给每个子智能体的上下文
+  # 必须传递给每个子智能体的上下文。占位符名称与 agents/writer.md 的 {xxx}
+  # 一一对应；主 session 用本表填模板。
   required:
-    - name: writing_brief_core
-      description: "论述主线 + 术语表（从 Writing Brief 提取）"
-      max_tokens: 500
-      source: "Phase 2A Writing Brief"
+    # ── 章节 / 子节身份 ──
+    - name: chapter_title
+      description: "章节标题（H2 标题文本，不含编号）"
+      max_tokens: 30
+      source: "OUTLINE_SUBSECTIONS 当前章节 title"
+    - name: h3_numbering
+      description: "本子节编号（如 '1.3.1'）— 仅用于 Task description 与上下文识别，**不写入** subagent 输出标题"
+      max_tokens: 10
+      source: "h3_assignment_table.h3_numbering"
+    - name: h3_title
+      description: "本子节标题文本（不含编号）— subagent 输出首行 ### 起跳"
+      max_tokens: 30
+      source: "h3_assignment_table.h3_title"
+    - name: h3_index
+      description: "本子节序号（1-based，如 '2'）— 给 subagent 上下文位置感"
+      max_tokens: 5
+      source: "枚举 h3_assignment_table"
+    - name: h3_total
+      description: "全章 H3 总数（如 '5'）"
+      max_tokens: 5
+      source: "len(h3_assignment_table)"
+    - name: connect_from
+      description: "承接上一节内容的一句话（首个 H3 固定 '章节引言'）"
+      max_tokens: 50
+      source: "h3_assignment_table[i].connect_from"
+    - name: lead_to
+      description: "为下一节铺垫的一句话（末个 H3 固定 '章节总结'）"
+      max_tokens: 50
+      source: "h3_assignment_table[i].lead_to"
 
-    - name: h3_task_definition
-      description: "当前 H3 的任务定义（核心论点、评分项、字数、衔接指令）"
+    # ── 写作蓝图（全章共享）──
+    - name: argument_thread
+      description: "全章论述主线（3-5 句话概括递进关系）"
       max_tokens: 200
-      source: "Writing Brief h3_assignment_table 对应行"
+      source: "Writing Brief argument_thread"
+    - name: terminology_table
+      description: "全章术语规范表（统一用语 / 禁用变体 / 使用场景）"
+      max_tokens: 400
+      source: "Writing Brief terminology_table"
 
+    # ── 本子节任务 ──
+    - name: core_argument
+      description: "本子节核心论点（1 句话）"
+      max_tokens: 50
+      source: "h3_assignment_table[i].core_argument"
+    - name: target_words
+      description: "本子节目标字数"
+      max_tokens: 5
+      source: "h3_assignment_table[i].target_words"
     - name: scoring_points_detail
       description: "需覆盖的 M4 评分项完整描述"
       max_tokens: 500
-      source: "M4 评分标准，按 h3_assignment_table.scoring_points 筛选"
+      source: "M4 评分标准，按 h3_assignment_table[i].scoring_points 筛选"
 
+    # ── 素材 ──
     - name: kb_materials_content
       description: "该 H3 对应的知识库检索结果"
       max_tokens: 1500
-      source: "Phase 1.3 KB 结果，按 h3_assignment_table.kb_materials 筛选"
-
+      source: "Phase 1.3 KB 结果，按 h3_assignment_table[i].kb_materials 筛选"
     - name: web_facts_content
       description: "该 H3 适用的 WEB_FACTS 条目"
       max_tokens: 500
-      source: "Phase 1.3 WEB_FACTS，按 h3_assignment_table.web_facts 筛选"
-
-    - name: global_writing_rules
-      description: "全局写作规则精简版"
-      max_tokens: 300
-      source: "article_core.yaml global_rules 精简提取"
-
+      source: "Phase 1.3 WEB_FACTS，按 h3_assignment_table[i].web_facts 筛选"
     - name: image_plan
       description: "该 H3 的图片分配数组：每项 {path: abs, caption: '图 X-Y ...', placement_hint: '开头/中段/末尾'}；空数组 [] 表示无图"
       max_tokens: 300
-      source: "Writing Brief h3_assignment_table.image_plan 列"
+      source: "Writing Brief h3_assignment_table[i].image_plan 列"
       note: "subagent 必须按 placement_hint 把每项嵌成 ![caption](path)，文件不存在时由 docx_writer 自动降级占位符"
+
+    # ── 全局规则 ──
+    - name: global_writing_rules
+      description: "全局写作规则精简版（评分导向 / 数据支撑 / 结构化表达 / 差异化 / 红线 / 字数 / 表格 / 中文排版）"
+      max_tokens: 300
+      source: "本 yaml 末 global_writing_rules_template 渲染"
 
   # 不传递给子智能体（节省 token）
   excluded:
@@ -113,6 +153,67 @@ phase_2b_execution:
       action: "降级到顺序写作模式（回退执行 Step 3）"
 
   degradation_message: "⚠️ 并行写作模式失败（{失败数}/{总数} 子节未完成），降级到顺序写作模式"
+
+# ============================================================
+# Phase 2.5R 审核 subagent dispatch 配置（v2.0 NEW）
+# ============================================================
+
+phase_2_5r_dispatch:
+  description: "每章 Phase 2C 完成、Phase 3 输出前，并行分派 spec + quality reviewer。"
+
+  dispatch_rule: |
+    主 session 在单条消息中并发分派两个 reviewer：
+      1. Read $SKILL_DIR/agents/spec-reviewer.md 拿模板，按 spec_reviewer_packaging 填占位符
+         → Task(description="规格审查 {chapter_numbering} {chapter_title}", prompt=...)
+      2. Read $SKILL_DIR/agents/quality-reviewer.md 拿模板，按 quality_reviewer_packaging 填占位符
+         → Task(description="质量审查 {chapter_numbering} {chapter_title}", prompt=...)
+    ⚠️ 两个 Task 必须在同一条消息中发出，确保并发执行。
+
+  spec_reviewer_packaging:
+    required:
+      - name: chapter_numbering
+        source: "当前章节 numbering（如 '1.3'）"
+      - name: chapter_title
+        source: "当前章节 title（不含编号）"
+      - name: draft_docx_path
+        source: "Phase 3 输出的章节 DOCX 路径（绝对路径）"
+      - name: outline_subsections_yaml
+        source: "OUTLINE_SUBSECTIONS[chapter_numbering] 的 YAML 序列化（含 numbering/title/depth）"
+      - name: l2_target_words
+        source: "WORD_OVERRIDE.get(2) 或模板默认"
+      - name: l3_target_words
+        source: "WORD_OVERRIDE.get(3) 或 900"
+      - name: l4_target_words
+        source: "WORD_OVERRIDE.get(4) 或 600"
+      - name: m4_scoring_points
+        source: "M4 评分项中与本章相关的部分"
+
+  quality_reviewer_packaging:
+    required:
+      - name: chapter_numbering
+        source: "同上"
+      - name: chapter_title
+        source: "同上"
+      - name: draft_docx_path
+        source: "同上"
+      - name: terminology_table
+        source: "Writing Brief terminology_table（统一用语 / 禁用变体）"
+      - name: kb_excerpts_used
+        source: |
+          本章实际引用的 KB 素材摘要（主 session 从 KB_MATERIALS 中提取已被本章
+          引用的部分；空则填"本章未引用 KB 素材"，reviewer 将跳过 KB 矛盾检查）
+
+  result_handling:
+    - status: "DONE / DONE"
+      action: "进 Phase 3 后续输出"
+    - status: "任一 NEEDS_REVISION"
+      action: |
+        主 session 应用修订列表（直接 Edit docx，或对受影响 H3 重派 writer 重写），
+        重跑两个 reviewer。最多 2 轮。
+    - status: "2 轮仍 NEEDS_REVISION"
+      action: |
+        写 audit log 到章节 docx 同目录的 <chapter>.audit.md（含两个 reviewer 的最后报告），
+        进 Phase 3 但终端提示用户人工审。不阻塞流程。
 
 # ============================================================
 # 全局写作规则精简版（从 article_core.yaml 提取）

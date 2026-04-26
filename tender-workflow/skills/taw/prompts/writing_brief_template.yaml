@@ -146,6 +146,15 @@ phase_2a_execution:
 phase_2c_integration:
   description: "合并子智能体输出，补充引言/结语/过渡，确保全章一致性"
   steps:
+    - step: 0
+      action: "标题层级守门（v2.0 NEW）"
+      detail: |
+        在拼接前对每个 subagent 输出做检查：
+        - 首行必须匹配 `^### ` （H3 起跳）；不得是 `# ` / `## `
+        - 标题文本不得含编号 prefix（regex `^### \d+(\.\d+)+\s+` 命中即违规）
+        不合规处理：直接降级到顺序写作（不私自修复，避免错上加错）；
+        在 phase_2b_execution.result_checking 已有"立即重派一次"动作，
+        Phase 2C 是最后防线。
     - step: 1
       action: "按 H3 顺序拼接所有子智能体输出"
     - step: 2
@@ -173,6 +182,16 @@ phase_2c_integration:
     - step: 5
       action: "M4 评分覆盖终检"
       detail: "对照 H3 分工表，逐一确认每个 M4 评分项在最终内容中有实质性响应；未覆盖的补充 2-3 句"
+    - step: 5.5
+      action: "图片清单核对（v2.0 NEW）"
+      detail: |
+        扫描合并后 Markdown 提取所有 ![]() 路径（regex `!\[([^\]]*)\]\(([^)]+)\)`），
+        对照 image_plan 应有清单：
+        - 每个 image_plan[i].path 必须在合并 Markdown 中至少出现一次
+        - 任何缺失项 → 按 image_plan[i].placement_hint 补嵌到对应 H3 末尾
+        - 路径在 Markdown 中但 image_plan 不含 → 警告（subagent 可能自创了图片，
+          多数情况是 LLM 编造，需人工核对）
+        最终所有 image_plan 100% 覆盖才进 Phase 2.5R。
     - step: 6
       action: "生成章节结尾段（100-200 字）"
       details:
