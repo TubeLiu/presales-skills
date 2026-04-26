@@ -36,20 +36,20 @@ if os.path.exists(p):
     for entries in d.get('plugins', {}).values():
         for e in (entries if isinstance(entries, list) else [entries]):
             if isinstance(e, dict) and '/ppt-master/' in e.get('installPath', ''):
-                print(e['installPath'] + '/skills/ppt-master'); sys.exit(0)
+                print(e['installPath'] + '/skills/make'); sys.exit(0)
 " 2>/dev/null)
 
-# vercel CLI fallback
+# vercel CLI fallback (skill subdir is 'make'; SKILL.md name is also 'make')
 [ -z "$SKILL_DIR" ] && for d in ~/.cursor/skills ~/.agents/skills .cursor/skills .agents/skills; do
-    [ -d "$d/ppt-master/skills/ppt-master" ] && SKILL_DIR="$d/ppt-master/skills/ppt-master" && break
-    [ -d "$d/ppt-master" ] && SKILL_DIR="$d/ppt-master" && break
+    [ -d "$d/ppt-master/skills/make" ] && SKILL_DIR="$d/ppt-master/skills/make" && break
+    [ -d "$d/make" ] && SKILL_DIR="$d/make" && break
 done
 
 # 用户预设环境变量
-[ -z "$SKILL_DIR" ] && [ -n "${PPT_MASTER_PLUGIN_PATH:-}" ] && SKILL_DIR="$PPT_MASTER_PLUGIN_PATH/skills/ppt-master"
+[ -z "$SKILL_DIR" ] && [ -n "${PPT_MASTER_PLUGIN_PATH:-}" ] && SKILL_DIR="$PPT_MASTER_PLUGIN_PATH/skills/make"
 
 # dev 态
-[ -z "$SKILL_DIR" ] && [ -d "./ppt-master/skills/ppt-master" ] && SKILL_DIR="$(pwd)/ppt-master/skills/ppt-master"
+[ -z "$SKILL_DIR" ] && [ -d "./ppt-master/skills/make" ] && SKILL_DIR="$(pwd)/ppt-master/skills/make"
 
 if [ -z "$SKILL_DIR" ]; then
     echo "[ERROR] 找不到 ppt-master skill 安装位置。" >&2

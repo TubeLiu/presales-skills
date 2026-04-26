@@ -36,20 +36,20 @@ if os.path.exists(p):
     for entries in d.get('plugins', {}).values():
         for e in (entries if isinstance(entries, list) else [entries]):
             if isinstance(e, dict) and '/web-access/' in e.get('installPath', ''):
-                print(e['installPath'] + '/skills/web-access'); sys.exit(0)
+                print(e['installPath'] + '/skills/browse'); sys.exit(0)
 " 2>/dev/null)
 
-# vercel CLI fallback
+# vercel CLI fallback (skill subdir is 'browse'; SKILL.md name is also 'browse')
 [ -z "$SKILL_DIR" ] && for d in ~/.cursor/skills ~/.agents/skills .cursor/skills .agents/skills; do
-    [ -d "$d/web-access/skills/web-access" ] && SKILL_DIR="$d/web-access/skills/web-access" && break
-    [ -d "$d/web-access" ] && SKILL_DIR="$d/web-access" && break
+    [ -d "$d/web-access/skills/browse" ] && SKILL_DIR="$d/web-access/skills/browse" && break
+    [ -d "$d/browse" ] && SKILL_DIR="$d/browse" && break
 done
 
 # 用户预设环境变量
-[ -z "$SKILL_DIR" ] && [ -n "${WEB_ACCESS_PLUGIN_PATH:-}" ] && SKILL_DIR="$WEB_ACCESS_PLUGIN_PATH/skills/web-access"
+[ -z "$SKILL_DIR" ] && [ -n "${WEB_ACCESS_PLUGIN_PATH:-}" ] && SKILL_DIR="$WEB_ACCESS_PLUGIN_PATH/skills/browse"
 
 # dev 态
-[ -z "$SKILL_DIR" ] && [ -d "./web-access/skills/web-access" ] && SKILL_DIR="$(pwd)/web-access/skills/web-access"
+[ -z "$SKILL_DIR" ] && [ -d "./web-access/skills/browse" ] && SKILL_DIR="$(pwd)/web-access/skills/browse"
 
 if [ -z "$SKILL_DIR" ]; then
     echo "[ERROR] 找不到 web-access skill 安装位置。" >&2

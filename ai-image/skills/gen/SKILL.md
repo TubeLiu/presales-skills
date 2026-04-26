@@ -47,20 +47,21 @@ if os.path.exists(p):
     for entries in d.get('plugins', {}).values():
         for e in (entries if isinstance(entries, list) else [entries]):
             if isinstance(e, dict) and '/ai-image/' in e.get('installPath', ''):
-                print(e['installPath'] + '/skills/ai-image'); sys.exit(0)
+                print(e['installPath'] + '/skills/gen'); sys.exit(0)
 " 2>/dev/null)
 
-# vercel CLI fallback
+# vercel CLI fallback (skill subdir is 'gen'; SKILL.md name is 'image-gen' so vercel
+# CLI installs the standalone skill at ~/.<agent>/skills/image-gen/)
 [ -z "$SKILL_DIR" ] && for d in ~/.cursor/skills ~/.agents/skills .cursor/skills .agents/skills; do
-    [ -d "$d/ai-image/skills/ai-image" ] && SKILL_DIR="$d/ai-image/skills/ai-image" && break
-    [ -d "$d/ai-image" ] && SKILL_DIR="$d/ai-image" && break
+    [ -d "$d/ai-image/skills/gen" ] && SKILL_DIR="$d/ai-image/skills/gen" && break
+    [ -d "$d/image-gen" ] && SKILL_DIR="$d/image-gen" && break
 done
 
 # 用户预设环境变量
-[ -z "$SKILL_DIR" ] && [ -n "${AI_IMAGE_PLUGIN_PATH:-}" ] && SKILL_DIR="$AI_IMAGE_PLUGIN_PATH/skills/ai-image"
+[ -z "$SKILL_DIR" ] && [ -n "${AI_IMAGE_PLUGIN_PATH:-}" ] && SKILL_DIR="$AI_IMAGE_PLUGIN_PATH/skills/gen"
 
 # dev 态
-[ -z "$SKILL_DIR" ] && [ -d "./ai-image/skills/ai-image" ] && SKILL_DIR="$(pwd)/ai-image/skills/ai-image"
+[ -z "$SKILL_DIR" ] && [ -d "./ai-image/skills/gen" ] && SKILL_DIR="$(pwd)/ai-image/skills/gen"
 
 if [ -z "$SKILL_DIR" ]; then
     echo "[ERROR] 找不到 ai-image skill 安装位置。" >&2
@@ -155,9 +156,9 @@ if os.path.exists(p):
     for entries in d.get('plugins', {}).values():
         for e in (entries if isinstance(entries, list) else [entries]):
             if isinstance(e, dict) and '/ai-image/' in e.get('installPath', ''):
-                print(e['installPath'] + '/skills/ai-image'); sys.exit(0)
+                print(e['installPath'] + '/skills/gen'); sys.exit(0)
 " 2>/dev/null)
-[ -z "$AI_IMAGE_DIR" ] && [ -n "${AI_IMAGE_PLUGIN_PATH:-}" ] && AI_IMAGE_DIR="$AI_IMAGE_PLUGIN_PATH/skills/ai-image"
+[ -z "$AI_IMAGE_DIR" ] && [ -n "${AI_IMAGE_PLUGIN_PATH:-}" ] && AI_IMAGE_DIR="$AI_IMAGE_PLUGIN_PATH/skills/gen"
 [ -z "$AI_IMAGE_DIR" ] && echo "[ai-image] plugin 未安装，跳过/降级到文本占位符" >&2 && exit 0  # graceful 降级
 python3 "$AI_IMAGE_DIR/scripts/image_gen.py" "<prompt>" -o /path/to/output/
 ```

@@ -53,20 +53,21 @@ if os.path.exists(p):
     for entries in d.get('plugins', {}).values():
         for e in (entries if isinstance(entries, list) else [entries]):
             if isinstance(e, dict) and '/solution-master/' in e.get('installPath', ''):
-                print(e['installPath'] + '/skills/solution-master'); sys.exit(0)
+                print(e['installPath'] + '/skills/go'); sys.exit(0)
 " 2>/dev/null)
 
-# vercel CLI fallback
+# vercel CLI fallback (skill subdir is 'go'; SKILL.md name is 'solution-master' so vercel
+# CLI installs the standalone skill at ~/.<agent>/skills/solution-master/)
 [ -z "$SKILL_DIR" ] && for d in ~/.cursor/skills ~/.agents/skills .cursor/skills .agents/skills; do
-    [ -d "$d/solution-master/skills/solution-master" ] && SKILL_DIR="$d/solution-master/skills/solution-master" && break
+    [ -d "$d/solution-master/skills/go" ] && SKILL_DIR="$d/solution-master/skills/go" && break
     [ -d "$d/solution-master" ] && SKILL_DIR="$d/solution-master" && break
 done
 
 # 用户预设环境变量
-[ -z "$SKILL_DIR" ] && [ -n "${SOLUTION_MASTER_PLUGIN_PATH:-}" ] && SKILL_DIR="$SOLUTION_MASTER_PLUGIN_PATH/skills/solution-master"
+[ -z "$SKILL_DIR" ] && [ -n "${SOLUTION_MASTER_PLUGIN_PATH:-}" ] && SKILL_DIR="$SOLUTION_MASTER_PLUGIN_PATH/skills/go"
 
 # dev 态
-[ -z "$SKILL_DIR" ] && [ -d "./solution-master/skills/solution-master" ] && SKILL_DIR="$(pwd)/solution-master/skills/solution-master"
+[ -z "$SKILL_DIR" ] && [ -d "./solution-master/skills/go" ] && SKILL_DIR="$(pwd)/solution-master/skills/go"
 
 if [ -z "$SKILL_DIR" ]; then
     echo "[ERROR] 找不到 solution-master skill 安装位置。" >&2
