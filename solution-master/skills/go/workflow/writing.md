@@ -98,14 +98,14 @@ digraph solution_writing {
 
 1. 调用 knowledge-retrieval 技能，传入任务的 KB 检索关键词
 2. **检查任务的"配图需求"字段**：
-   - 如果配图需求明确表示需要图片（即字段值不是"无"、"无需配图"、"无配图需求"、"N/A"等否定性表述），**必须**调用 ai-image plugin 的 `image-gen` 命令
-   - `image-gen` 产出一个"配图方案"（每张图的描述 + 图片路径或占位符）
-   - 如果 `image-gen` 调用失败（如 API 不可用），配图方案中使用标准占位符格式，不阻塞撰写流程
+   - 如果配图需求明确表示需要图片（即字段值不是"无"、"无需配图"、"无配图需求"、"N/A"等否定性表述），**必须**通过 `Skill(skill="ai-image:gen")` 调用 ai-image plugin
+   - ai-image plugin 产出一个"配图方案"（每张图的描述 + 图片路径或占位符）
+   - 如果 ai-image plugin 调用失败（如 API 不可用），配图方案中使用标准占位符格式，不阻塞撰写流程
    - 如果配图需求明确为"无"或等价否定表述，跳过此步骤
 3. 收集检索结果和配图方案（如有）
 
 <HARD-GATE>
-如果任务的"配图需求"字段表示需要图片（非"无"、"无需配图"、"无配图需求"、"N/A"），且未调用 ai-image plugin 的 `image-gen` 命令，则不得进入 Phase 2（分派撰写子智能体）。
+如果任务的"配图需求"字段表示需要图片（非"无"、"无需配图"、"无配图需求"、"N/A"），且未通过 `Skill(skill="ai-image:gen")` 调用 ai-image plugin，则不得进入 Phase 2（分派撰写子智能体）。
 </HARD-GATE>
 
 **配图方案产出格式**（传给 writer 子智能体）：
@@ -359,7 +359,7 @@ digraph process {
 ## 红线
 
 **绝不：**
-- 跳过 knowledge-retrieval（或在配图需求非空时跳过 ai-image plugin 的 `image-gen` 命令）直接撰写
+- 跳过 knowledge-retrieval（或在配图需求非空时跳过 `Skill(skill="ai-image:gen")` 调用）直接撰写
 - 跳过审查（spec-reviewing 或 quality-reviewing）
 - 带着未修复的问题继续
 - 并行分派多个撰写子智能体写同一章节（会冲突）
@@ -390,14 +390,14 @@ digraph process {
 
 ## 集成
 
-**必需的前置技能：**
-- **solution-brainstorming** - 需求提取
-- **solution-planning** - 任务分解与验收标准
-- **knowledge-retrieval** - 每个任务撰写前的素材检索
-- **ai-image (image-gen)** - 每个任务撰写前的配图规划（独立 plugin，通过 bin 命令调用）
+**必需的前置 workflow（v1.0.0 后单 SKILL `go` + workflow/ 子文件结构）：**
+- **`workflow/brainstorming.md`** - 需求提取
+- **`workflow/planning.md`** - 任务分解与验收标准
+- **`workflow/knowledge-retrieval.md`** - 每个任务撰写前的素材检索
+- **ai-image plugin** - 每个任务撰写前的配图规划（独立 plugin，通过 `Skill(skill="ai-image:gen")` 或自然语言触发）
 
-**并行使用：**
-- **solution-writing** - 领域特有执行流程（draw.io 检查、Phase 1/2/3、最终组装），本技能提供其子智能体驱动骨架
+**配套 workflow：**
+- **本文件 `workflow/writing.md`** - 领域特有执行流程（draw.io 检查、Phase 1/2/3、最终组装）+ 子智能体驱动骨架
 
 **产出下游：**
 - **docx-formatting** - 所有章节完成后的 DOCX 输出
