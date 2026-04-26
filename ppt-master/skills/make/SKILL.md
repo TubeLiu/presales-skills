@@ -164,13 +164,14 @@ Import source content (choose based on the situation):
 
 | Situation | Action |
 |-----------|--------|
-| Has source files (PDF/MD/etc.) | `python3 $SKILL_DIR/scripts/project_manager.py import-sources <project_path> <source_files...> --move` |
+| Has source files (PDF/MD/etc.) | `python3 $SKILL_DIR/scripts/project_manager.py import-sources <project_path> <source_files...>` |
 | User provided text directly in conversation | No import needed — content is already in conversation context; subsequent steps can reference it directly |
 
-> ⚠️ **MUST use `--move`**: All source files (original PDF / MD / images) MUST be **moved** (not copied) into `sources/` for archiving.
-> - Markdown files generated in Step 1, original PDFs, original MDs — **all** must be moved into the project via `import-sources --move`
-> - Intermediate artifacts (e.g., `_files/` directories) are handled automatically by `import-sources`
-> - After execution, source files no longer exist at their original location
+> 🛡️ **默认行为：保留用户原文件**。`import-sources` 不带 flag 时：
+> - **用户提供的、位于 repo 之外**的源文件 → **复制**到 `sources/`，原位置文件保留（不要让用户丢文件）
+> - 位于本 repo 内部的源文件（如 `examples/` 中的演示文件）→ 自动 move 进 `sources/` 并打 stderr note，避免误提交未跟踪产物
+> - 显式 override：`--move` 强制 move（仅在用户明确要求"搬走原文件"时使用）；`--copy` 强制 copy
+> - `_files/` 等伴生资源目录由 `import-sources` 自动同步处理
 
 **✅ Checkpoint — Confirm project structure created successfully, `sources/` contains all source files, converted materials are ready. Proceed to Step 3.**
 

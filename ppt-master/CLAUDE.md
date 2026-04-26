@@ -20,7 +20,7 @@ node skills/make/scripts/source_to_md/web_to_md.cjs <URL>       # fallback only;
 
 # Project management
 python3 skills/make/scripts/project_manager.py init <project_name> --format ppt169
-python3 skills/make/scripts/project_manager.py import-sources <project_path> <source_files_or_URLs...> --move
+python3 skills/make/scripts/project_manager.py import-sources <project_path> <source_files_or_URLs...>
 python3 skills/make/scripts/project_manager.py validate <project_path>
 
 # Image tools

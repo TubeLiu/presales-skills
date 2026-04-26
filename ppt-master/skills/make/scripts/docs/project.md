@@ -14,12 +14,11 @@ python3 scripts/project_manager.py info <project_path>
 ```
 
 Notes:
-- Files outside the repo are copied into `sources/` by default
-- With `--move`, files outside the repo are moved into `sources/`
-- Files already inside the repo are moved into `sources/` by default (with a stderr
-  note), to avoid leaving unintended artifacts that could be committed by mistake.
-  Pass `--copy` to force a copy for in-repo sources instead.
-- `--move` and `--copy` are mutually exclusive.
+- **默认安全**：用户提供的、位于 repo 之外的源文件会**复制**进 `sources/`，原位置文件保留
+- 位于本 repo 内部的源文件（如 `examples/` 中的演示文件）会自动 move 进 `sources/`（伴一行 stderr note），
+  避免未跟踪产物被误提交；如果你想保留 in-repo 文件原状，加 `--copy`
+- `--move` 强制 move（**会让原位置文件消失**——仅在用户明确说"搬走原文件"时使用）
+- `--move` 和 `--copy` 互斥
 
 Common formats:
 - `ppt169`
