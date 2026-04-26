@@ -29,8 +29,15 @@ if [ ! -d "${PROJECT_DIR}/drafts" ] && \
   exit 0
 fi
 
-# Read main solution-master SKILL content (post M4 11→1 merge: iron rules now live here)
-using_sm_content=$(cat "${SM_ROOT}/skills/go/SKILL.md" 2>&1 || echo "Error reading solution-master skill")
+# F-012: 注入 _RULES.md（约 3KB，仅含铁律 + 红线 + workflow 导航 + HARD-GATE 约定），
+# 不再注入完整 SKILL.md（13.8KB，含路径自定位 bootstrap 等 hook 不需要的段落）。
+# 完整 SKILL.md 由用户首句触发 description 时按需 lazy-load。
+# Fallback：_RULES.md 不存在时（旧版本未拆出），降级注入 SKILL.md 全文。
+if [ -f "${SM_ROOT}/skills/_RULES.md" ]; then
+    using_sm_content=$(cat "${SM_ROOT}/skills/_RULES.md" 2>&1 || echo "Error reading solution-master _RULES.md")
+else
+    using_sm_content=$(cat "${SM_ROOT}/skills/go/SKILL.md" 2>&1 || echo "Error reading solution-master skill")
+fi
 
 # Escape string for JSON embedding via Python json.dumps — full RFC 8259 coverage
 # including all control chars U+0000–U+001F (F-022 fix).
@@ -46,7 +53,7 @@ escape_for_json() {
 }
 
 using_sm_escaped=$(escape_for_json "$using_sm_content")
-session_context="<EXTREMELY_IMPORTANT>\nYou are operating Solution Master — an AI 辅助通用解决方案撰写框架.\n\n**Below is the full content of your 'solution-master:solution-master' skill — your introduction to Solution Master's iron rules, red lines, workflow navigation, and subagent dispatch. For other skills, use the 'Skill' tool:**\n\n${using_sm_escaped}\n</EXTREMELY_IMPORTANT>"
+session_context="<EXTREMELY_IMPORTANT>\nYou are operating Solution Master — an AI 辅助通用解决方案撰写框架.\n\n**Below is the iron rules / red lines / workflow navigation extracted from Solution Master (intentionally slim ~3KB). For full workflow details and subagent dispatch templates, load 'skills/go/SKILL.md' on first user trigger:**\n\n${using_sm_escaped}\n</EXTREMELY_IMPORTANT>"
 
 # Output context injection as JSON.
 #
