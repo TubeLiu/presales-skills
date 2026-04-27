@@ -80,15 +80,21 @@ fi
 4. **执行生成**：调 `image_gen.py`：
    - 设定 `IMAGE_BACKEND` 为选定 provider 的 canonical 名（ark→volcengine，dashscope→qwen，其他同名）
    - 通过 `-o` 指定输出目录
-   - 根据 `ai_image.default_size` 或用户显式指定的 aspect ratio / size
+   - 用户没显式给 size / ratio 时，分别从 `ai_image.default_size`（preset 如 `2K`）和 `ai_image.default_aspect_ratio`（比例如 `16:9`）读默认值。**两个独立参数**：size preset 决定分辨率，aspect ratio 决定形状
 
 ```bash
-# 默认 provider（来自 config.yaml）
-python3 "$SKILL_DIR/scripts/image_gen.py" "用户提示词" --aspect_ratio 16:9 --image_size 1K -o /path/to/output/
+# 默认 provider + 默认 size + 默认 ratio（全从 config.yaml 取）
+python3 "$SKILL_DIR/scripts/image_gen.py" "用户提示词" \
+  --image_size "$DEFAULT_SIZE" --aspect_ratio "$DEFAULT_RATIO" -o /path/to/output/
 
-# 显式指定 backend
-IMAGE_BACKEND=ark python3 "$SKILL_DIR/scripts/image_gen.py" "用户提示词" -o /path/to/output/
+# 显式指定 backend + size / ratio
+IMAGE_BACKEND=ark python3 "$SKILL_DIR/scripts/image_gen.py" "用户提示词" \
+  --image_size 2K --aspect_ratio 16:9 -o /path/to/output/
 ```
+
+> ⚠ `--image_size` 只接受 preset：`512px` / `1K` / `2K` / `4K`（不是字面像素如 `2048x2048`）；
+> `--aspect_ratio` 只接受 `1:1` / `16:9` / `9:16` 等比例。配置里 `default_size` 写错值，
+> CLI 会被 argparse 拒，此时跑 `python3 ai_image_config.py validate` 看具体提示。
 
 5. **验证输出**：文件存在且 > 10KB，否则降级或报错
 6. **返回给用户**：图片路径 + 简要描述

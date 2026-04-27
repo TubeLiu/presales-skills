@@ -567,3 +567,57 @@ def test_mcp_installer_has_list_search_tools_subcommand():
         "mcp_installer.py 必须注册 list-search-tools 子命令"
     assert "_is_web_search_tool" in text, \
         "mcp_installer.py 必须含 _is_web_search_tool 启发式过滤函数"
+
+
+def test_ai_image_default_size_is_legal_preset():
+    """ai_image_config.DEFAULT_CONFIG.default_size 必须是 ALL_IMAGE_SIZES 之一。
+
+    回归 user 报告的 bug：v1.0.0 默认值是字面像素 '2048x2048'，但
+    image_gen.py --image_size 只接受 preset (512px/1K/2K/4K)，传字面像素 argparse 拒。
+    """
+    import importlib.util
+    p = REPO_ROOT / "ai-image/skills/gen/scripts/ai_image_config.py"
+    spec = importlib.util.spec_from_file_location("ai_image_config_lint", p)
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    size = m.DEFAULT_CONFIG["ai_image"]["default_size"]
+    assert size in m.ALL_IMAGE_SIZES, (
+        f"DEFAULT_CONFIG.ai_image.default_size = {size!r} 不在 ALL_IMAGE_SIZES "
+        f"= {m.ALL_IMAGE_SIZES}；image_gen.py --image_size 会被 argparse 拒"
+    )
+    ratio = m.DEFAULT_CONFIG["ai_image"].get("default_aspect_ratio")
+    assert ratio is not None, \
+        "DEFAULT_CONFIG.ai_image 必须含 default_aspect_ratio 字段（C9 加的）"
+    assert ratio in m.ALL_ASPECT_RATIOS, (
+        f"default_aspect_ratio = {ratio!r} 不在 ALL_ASPECT_RATIOS"
+    )
+
+
+def test_ai_image_setup_md_does_not_offer_pixel_literal():
+    """ai-image setup.md §5 不应该列字面像素（'2048x2048' / '1024x1024'）作为 size 候选——
+    这些值传给 image_gen.py --image_size 会被 argparse 拒。
+
+    回归 user 报告："默认图片尺寸？（推荐 2048x2048，可选 1K/1024x1024/16:9/9:16 等）"
+    这种问法把字面像素和 aspect ratio 混进 size preset 选项。
+    """
+    p = REPO_ROOT / "ai-image/skills/gen/setup.md"
+    text = _read(p)
+    # 找 §5 段（"步骤 5" 到下一个 "## " 之间）
+    m = re.search(r"##\s*步骤\s*5[^\n]*\n([\s\S]+?)(?=\n##\s|\Z)", text)
+    assert m, "setup.md 缺步骤 5 段"
+    section = m.group(1)
+    forbidden_pixels = ["2048x2048", "1024x1024", "512x512", "4096x4096"]
+    for px in forbidden_pixels:
+        assert px not in section, (
+            f"setup.md §5 不应列字面像素 {px!r}（image_gen.py --image_size "
+            f"只接受 preset 1K/2K/4K；字面像素会被 argparse 拒）"
+        )
+    # 必须含 supported_sizes_for_model 调用（按 model max 过滤候选）
+    assert "supported_sizes_for_model" in section, (
+        "setup.md §5 必须调 ai_image_config.supported_sizes_for_model 按 model max "
+        "过滤候选 size（用户选 model 不支持的 preset → 生图被 model 拒，最差体验）"
+    )
+    # 必须有 default_aspect_ratio 单独问
+    assert "default_aspect_ratio" in section, (
+        "setup.md §5 必须单独问 default_aspect_ratio（与 default_size 是独立参数）"
+    )
