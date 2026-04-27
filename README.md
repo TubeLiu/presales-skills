@@ -1,8 +1,8 @@
 # presales-skills — 灵雀云售前工作 skill 集合
 
-灵雀云（Alauda）售前与市场团队建设和维护的 SKILL 集合，统一通过 marketplace 分发。覆盖售前日常高频场景——**写方案 / 做 PPT / 招投标 / 画图 / AI 生图 / 联网检索 / 知识库语义搜索**——把以前要在多个工具/网页之间切换的步骤压缩成"对 AI 说一句话"。
+灵雀云（Alauda）售前与市场团队建设和维护的 SKILL 集合，统一通过 marketplace 分发。
 
-**目标用户**：灵雀云售前 / 解决方案 / 市场团队成员，希望少切窗口、多产输出；同时对外开源，欢迎友商参考或贡献。
+**目标用户**：灵雀云售前 / 解决方案 / 市场团队成员，希望帮助大家少掉头发，多产输出；少熬夜加班，多陪陪自己和家人。
 
 **兼容性**：同时支持 **Claude Code**（marketplace 直装）和 **Cursor / Codex / OpenCode**（[vercel-labs/skills](https://github.com/vercel-labs/skills) CLI 装）。
 
@@ -216,7 +216,7 @@ ppt_master:
 **先配置**：
 
 ```
-> 配置 tender
+> 配置 tender                                   # 一次性配好 4 个角色（tpl/taa/taw/trv）共享的统一配置
 ```
 
 AI 会引导 6 步：本地知识库路径 → AnythingLLM（可选）→ drawio 检测 → MCP 搜索工具（tavily / exa / minimax，调 `web-access` 的 `mcp_installer.py`）→ skill 默认值（taa 厂商名 / tpl 模板等）→ validate。
@@ -495,10 +495,3 @@ grep '"version"' .claude-plugin/marketplace.json */.claude-plugin/plugin.json
 ```
 
 三处版本号必须保持一致：marketplace.json 顶层 `metadata.version` + 各 plugin entry 的 `version` + 各 plugin 自己的 `plugin.json` 的 `version`。
-
----
-
-## License
-
-MIT。版权归灵雀云（Alauda）。
-
