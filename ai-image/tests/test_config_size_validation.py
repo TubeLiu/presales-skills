@@ -133,6 +133,23 @@ def test_legacy_migration_preserves_unknown_value() -> None:
     assert out["ai_image"]["default_size"] == "weird-value"
 
 
+def test_model_exists_in_registry_distinguishes_typo_from_unparseable() -> None:
+    """C12 修 P2：model_exists_in_registry 必须精确报告 model 是否在 registry——
+    与 get_model_max_size_preset 区分（那个返回 None 既可能是 typo 也可能是 max_resolution
+    解析不出，validate 需要把这俩分开报）。
+
+    回归：旧 validate 用 supported_sizes_for_model 判 size，typo 时它返回全集导致
+    default_size 永真通过，validate 报 OK 但运行时 backend 拿到不存在的 model 报错。
+    """
+    # 真实存在的 model
+    assert ac.model_exists_in_registry("ark", "doubao-seedream-4-5-251128") is True
+    assert ac.model_exists_in_registry("gemini", "gemini-2.0-flash-exp") is True
+    # typo / 不存在
+    assert ac.model_exists_in_registry("ark", "doubao-seedream-99-typo") is False
+    # 完全未知 provider
+    assert ac.model_exists_in_registry("no-such-provider", "anything") is False
+
+
 def main() -> int:
     tests = [
         test_default_config_size_is_legal_preset,
@@ -144,6 +161,7 @@ def main() -> int:
         test_legacy_size_migration_to_preset,
         test_legacy_migration_leaves_valid_preset_alone,
         test_legacy_migration_preserves_unknown_value,
+        test_model_exists_in_registry_distinguishes_typo_from_unparseable,
     ]
     failed = 0
     for t in tests:

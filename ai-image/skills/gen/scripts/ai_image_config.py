@@ -255,6 +255,24 @@ def _max_resolution_to_preset(mr_str: str) -> Optional[str]:
     return None
 
 
+def model_exists_in_registry(provider: str, model_id: str) -> bool:
+    """精确判断 model_id 是否在 ai_image_models.yaml 的 provider 下注册。
+
+    与 get_model_max_size_preset 区分：那个返回 None 既可能是 "model 不在 registry"
+    也可能是 "model 在但 max_resolution 解析不出"——validate 需要把这俩分开报。
+    """
+    if not PLUGIN_REGISTRY.exists():
+        return False
+    registry = _load_yaml(PLUGIN_REGISTRY) or {}
+    prov = (registry.get("providers") or {}).get(provider)
+    if not isinstance(prov, dict):
+        return False
+    for m in (prov.get("models") or []):
+        if isinstance(m, dict) and m.get("id") == model_id:
+            return True
+    return False
+
+
 def get_model_max_size_preset(provider: str, model_id: str) -> Optional[str]:
     """读 ai_image_models.yaml 找该 model 的 max_resolution preset；找不到 → None。"""
     if not PLUGIN_REGISTRY.exists():
@@ -590,20 +608,29 @@ def cmd_validate(provider_filter: Optional[str]) -> int:
             f"ai_image.default_aspect_ratio = '{default_ratio}' 不是合法比例；"
             f"必须是 {ALL_ASPECT_RATIOS} 之一。"
         )
-    # default_size 是否 ≤ default_provider 的 default model 的 max_resolution
-    if (default_size and default_size in ALL_IMAGE_SIZES
-            and default_provider and isinstance(models_per_provider, dict)):
+    # default_model 必须存在于 ai_image_models.yaml registry（避免 typo 静默通过）
+    # + default_size 是否 ≤ default model 的 max_resolution
+    if default_provider and isinstance(models_per_provider, dict):
         default_model = models_per_provider.get(default_provider)
         if default_model:
-            supported = supported_sizes_for_model(default_provider, default_model)
-            if default_size not in supported:
-                max_supported = supported[-1] if supported else "unknown"
+            if not model_exists_in_registry(default_provider, default_model):
                 issues.append(
-                    f"ai_image.default_size = '{default_size}' 超出 default model "
-                    f"'{default_model}' (provider {default_provider}) 的最大支持 "
-                    f"'{max_supported}'。生图时会被 model 拒。"
-                    f"建议：set ai_image.default_size {max_supported}"
+                    f"ai_image.models.{default_provider} = '{default_model}' 不在 "
+                    f"ai_image_models.yaml registry 里——可能 typo 或 model 已下架。"
+                    f"运行 `models {default_provider}` 看注册表确认；"
+                    f"如果是用户自定义模型，加到 ~/.config/presales-skills/models-user.yaml"
                 )
+            elif default_size and default_size in ALL_IMAGE_SIZES:
+                # 仅当 model 在 registry 时才比较 size 上限（否则 fall through 全集没意义）
+                supported = supported_sizes_for_model(default_provider, default_model)
+                if default_size not in supported:
+                    max_supported = supported[-1] if supported else "unknown"
+                    issues.append(
+                        f"ai_image.default_size = '{default_size}' 超出 default model "
+                        f"'{default_model}' (provider {default_provider}) 的最大支持 "
+                        f"'{max_supported}'。生图时会被 model 拒。"
+                        f"建议：set ai_image.default_size {max_supported}"
+                    )
 
     if issues:
         print()
