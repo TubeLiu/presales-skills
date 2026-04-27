@@ -527,3 +527,143 @@ def test_cmd_test_initialize_error_returns_1(mocked_test_proc, monkeypatch, caps
     rc = mi.cmd_test("tavily", key="tvly-x", host=None)
     assert rc == 1
     assert "initialize" in capsys.readouterr().out
+
+
+# ════════════════════════════════════════════════════════
+# 11. list-search-tools — 启发式过滤 + 多 server 容错 + builtin
+# ════════════════════════════════════════════════════════
+
+@pytest.mark.parametrize("name,desc,expected", [
+    # 命中：name 含搜索关键字
+    ("tavily_search",       "Search the web",                       True),
+    ("web_search",          "Search engine",                        True),
+    ("web_search_exa",      "Semantic web search",                  True),
+    ("brave_search",        "Brave search",                         True),
+    # 命中：name 不显眼但 desc 命中
+    ("query",               "Perform a web search",                 True),
+    # 排除：明显非 web 的搜索
+    ("anythingllm_search",  "Search a workspace",                   False),
+    ("vector_search",       "Vector similarity search",             False),
+    ("kb_search",           "Knowledge base search",                False),
+    ("image_search",        "Search images",                        False),
+    ("code_search",         "Search code",                          False),
+    # 排除：辅助 tool（不是 search 本身）
+    ("tavily_extract",      "Extract a URL",                        False),
+    ("tavily_crawl",        "Crawl a site",                         False),
+    ("tavily_research",     "Multi-step research",                  False),
+    ("tavily_map",          "Site map",                             False),
+    # 排除：browser automation（含 search 字面但不是 web search）
+    ("take_screenshot",     "Screenshot the page",                  False),
+    ("performance_analyze_insight", "Analyze perf",                 False),
+    # 排除：完全无关
+    ("read_file",           "Read a file",                          False),
+])
+def test_is_web_search_tool_heuristic(name, desc, expected):
+    assert mi._is_web_search_tool(name, desc) is expected
+
+
+def test_list_search_tools_emits_fqn_for_web_search_tools(monkeypatch, capsys):
+    """typical 场景：~/.claude.json 含 tavily 和 anythingllm-mcp，
+    输出只含 tavily_search（FQN 完整 + description 一行），anythingllm_search 被过滤"""
+    monkeypatch.setattr(mi, "read_claude_json", lambda: {
+        "mcpServers": {
+            "tavily": {"command": "npx", "args": ["-y", "tavily-mcp@latest"]},
+            "anythingllm": {"command": "node", "args": ["server.js"]},
+        }
+    })
+
+    def fake_list(name, cfg, timeout):
+        if name == "tavily":
+            return [{"name": "tavily_search",
+                     "description": "Search the web for current info\nLine 2 truncated"}], None
+        if name == "anythingllm":
+            return [{"name": "anythingllm_search", "description": "Search a workspace"},
+                    {"name": "anythingllm_list_workspaces", "description": "List workspaces"}], None
+        return [], "not stubbed"
+
+    monkeypatch.setattr(mi, "_list_server_tools", fake_list)
+    rc = mi.cmd_list_search_tools(timeout=5.0, include_builtin=False)
+    assert rc == 0
+    lines = [l for l in capsys.readouterr().out.splitlines() if l.strip()]
+    parsed = [json.loads(l) for l in lines]
+    fqns = [p.get("fqn") for p in parsed if "fqn" in p]
+    assert "mcp__tavily__tavily_search" in fqns
+    # anythingllm_* 全被启发式排除
+    assert not any("anythingllm" in f for f in fqns)
+    # description 取首行 + 截断到 200
+    tavily_record = next(p for p in parsed if p.get("fqn") == "mcp__tavily__tavily_search")
+    assert tavily_record["description"] == "Search the web for current info"
+
+
+def test_list_search_tools_single_server_failure_does_not_block_others(monkeypatch, capsys):
+    """spawn 失败 / 握手超时 → emit error 行，继续枚举其它 server，不阻塞。"""
+    monkeypatch.setattr(mi, "read_claude_json", lambda: {
+        "mcpServers": {
+            "broken": {"command": "nonexistent", "args": []},
+            "tavily": {"command": "npx", "args": ["-y", "tavily-mcp@latest"]},
+        }
+    })
+
+    def fake_list(name, cfg, timeout):
+        if name == "broken":
+            return [], "spawn failed: [Errno 2] no such file"
+        if name == "tavily":
+            return [{"name": "tavily_search", "description": "Search the web"}], None
+        return [], "unknown"
+
+    monkeypatch.setattr(mi, "_list_server_tools", fake_list)
+    rc = mi.cmd_list_search_tools(timeout=5.0)
+    assert rc == 0
+    lines = [json.loads(l) for l in capsys.readouterr().out.splitlines() if l.strip()]
+    # 一行 broken 的 error，一行 tavily 的 fqn
+    err_lines = [l for l in lines if l.get("server") == "broken" and "error" in l]
+    ok_lines = [l for l in lines if l.get("fqn") == "mcp__tavily__tavily_search"]
+    assert len(err_lines) == 1
+    assert len(ok_lines) == 1
+
+
+def test_list_search_tools_include_builtin_appends_websearch(monkeypatch, capsys):
+    """--include-builtin → 末尾追加 WebSearch 兜底候选（fqn = "WebSearch"，不带 mcp__ 前缀）"""
+    monkeypatch.setattr(mi, "read_claude_json", lambda: {"mcpServers": {}})
+    rc = mi.cmd_list_search_tools(timeout=5.0, include_builtin=True)
+    assert rc == 0
+    lines = [json.loads(l) for l in capsys.readouterr().out.splitlines() if l.strip()]
+    builtin = [l for l in lines if l.get("fqn") == "WebSearch"]
+    assert len(builtin) == 1
+    assert builtin[0]["server"] == "_builtin"
+
+
+def test_list_search_tools_all_flag_skips_heuristic(monkeypatch, capsys):
+    """--all → 不做启发式过滤，连 anythingllm_search 也输出。"""
+    monkeypatch.setattr(mi, "read_claude_json", lambda: {
+        "mcpServers": {"anythingllm": {"command": "node", "args": ["s.js"]}}
+    })
+    monkeypatch.setattr(mi, "_list_server_tools", lambda name, cfg, timeout: (
+        [{"name": "anythingllm_search", "description": "Search workspace"},
+         {"name": "anythingllm_list_workspaces", "description": "List"}],
+        None,
+    ))
+    rc = mi.cmd_list_search_tools(timeout=5.0, all_tools=True)
+    assert rc == 0
+    lines = [json.loads(l) for l in capsys.readouterr().out.splitlines() if l.strip()]
+    fqns = [l.get("fqn") for l in lines if "fqn" in l]
+    assert "mcp__anythingllm__anythingllm_search" in fqns
+    assert "mcp__anythingllm__anythingllm_list_workspaces" in fqns
+
+
+def test_list_search_tools_empty_mcpServers_emits_empty_marker(monkeypatch, capsys):
+    """没配任何 MCP server → 输出 _empty 标记行（让 setup wizard 知道走兜底分支）"""
+    monkeypatch.setattr(mi, "read_claude_json", lambda: {"mcpServers": {}})
+    rc = mi.cmd_list_search_tools(timeout=5.0)
+    assert rc == 0
+    lines = [json.loads(l) for l in capsys.readouterr().out.splitlines() if l.strip()]
+    assert any(l.get("server") == "_empty" for l in lines)
+
+
+def test_list_search_tools_corrupt_claude_json_returns_3(tmp_path, monkeypatch, capsys):
+    fake = tmp_path / ".claude.json"
+    fake.write_text("garbage{", encoding="utf-8")
+    monkeypatch.setattr(mi, "CLAUDE_JSON", fake)
+    rc = mi.cmd_list_search_tools(timeout=5.0)
+    assert rc == 3
+    assert "解析失败" in capsys.readouterr().err

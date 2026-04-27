@@ -16,6 +16,7 @@ CLI 用法：
     python3 mcp_installer.py register <provider> --key=<KEY> [--host=<HOST>] [--dry-run]
     python3 mcp_installer.py test <provider> [--key=<KEY>] [--host=<HOST>]
     python3 mcp_installer.py unregister <provider>
+    python3 mcp_installer.py list-search-tools [--include-builtin] [--all] [--timeout 30]
 """
 
 from __future__ import annotations
@@ -460,6 +461,155 @@ def recv_jsonrpc(q: queue.Queue, expected_id: int, timeout: float) -> dict:
 
 
 # ════════════════════════════════════════════════════════
+# list-search-tools
+# ════════════════════════════════════════════════════════
+
+# 启发式：tool name 含这些片段 → 候选 web 搜索
+_SEARCH_NAME_HINTS = ("search", "tavily", "exa", "google",
+                      "brave", "perplexity", "serpapi", "kagi", "duckduckgo")
+# 描述里出现这些短语 → 候选 web 搜索（兜底，覆盖 name 不显眼的情况）
+_WEB_DESC_HINTS = ("web search", "search the web", "search engine",
+                   "internet search", "online search")
+# tool name 含这些片段 → 一定不是 web 搜索（哪怕匹配了上面的关键字）
+_NON_WEB_EXCLUDE = ("image_", "code_", "vector_", "kb_", "knowledge_",
+                    "anythingllm", "list_workspace", "_extract", "_crawl",
+                    "_research", "_map", "_fetch", "screenshot", "navigate",
+                    "click", "fill", "evaluate", "take_", "performance_",
+                    "lighthouse")
+
+
+def _is_web_search_tool(name: str, desc: str) -> bool:
+    """启发式判定一个 MCP tool 是否是 web 搜索类。"""
+    n = (name or "").lower()
+    d = (desc or "").lower()
+    if any(x in n for x in _NON_WEB_EXCLUDE):
+        return False
+    if any(x in n for x in _SEARCH_NAME_HINTS):
+        return True
+    if any(x in d for x in _WEB_DESC_HINTS):
+        return True
+    return False
+
+
+def _list_server_tools(server_name: str, server_cfg: dict, timeout: float) -> tuple[list[dict], Optional[str]]:
+    """spawn 一个 MCP server，跑 initialize + tools/list，返回 (tools, error)。"""
+    cmd = _resolve_cmd([server_cfg.get("command", "")] + list(server_cfg.get("args", []) or []))
+    if not cmd or not cmd[0]:
+        return [], "missing command in server config"
+    env = {**os.environ, **(server_cfg.get("env") or {})}
+    try:
+        proc = subprocess.Popen(
+            cmd,
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            env=env, text=True, bufsize=1,
+        )
+    except FileNotFoundError as e:
+        return [], f"spawn failed: {e}"
+
+    out_q: queue.Queue = queue.Queue()
+
+    def _reader() -> None:
+        if proc.stdout is None:
+            out_q.put(None); return
+        for line in iter(proc.stdout.readline, ""):
+            out_q.put(line)
+        out_q.put(None)
+
+    threading.Thread(target=_reader, daemon=True).start()
+    # 把 stderr 也读掉，避免 buffer 满阻塞 server
+    threading.Thread(
+        target=lambda: [None for _ in iter((proc.stderr.readline if proc.stderr else (lambda: "")), "")],
+        daemon=True,
+    ).start()
+
+    try:
+        send_jsonrpc(proc, {
+            "jsonrpc": "2.0", "id": 1, "method": "initialize",
+            "params": {"protocolVersion": "2024-11-05",
+                       "capabilities": {},
+                       "clientInfo": {"name": "mcp_installer-list", "version": "1.0.0"}},
+        })
+        init = recv_jsonrpc(out_q, expected_id=1, timeout=timeout)
+        if init.get("error"):
+            return [], f"initialize error: {init['error']}"
+        send_jsonrpc(proc, {"jsonrpc": "2.0", "method": "notifications/initialized"})
+        send_jsonrpc(proc, {"jsonrpc": "2.0", "id": 2, "method": "tools/list"})
+        resp = recv_jsonrpc(out_q, expected_id=2, timeout=timeout)
+        if resp.get("error"):
+            return [], f"tools/list error: {resp['error']}"
+        return resp.get("result", {}).get("tools", []) or [], None
+    except (TimeoutError, RuntimeError) as e:
+        return [], str(e)
+    finally:
+        try:
+            proc.terminate()
+            proc.wait(timeout=3)
+        except Exception:
+            try:
+                proc.kill()
+            except Exception:
+                pass
+
+
+def cmd_list_search_tools(timeout: float = 30.0,
+                          include_builtin: bool = False,
+                          all_tools: bool = False) -> int:
+    """枚举当前 ~/.claude.json mcpServers 里的 web 搜索类 tool。
+
+    输出 JSON Lines（每行一条记录），便于 setup wizard 用 Bash + jq / python 消费：
+      {"server":"<x>","tool":"<name>","fqn":"mcp__<x>__<name>","description":"..."}
+      {"server":"<x>","error":"<reason>"}    # spawn / 握手失败
+    单 server 失败不阻塞其它枚举。--include-builtin → 末尾追加 WebSearch 兜底。
+    --all → 不做启发式过滤，全部 tool 输出（让用户人工选）。
+    """
+    try:
+        cfg = read_claude_json()
+    except ClaudeJsonCorrupted as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        return 3
+    servers = cfg.get("mcpServers", {}) or {}
+
+    if not servers:
+        print(json.dumps({"server": "_empty",
+                          "error": "no mcpServers in ~/.claude.json"}, ensure_ascii=False))
+
+    for name, srv_cfg in servers.items():
+        if not isinstance(srv_cfg, dict):
+            print(json.dumps({"server": name,
+                              "error": "server config not a dict"}, ensure_ascii=False))
+            continue
+        tools, err = _list_server_tools(name, srv_cfg, timeout=timeout)
+        if err:
+            print(json.dumps({"server": name, "error": err[:300]},
+                             ensure_ascii=False))
+            continue
+        for t in tools:
+            tname = (t.get("name") or "").strip()
+            tdesc = (t.get("description") or "").strip()
+            if not tname:
+                continue
+            if not all_tools and not _is_web_search_tool(tname, tdesc):
+                continue
+            first_line = tdesc.splitlines()[0] if tdesc else ""
+            print(json.dumps({
+                "server": name,
+                "tool": tname,
+                "fqn": f"mcp__{name}__{tname}",
+                "description": first_line[:200],
+            }, ensure_ascii=False))
+
+    if include_builtin:
+        print(json.dumps({
+            "server": "_builtin",
+            "tool": "WebSearch",
+            "fqn": "WebSearch",
+            "description": "Claude Code 内置 web 搜索（兜底）",
+        }, ensure_ascii=False))
+
+    return 0
+
+
+# ════════════════════════════════════════════════════════
 # CLI
 # ════════════════════════════════════════════════════════
 
@@ -483,14 +633,23 @@ def main() -> int:
     sub.add_argument("--key", default=None)
     sub.add_argument("--host", default=None)
     sub = sp.add_parser("unregister"); sub.add_argument("provider")
+    sub = sp.add_parser("list-search-tools")
+    sub.add_argument("--timeout", type=float, default=30.0,
+                     help="单个 server tools/list 超时（秒），默认 30")
+    sub.add_argument("--include-builtin", action="store_true",
+                     help="末尾追加 WebSearch 内置工具作为兜底候选")
+    sub.add_argument("--all", action="store_true", dest="all_tools",
+                     help="不做启发式过滤，输出所有 tool（含非搜索类）")
 
     a = p.parse_args()
-    if a.cmd == "check":         return cmd_check(a.runtime)
-    if a.cmd == "auto-install":  return cmd_auto_install(a.runtime)
-    if a.cmd == "probe":         return cmd_probe(a.provider)
-    if a.cmd == "register":      return cmd_register(a.provider, a.key, a.host, a.dry_run)
-    if a.cmd == "test":          return cmd_test(a.provider, a.key, a.host)
-    if a.cmd == "unregister":    return cmd_unregister(a.provider)
+    if a.cmd == "check":              return cmd_check(a.runtime)
+    if a.cmd == "auto-install":       return cmd_auto_install(a.runtime)
+    if a.cmd == "probe":              return cmd_probe(a.provider)
+    if a.cmd == "register":           return cmd_register(a.provider, a.key, a.host, a.dry_run)
+    if a.cmd == "test":               return cmd_test(a.provider, a.key, a.host)
+    if a.cmd == "unregister":         return cmd_unregister(a.provider)
+    if a.cmd == "list-search-tools":  return cmd_list_search_tools(
+        timeout=a.timeout, include_builtin=a.include_builtin, all_tools=a.all_tools)
     return 2
 
 
