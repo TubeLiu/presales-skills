@@ -177,12 +177,67 @@ python3 "$SKILL_DIR/scripts/ai_image_config.py" set ai_image.default_provider <p
 python3 "$SKILL_DIR/scripts/ai_image_config.py" set ai_image.default_provider <唯一的 provider>
 ```
 
-## 步骤 5：默认图片尺寸
+## 步骤 5：默认图片尺寸 + 长宽比（拆两问，必做）
 
-> "默认图片尺寸？（推荐 `2048x2048`，可选 `1K` / `1024x1024` / `16:9` / `9:16` 等）"
+> **背景**：`image_gen.py` 把"尺寸"分两个独立参数：
+> - `--image_size` 只接受 **preset**：`512px` / `1K` / `2K` / `4K`（决定分辨率）
+> - `--aspect_ratio` 只接受 **比例**：`1:1` / `16:9` / `9:16` 等（决定形状）
+>
+> 早期版本把这俩混问、还接受 `2048x2048` 字面像素 — 全是错的（CLI 拒）。这一步必须拆两问。
+
+### 5.1 默认 size preset（按已配 default model 的上限过滤候选）
+
+先读 step 4 写入的 `ai_image.default_provider`，再读该 provider 在 step 3.3 写入的 default model，
+查询该 model 的 `max_resolution` 算出可选 preset 范围：
 
 ```bash
-python3 "$SKILL_DIR/scripts/ai_image_config.py" set ai_image.default_size <size>
+python3 -c "
+import sys, json
+sys.path.insert(0, '$SKILL_DIR/scripts')
+import ai_image_config as ac
+cfg = ac.load_config() or {}
+ai = cfg.get('ai_image', {})
+prov = ai.get('default_provider')
+model = (ai.get('models') or {}).get(prov)
+if not prov or not model:
+    print(json.dumps({'supported': ac.ALL_IMAGE_SIZES, 'reason': 'no default model yet'}))
+else:
+    sizes = ac.supported_sizes_for_model(prov, model)
+    print(json.dumps({'provider': prov, 'model': model, 'supported': sizes,
+                      'max': sizes[-1] if sizes else None}))
+"
+```
+
+把输出展示给用户：
+
+> "default_provider = `<prov>`，default model = `<model>`。该 model 最大支持 `<max>`，
+> 可选 preset：`<supported>`。
+>
+> 默认 image_size 选哪个？（推荐 `<max>`——榨干 model 能力）"
+
+收到用户选择后**校验在 supported 列表里**，再写入：
+
+```bash
+# 用户选了 supported 中的某个 preset（如 2K）
+python3 "$SKILL_DIR/scripts/ai_image_config.py" set ai_image.default_size <preset>
+```
+
+> **关键纪律**：必须按 model max 过滤候选——不能让用户选超出 model 能力的 preset
+> （否则生图时被 model 拒，用户体验最差）。如果用户配多个 provider，**这里只看 default_provider 的 default model**；
+> 跑生图时切到别的 provider，CLI 会用各 backend 自己的 size 适配逻辑。
+
+### 5.2 默认 aspect ratio
+
+> "默认 aspect_ratio 选哪个？常用：
+>   - `16:9` — PPT / 横版示意图（推荐）
+>   - `1:1` — 头像 / 方图
+>   - `9:16` — 手机竖版 / 海报
+>   - 其它见 `ALL_ASPECT_RATIOS`：1:4 / 1:8 / 2:3 / 3:2 / 3:4 / 4:1 / 4:3 / 4:5 / 5:4 / 8:1 / 21:9"
+
+收到用户选择后写入：
+
+```bash
+python3 "$SKILL_DIR/scripts/ai_image_config.py" set ai_image.default_aspect_ratio <ratio>
 ```
 
 ## 步骤 6：全量 validate + 完成提示
