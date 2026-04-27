@@ -67,13 +67,37 @@ LEGACY_CONFIGS = {
     "tender-workflow": Path.home() / ".config" / "tender-workflow" / "config.yaml",
 }
 
+# 与 image_gen.py 同源（test_skill_format.py 有 lint 验证一致性）：
+#   --image_size 接受的 preset 列表 + --aspect_ratio 接受的比例列表
+# 注意区别：
+#   image_size  preset 像素分辨率 (1K / 2K / 4K) — 决定生成图大小
+#   aspect_ratio 长宽比 (16:9 / 1:1 / ...)       — 决定生成图形状
+# 两个参数独立；早期 v1.0.0 的 default_size = "2048x2048" 是字面像素，CLI 不接受，
+# 已透明迁移到 "2K"（见 _normalize_default_size_legacy）。
+ALL_IMAGE_SIZES = ["512px", "1K", "2K", "4K"]
+ALL_ASPECT_RATIOS = [
+    "1:1", "1:4", "1:8",
+    "2:3", "3:2", "3:4", "4:1", "4:3",
+    "4:5", "5:4", "8:1", "9:16", "16:9", "21:9",
+]
+# preset → 大致像素，用于和 model max_resolution 比较取最大支持
+SIZE_PRESET_PX: dict[str, int] = {
+    "512px": 512,
+    "1K": 1024,
+    "2K": 2048,
+    "4K": 4096,
+}
+
 # 默认 schema（setup / normalize 时用）
 DEFAULT_CONFIG: dict[str, Any] = {
     "version": "1.0.0",
     "api_keys": {},
     "ai_image": {
         "default_provider": "ark",
-        "default_size": "2048x2048",
+        # default_size 必须是 ALL_IMAGE_SIZES 之一（preset，不是字面像素）
+        "default_size": "2K",
+        # default_aspect_ratio 必须是 ALL_ASPECT_RATIOS 之一
+        "default_aspect_ratio": "16:9",
         "max_retries": 2,
         "timeout": 60,
         "models": {},
@@ -85,7 +109,12 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "workspace": None,
     },
     "mcp_search": {
-        "priority": ["tavily_search", "exa_search"],
+        # priority 存 FQN（"mcp__<server>__<tool>" 或内置 "WebSearch"）；
+        # 由 /twc setup §4.4 / /solution-master setup §4.4 跑 list-search-tools 实时
+        # 枚举 + 让用户选默认后写入。空 = 工作流跑时自动兜底 ["WebSearch"]。
+        # tw_config / sm_config 的 LEGACY_ALIAS 表会把老别名（tavily_search 等）
+        # 透明迁移到 FQN，保证向后兼容。
+        "priority": [],
     },
     "drawio": {},  # cli_path 已废弃（v1.0.0 删 drawio-gen bin 后由 drawio plugin 自定位）；与 sm_config / tw_config 一致
     "solution_brainstorming": {},
@@ -193,12 +222,91 @@ def _deep_set(d: dict, key_path: str, value: Any) -> None:
     cur[parts[-1]] = value
 
 
+# ── 尺寸 / 比例 helper（setup wizard + validate 共享）────
+def _max_resolution_to_preset(mr_str: str) -> Optional[str]:
+    """ai_image_models.yaml 的 max_resolution 字符串解析成 ALL_IMAGE_SIZES preset。
+
+    例：
+      "2K (2048×2048)"     → "2K"
+      "4K (4096×4096)"     → "4K"
+      "原生2K, AI增强4K"   → "4K"   (取最大命中)
+      "1K (1024×1024)"     → "1K"
+      "1K-2K"              → "2K"
+      "~1.4K"              → "1K"   (向下取整保守；不能让 1.4 误判 4K)
+      "" / 解析不出        → None  (调用方按"未知"处理)
+    """
+    import re as _re
+    if not mr_str:
+        return None
+    s = mr_str.upper()
+    # 提取所有形如 N[.M]K 的整数 K 数（小数点后部分丢弃，向下取整保守）
+    matches = _re.findall(r"(\d+)(?:\.\d+)?\s*K", s)
+    if matches:
+        max_num = max(int(m) for m in matches)
+        if max_num >= 4:
+            return "4K"
+        if max_num >= 2:
+            return "2K"
+        if max_num >= 1:
+            return "1K"
+    # 特殊：512px
+    if _re.search(r"512\s*PX", s):
+        return "512px"
+    return None
+
+
+def get_model_max_size_preset(provider: str, model_id: str) -> Optional[str]:
+    """读 ai_image_models.yaml 找该 model 的 max_resolution preset；找不到 → None。"""
+    if not PLUGIN_REGISTRY.exists():
+        return None
+    registry = _load_yaml(PLUGIN_REGISTRY) or {}
+    prov = (registry.get("providers") or {}).get(provider)
+    if not isinstance(prov, dict):
+        return None
+    for m in (prov.get("models") or []):
+        if isinstance(m, dict) and m.get("id") == model_id:
+            return _max_resolution_to_preset(m.get("max_resolution", ""))
+    return None
+
+
+def supported_sizes_for_model(provider: str, model_id: str) -> list[str]:
+    """返回该 model 支持的 preset 列表（≤ max）；找不到 model max → 返回 ALL_IMAGE_SIZES 全集。"""
+    max_preset = get_model_max_size_preset(provider, model_id)
+    if not max_preset or max_preset not in ALL_IMAGE_SIZES:
+        return list(ALL_IMAGE_SIZES)
+    max_idx = ALL_IMAGE_SIZES.index(max_preset)
+    return ALL_IMAGE_SIZES[: max_idx + 1]
+
+
+def _normalize_default_size_legacy(cfg: dict[str, Any]) -> dict[str, Any]:
+    """老 config 里 ai_image.default_size 写的是字面像素（如 '2048x2048'）→ 透明迁移成 preset。
+    image_gen.py --image_size 不接受字面像素，老值会让 CLI 拒；这里只在 load 时转，不写盘。
+    """
+    ai_image = cfg.get("ai_image")
+    if not isinstance(ai_image, dict):
+        return cfg
+    size = ai_image.get("default_size")
+    if isinstance(size, str) and size not in ALL_IMAGE_SIZES:
+        legacy_map = {
+            "512x512": "512px",
+            "1024x1024": "1K",
+            "2048x2048": "2K",
+            "4096x4096": "4K",
+        }
+        if size in legacy_map:
+            ai_image["default_size"] = legacy_map[size]
+    return cfg
+
+
 # ── 基础操作 ─────────────────────────────────────────────
 def load_config() -> dict[str, Any]:
     """读取配置文件。若不存在返回空 dict（调用方决定是否用 DEFAULT_CONFIG 兜底）。
     YAML 解析失败时给可读错误并 sys.exit(1)，避免 traceback 让 cmd_show/validate/set/setup 无法 debug。
+
+    透明迁移：ai_image.default_size 字面像素 → preset（不写盘，仅返回时修正）。
     """
-    return _safe_load(CONFIG_PATH, "presales-skills")
+    cfg = _safe_load(CONFIG_PATH, "presales-skills")
+    return _normalize_default_size_legacy(cfg) if cfg else cfg
 
 
 def save_config(data: dict[str, Any]) -> None:
@@ -463,6 +571,39 @@ def cmd_validate(provider_filter: Optional[str]) -> int:
             issues.append(f"{prov_name}: 未设置 API key（config.yaml 和 env 都空）")
         else:
             print(f"✓ {prov_name}: API key 已配置（{len(key)} chars）")
+
+    # 检查 default_size / default_aspect_ratio 是否合法 + 是否超出 default model 上限
+    ai_image_cfg = cfg.get("ai_image") or {}
+    default_size = ai_image_cfg.get("default_size")
+    default_ratio = ai_image_cfg.get("default_aspect_ratio")
+    default_provider = ai_image_cfg.get("default_provider")
+    models_per_provider = ai_image_cfg.get("models") or {}
+
+    if default_size and default_size not in ALL_IMAGE_SIZES:
+        issues.append(
+            f"ai_image.default_size = '{default_size}' 不是合法 preset；"
+            f"必须是 {ALL_IMAGE_SIZES} 之一（不是字面像素如 '2048x2048'）。"
+            f"运行 setup 重新配置或：set ai_image.default_size 2K"
+        )
+    if default_ratio and default_ratio not in ALL_ASPECT_RATIOS:
+        issues.append(
+            f"ai_image.default_aspect_ratio = '{default_ratio}' 不是合法比例；"
+            f"必须是 {ALL_ASPECT_RATIOS} 之一。"
+        )
+    # default_size 是否 ≤ default_provider 的 default model 的 max_resolution
+    if (default_size and default_size in ALL_IMAGE_SIZES
+            and default_provider and isinstance(models_per_provider, dict)):
+        default_model = models_per_provider.get(default_provider)
+        if default_model:
+            supported = supported_sizes_for_model(default_provider, default_model)
+            if default_size not in supported:
+                max_supported = supported[-1] if supported else "unknown"
+                issues.append(
+                    f"ai_image.default_size = '{default_size}' 超出 default model "
+                    f"'{default_model}' (provider {default_provider}) 的最大支持 "
+                    f"'{max_supported}'。生图时会被 model 拒。"
+                    f"建议：set ai_image.default_size {max_supported}"
+                )
 
     if issues:
         print()
