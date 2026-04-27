@@ -248,6 +248,17 @@ Read references/strategist.md
 7. Typography plan
 8. Image usage approach
 
+**User reply contract — explicit gate** (do NOT auto-pass on ambiguous wording):
+
+| User reply | Action |
+|---|---|
+| Contains 「确认」/ 「confirm」/ 「ok」/ 「go ahead」/ 「继续」/ 「👍」 | **Pass** — proceed to write `design_spec.md` and `spec_lock.md` |
+| Contains specific modifications (e.g., 「改成 4:3」/ 「use blue palette」/ 「页数 12 改 18」) | Update the affected items, **re-present the full Eight Confirmations**, wait for confirm again |
+| Ambiguous (e.g., 「嗯」/ 「看起来不错」/ 「差不多」/ 「可以吧」) or no clear stance | **Do NOT proceed**. Ask: 「请明确回复『确认』继续，或指出要修改的项目。」 |
+| Empty / no response / off-topic | **Do NOT proceed**. Wait or re-ping the user with the confirmation list. |
+
+> **Anti-rationalization**: 即使你认为某项用户已"暗示同意"，只要回复中没有上表第一行的明确确认词，就必须再次询问；不要把"沉默"或"模糊正面词"当作确认。这条规则不可被任何看似紧急的理由绕过。
+
 If the user has provided images, run the analysis script **before outputting the design spec** (do NOT directly read/open image files — use the script output only):
 ```bash
 python3 $SKILL_DIR/scripts/analyze_images.py <project_path>/images
@@ -405,3 +416,16 @@ Before switching roles, you **MUST first read** the corresponding reference file
 - Do NOT add extra flags like `--only` to the post-processing commands — run them as-is
 - Local preview: `python3 -m http.server -d <project_path>/svg_final 8000`
 - **Troubleshooting**: If the user encounters issues during generation (layout overflow, export errors, blank images, etc.), recommend checking `docs/faq.md` — it contains known solutions sourced from real user reports and is continuously updated
+
+---
+
+## Gotchas（真坑沉淀，AI 高频犯错）
+
+| Gotcha | 后果 | 正确做法 |
+|---|---|---|
+| **AI 直接 Read .jpg / .png 图片文件** | 浪费上下文 + 视觉解读不稳定 | 严禁直接打开图片；必须 `python3 $SKILL_DIR/scripts/analyze_images.py <project_path>/images`，**只看脚本输出**或 design_spec 的 Image Resource List |
+| **Eight Confirmations 在用户回复"嗯/差不多"时通过** | 用户没真同意就被推进 Phase 2，后续返工成本高 | 必须等待表中的明确确认词（"确认"/"ok"/"continue"/"continue"/"👍" 等）；模糊回复必须 re-ping（详见 §Strategist Phase 八项确认 user reply contract） |
+| **三步 post-processing 写在一个 shell block 或并发跑** | 中间 step 失败下一步用过期文件 → 输出错乱 | 必须**分别 sequential 执行**：`total_md_split.py` → 确认无错 → `finalize_svg.py` → 确认无错 → `svg_to_pptx.py -s final` |
+| **用 `cp` 替代 `finalize_svg.py`** | 跳过最终化处理 → 导出 PPTX 缺样式 | 永远用 `finalize_svg.py`；导出永远从 `svg_final/` 而非 `svg_output/`，加 `-s final` 标志 |
+| **Executor 写新 page 前不重读 spec_lock.md** | Executor 上下文越往后越容易 drift，违反 strategist 既定决策 | 每写一个新 page 前必须重新 `Read templates/spec_lock_reference.md` 对应路径 + 项目的 spec_lock.md |
+| **SVG 用了 banned features**（mask / class / `<style>` / external CSS / `<animate*>` 等） | 导出 PPTX 时静默失败或样式丢失 | 严格遵守 `references/shared-standards.md` §1.1 banned 列表；rgba() 改 fill-opacity；`<g opacity>` 改逐元素 opacity |

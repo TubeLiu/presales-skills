@@ -87,6 +87,15 @@ Before starting the workflow, assess whether the user's request is specific enou
 
 Skip clarification if the request already specifies these details or is clearly simple (e.g., "draw a flowchart of X").
 
+**Style preset fast-path（避免被 preset 系统 railroad）**：
+
+```
+Did the user mention any preset name OR is there a default user preset in ~/.drawio-skill/styles/?
+├─ NO  → SKIP Step 0.5 entirely. Go straight to Step 1 with built-in colors. Do NOT read references/preset-management.md.
+└─ YES → Run Step 0.5 below.
+```
+
+> 简单画图（rectangle + arrow / 单图类型 / 用户没提风格）的默认路径**不经过 preset 系统**——直接用 SKILL.md 的 built-in color palette 即可。
 
 **Step 0.5 — Resolve active preset.** Determine which (if any) user-defined style preset applies to this generation.
 
@@ -157,81 +166,21 @@ Once the user approves:
 
 ## Style Presets
 
-A **style preset** is a named JSON file that captures a user's visual preferences — palette, shape vocabulary, fonts, edge style. When a preset is active, it fully replaces the built-in conventions described in the `### Applying a preset` subsection below (under `## Draw.io XML Structure`).
+A **style preset** is a named JSON file that captures a user's visual preferences — palette, shape vocabulary, fonts, edge style. When a preset is active, it fully replaces the built-in conventions for color/shape/edge/font.
 
-**Locations, in lookup order:**
-1. `~/.drawio-skill/styles/<name>.json` — user presets (persist across vendor sync).
-2. `$DRAW_DIR/styles/built-in/<name>.json` — built-ins shipped with the skill (`default`, `corporate`, `handdrawn`).
+**Lookup order**: `~/.drawio-skill/styles/<name>.json` (user) → `$DRAW_DIR/styles/built-in/<name>.json` (shipped: `default`, `corporate`, `handdrawn`). User presets shadow built-ins of the same name. Only user presets can carry `"default": true`. All names lowercase.
 
-A user preset shadows a built-in of the same name.
+**Detail references**（按需读取，保持一级深，不要从 preset-management 跳到其他文件）：
 
-Only user presets can have `"default": true`. When the user says *"make `<built-in-name>` my default"*, copy the built-in JSON to `~/.drawio-skill/styles/<name>.json` first, then set `default: true` on the copy — leave the shipped built-in untouched.
+- **`references/preset-management.md`** — Learn flow / Manage operations / Validation / Apply 规则 / 与 Diagram Type Preset 冲突解决
+- **`references/style-extraction.md`** — 仅 Learn flow 用：从 `.drawio` XML 或图片样本提取 palette / shapes / fonts 的具体算法，sample diagram skeleton 模板
+- **`references/diagram-type-presets.md`** — 6 种 diagram type（ERD / UML / Sequence / Architecture / ML-DL / Flowchart）的结构化 shape/edge/layout 表
 
-**Name normalisation:** always lowercase the user-provided name before writing or looking up files (the preset schema enforces lowercase; uppercase names will fail validation).
+读取触发：
 
-### Learn flow
-
-**Triggers:** "learn my style from `<path>` as `<name>`", "save this as `<name>` style", "remember this style as `<name>`".
-
-**Dispatch by file extension:**
-- `.drawio`, `.xml` → XML path
-- `.png`, `.jpg`, `.jpeg`, `.svg` (rasterized flat image) → image path
-
-**Steps:**
-
-1. **Load the extraction reference.** Read `references/style-extraction.md` into context.
-2. **Extract** following the XML path or image path procedure in the reference.
-3. **Normalize and build candidate.** Convert the user-provided preset name to lowercase. Use this normalized name for ALL file paths in this flow. Build the candidate preset JSON and write it to `/tmp/drawio-preset-<name>.json` (where `<name>` is the already-normalized name). Do **not** save to `~/.drawio-skill/styles/<name>.json` yet.
-4. **Render a sample** using the sample-diagram skeleton in `references/style-extraction.md`, parameterized by the candidate preset. Export PNG to `./preset-<name>-sample.png` using the same `draw.io -x -f png -s 2 -o ./preset-<name>-sample.png /tmp/drawio-preset-<name>.drawio` command the main workflow uses.
-5. **Show the user:**
-   - Preset summary table (palette hex values, shapes per role, font, edge style, extras).
-   - The sample PNG path (and embed the image if the environment supports it).
-   - Provenance line: `source.type`, `source.path`, `extracted_at`, `confidence`.
-6. **Wait for approval:**
-   - "save" / "looks good" → write candidate to `~/.drawio-skill/styles/<name>.json`. Create `~/.drawio-skill/styles/` if it doesn't exist. Delete tempfile and sample PNG.
-   - "change `<field>` to `<value>`" → edit the in-memory candidate, re-render, re-ask.
-   - "cancel" / "abort" / "no" → delete tempfile and sample PNG; nothing saved.
-
-**Error behavior:**
-
-| Failure | Behavior |
-|---|---|
-| Source path does not exist | Stop; report path not found. |
-| XML parse fails | Stop; report the parse error; suggest opening the file in drawio desktop to repair. |
-| Image vision unavailable | Stop; tell user to re-run on a vision-capable model or provide the `.drawio` file. |
-| Extraction yields 0 vertices / shapes | Stop; refuse to save. |
-| Extraction yields <3 distinct color pairs | Continue; mark `confidence: "low"` (image) or `"medium"` (XML); warn in summary. |
-| Preset name collides with existing user preset | Ask: overwrite, or pick a new name. |
-| Preset name collides with a built-in preset | Save to user dir (shadows the built-in); warn once. |
-| Sample render fails | Still show summary; note "could not render sample — saving on your OK anyway". Do not block. |
-
-### Management operations
-
-All operations are natural language — no slash commands.
-
-*Apply name normalisation (lowercase) to all `<name>`, `<a>`, `<b>` arguments before any file operation.*
-
-| User says | Agent does |
-|---|---|
-| "list my styles", "what styles do I have", "show me my style presets" | Read `~/.drawio-skill/styles/` and `$DRAW_DIR/styles/built-in/`. Print a table: `name`, `location` (user/built-in), `source.type`, `confidence`, `default` flag. Built-ins shadowed by a user preset are marked so. |
-| "show my `<name>` style", "what's in `<name>`" | Print the preset JSON (pretty-printed) + a one-line summary (source, confidence, is-default). |
-| "make `<name>` the default", "set `<name>` as default" | If `<name>` is a user preset: set `default: true` on it; clear `default` on any other user preset that had it; save both files. If `<name>` is a built-in: copy `$DRAW_DIR/styles/built-in/<name>.json` → `~/.drawio-skill/styles/<name>.json` first, then set `default: true` on the copy. Never mutate the shipped built-in. |
-| "remove default", "unset default" | Clear `default: true` from whichever user preset has it. |
-| "delete `<name>`", "remove `<name>`" | Confirm first. Then `rm ~/.drawio-skill/styles/<name>.json`. Refuse to delete files under `$DRAW_DIR/styles/built-in/` — suggest shadowing with a user preset of the same name. |
-| "rename `<a>` to `<b>`" | `mv ~/.drawio-skill/styles/<a>.json ~/.drawio-skill/styles/<b>.json`, then update the `name` field inside. Fails if `<a>` is a built-in (offer to copy-then-rename instead). |
-| "learn my style from `<path>` as `<name>`" | Dispatch to the Learn flow above. |
-
-### Preset file validation
-
-When loading any preset (for generation or management), do a lightweight structural check:
-- Required top-level fields present (`name`, `version`, `palette`, `roles`, `shapes`, `font`, `edges`).
-- `version === 1`.
-- Every populated palette slot has both `fillColor` and `strokeColor` as `#RRGGBB`.
-- `confidence` ∈ {`"low"`, `"medium"`, `"high"`} if present.
-
-On validation failure:
-- **During generation:** warn the user, fall back to built-in conventions for this one diagram, do not mutate the file.
-- **During learn:** refuse to save the candidate; report which field failed.
+- **Learn**: "learn my style from `<path>` as `<name>`" / "save this as `<name>` style" → 读 preset-management.md + style-extraction.md
+- **Manage**: "list my styles" / "show my `<name>` style" / "make `<name>` the default" / "remove default" / "delete `<name>`" / "rename `<a>` to `<b>`" → 读 preset-management.md
+- **Apply** a preset 到当前 diagram → 读 preset-management.md §5
 
 ## Draw.io XML Structure
 
@@ -369,29 +318,7 @@ When multiple edges connect to the same shape, assign different entry/exit point
 
 ### Applying a preset
 
-When the Workflow's step *Resolve active preset* identified a preset, it fully replaces the built-in palette, shape keywords, edge defaults, and font for this diagram — do not mix values from the built-in color table below.
-
-**Color lookup.** For each role a shape plays (service / database / queue / gateway / error / external / security), resolve `preset.roles[role]` to a slot name, then `preset.palette[<slot>]` to the `(fillColor, strokeColor)` pair. If `roles[role]` is unset or the resolved slot is `null`, follow this fallback ladder:
-
-1. Try the role's canonical slot (`service→primary`, `database→success`, `queue→warning`, `gateway→accent`, `error→danger`, `external→neutral`, `security→secondary`).
-2. If that slot is also empty, pick the most-populated non-null slot in the preset.
-3. Never reach into the built-in color table below — the preset is authoritative.
-
-**Decision and container shapes** are not in `preset.roles` — they have shape vocabulary (`preset.shapes.decision`, `preset.shapes.container`) but no role-to-slot mapping. Pick their colors as follows:
-- **Decision** (rhombus) → use `preset.palette.warning` (the canonical yellow slot in the built-in conventions). If `warning` is empty, apply the slot-fallback ladder above starting from `warning`.
-- **Container** (swimlane) → use the palette slot matching the tier/grouping the container represents (e.g., a "Services" tier container uses `primary`; a "Data" tier uses `success`). If no tier signal is available, default to `primary`.
-
-**Shape keywords.** Use `preset.shapes[role]` as the **prefix** of the vertex style string (before `whiteSpace=wrap;html=1;...`). Example: for a database role, if `preset.shapes.database = "shape=cylinder3"`, the vertex style starts `shape=cylinder3;whiteSpace=wrap;html=1;fillColor=...`. The six named shape keys are `service`, `database`, `queue`, `decision`, `external`, `container`. Roles `gateway`, `error`, and `security` reuse `preset.shapes.service` unless the preset explicitly populates a key with their name.
-
-**Edges.** Use `preset.edges.style` as the base edge style string. Append `preset.edges.arrow`. Per-edge routing keys (`exitX/exitY/entryX/entryY/...`) are still added by the usual routing rules in the rest of this document. If the flow between two shapes matches a token from `preset.edges.dashedFor` (either because the user's prompt used that word, or because one end of the edge plays a role whose typical relation is "optional"), append `;dashed=1` to the edge style.
-
-**Fonts.** Append `fontFamily=<preset.font.fontFamily>;fontSize=<preset.font.fontSize>` to every vertex style. Container headers and swimlane titles additionally get `fontSize=<preset.font.titleFontSize>;fontStyle=1` when `preset.font.titleBold` is `true`.
-
-**Extras.**
-- `preset.extras.sketch === true` → append `sketch=1` to every vertex style and every edge style.
-- `preset.extras.globalStrokeWidth !== 1` (any value other than the drawio default of 1, including `0.5`) → append `strokeWidth=<n>` to every vertex style and every edge style.
-
-**Interaction with diagram-type presets (ERD / UML / Sequence / ML / Flowchart).** Diagram-type presets earlier in this document set structural style keywords that the user preset must preserve (e.g., ERD tables rely on `shape=table;startSize=30;container=1;childLayout=tableLayout;...`). The rule: keep the diagram-type preset's structural keywords, then layer the user preset's color / font / edge / extras on top. When a diagram-type preset hardcodes a color (`fillColor=#dae8fc`, etc.) that conflicts with the user preset, the user preset's color wins. Exception: `fillColor=none` is structural — do not replace it with a palette color.
+When Workflow Step 0.5 resolved a preset, the preset's palette / shape keywords / edge defaults / font fully replace the built-in tables below. Detailed application rules — color slot fallback ladder, decision/container shape mapping, shape keyword composition, edge dashedFor token matching, font append rules, sketch/strokeWidth extras, conflict resolution with Diagram Type Presets — see **`references/preset-management.md` §5 Applying a preset**.
 
 ### Color palette (fillColor / strokeColor)
 
@@ -539,80 +466,15 @@ fi
 
 ## Diagram Type Presets
 
-When the user requests a specific diagram type, apply the matching preset below for shapes, styles, and layout conventions.
+When the user requests a **specific diagram type**, apply that type's structural shape/style/layout conventions. Detailed tables (shapes, edges, layout rules) for the 6 supported types live in **`references/diagram-type-presets.md`** — read it only when the request matches one of these:
 
-### ERD (Entity-Relationship Diagram)
+| Type | Triggers |
+|---|---|
+| **ERD** | "ER diagram", "数据库表关系", "schema diagram", PK/FK 提及 |
+| **UML Class** | "UML class", "类图", "继承/实现/composition" |
+| **Sequence** | "sequence diagram", "时序图", "lifeline", "actor 交互" |
+| **Architecture** | "架构图", "system architecture", 多 tier / 多 service / queue+db |
+| **ML / DL** | "neural network", "model architecture", "Conv/RNN/Transformer/Attention" |
+| **Flowchart** | "flowchart", "流程图", start/end + decision + process |
 
-| Element | Style | Notes |
-|---------|-------|-------|
-| Table | `shape=table;startSize=30;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;strokeColor=#6c8ebf;fillColor=#dae8fc;` | Each table is a container |
-| Row (column) | `shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontSize=12;` | Child of table, `parent=tableId` |
-| PK column | Bold text: `fontStyle=1` on the row | Mark with `PK` prefix or key icon |
-| FK relationship | Dashed edge: `dashed=1;endArrow=ERmandOne;startArrow=ERmandOne;` | Use ER notation arrows |
-| Layout | TB, tables spaced 300px apart | Group related tables vertically |
-
-### UML Class Diagram
-
-| Element | Style | Notes |
-|---------|-------|-------|
-| Class box | `swimlane;fontStyle=1;align=center;startSize=26;html=1;` | 3-section: title / attributes / methods |
-| Separator | `line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=10;rotatable=0;labelPosition=left;points=[];portConstraint=eastwest;` | Between sections |
-| Inheritance | `endArrow=block;endFill=0;` | Hollow triangle arrow |
-| Implementation | `endArrow=block;endFill=0;dashed=1;` | Dashed + hollow triangle |
-| Composition | `endArrow=diamondThin;endFill=1;` | Filled diamond |
-| Aggregation | `endArrow=diamondThin;endFill=0;` | Hollow diamond |
-| Layout | TB, classes 250px apart | Interfaces above implementations |
-
-### Sequence Diagram
-
-| Element | Style | Notes |
-|---------|-------|-------|
-| Actor/Object | `shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;` | Lifeline with dashed vertical line |
-| Sync message | `html=1;verticalAlign=bottom;endArrow=block;` | Solid line, filled arrowhead |
-| Async message | `html=1;verticalAlign=bottom;endArrow=open;dashed=1;` | Dashed line, open arrowhead |
-| Return message | `html=1;verticalAlign=bottom;endArrow=open;dashed=1;strokeColor=#999999;` | Grey dashed |
-| Activation box | `shape=umlFrame;whiteSpace=wrap;` on the lifeline | Narrow rectangle on lifeline |
-| Layout | LR, lifelines spaced 200px apart | Time flows top to bottom |
-
-### Architecture Diagram
-
-| Element | Style | Notes |
-|---------|-------|-------|
-| Layer/tier | `swimlane;startSize=30;` | Containers for grouping: Client / API / Service / Data |
-| Service | `rounded=1;whiteSpace=wrap;html=1;` + tier color | Use color palette by tier |
-| Database | `shape=cylinder3;whiteSpace=wrap;html=1;` | Green palette |
-| Queue/Bus | `rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;` | Yellow — place centrally for hub pattern |
-| Gateway/LB | `shape=mxgraph.aws4.resourceIcon;` or `rounded=1;` with orange | Orange palette |
-| External | `rounded=1;dashed=1;fillColor=#f5f5f5;strokeColor=#666666;` | Dashed border for external systems |
-| Layout | TB or LR by tier count; ≥4 tiers → TB | Hub nodes centered |
-
-### ML / Deep Learning Model Diagram
-
-For neural network architecture diagrams — ideal for papers targeting NeurIPS, ICML, ICLR.
-
-| Element | Style | Notes |
-|---------|-------|-------|
-| Layer block | `rounded=1;whiteSpace=wrap;html=1;` + type color | Main building block |
-| Input/Output | `fillColor=#d5e8d4;strokeColor=#82b366;` | Green |
-| Conv / Pooling | `fillColor=#dae8fc;strokeColor=#6c8ebf;` | Blue |
-| Attention / Transformer | `fillColor=#e1d5e7;strokeColor=#9673a6;` | Purple |
-| RNN / LSTM / GRU | `fillColor=#fff2cc;strokeColor=#d6b656;` | Yellow |
-| FC / Linear | `fillColor=#ffe6cc;strokeColor=#d79b00;` | Orange |
-| Loss / Activation | `fillColor=#f8cecc;strokeColor=#b85450;` | Red/Pink |
-| Skip connection | `dashed=1;endArrow=block;curved=1;` | Dashed curved arrow |
-| Tensor shape label | Add shape annotation as secondary label: `value="Conv2D&#xa;(B, 64, 32, 32)"` | Use `&#xa;` for multi-line |
-| Layout | TB (data flows top→bottom), layers 150px apart | Group encoder/decoder as swimlanes |
-
-**Tensor shape convention:** annotate each layer with input/output tensor dimensions in `(B, C, H, W)` or `(B, T, D)` format. Place dimensions as the second line of the label using `&#xa;`.
-
-### Flowchart (enhanced)
-
-| Element | Style | Notes |
-|---------|-------|-------|
-| Start/End | `ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;` | Green oval |
-| Process | `rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;` | Blue rectangle |
-| Decision | `rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;` | Yellow diamond |
-| I/O | `shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;` | Orange parallelogram |
-| Subprocess | `rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;` + double border | Purple |
-| Yes/No labels | `value="Yes"` / `value="No"` on decision edges | Always label decision branches |
-| Layout | TB, 200px vertical gap | Decisions branch LR, merge back to center |
+For generic diagrams that don't match any specific type, use the §"Color palette" + §"Shape types" tables above directly — no need to read the reference.

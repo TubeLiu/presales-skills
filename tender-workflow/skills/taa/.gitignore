@@ -32,3 +32,8 @@ templates/builtin/*
 !tools/
 tools/*
 !tools/*.py
+
+# 允许 references 目录及 md 文件（SKILL.md 拆分后的下沉细则）
+!references/
+references/*
+!references/*.md

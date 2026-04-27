@@ -1,9 +1,10 @@
 ---
 name: taw
 description: >
-  当用户说"帮我写标书"、"写标书"、"编写标书"或"撰写标书"时触发。
-  根据 taa 产出的招标分析报告（.md）和投标文件大纲（.docx），结合公司知识库，
-  自动生成投标文件章节内容草稿（DOCX 格式）。
+  **乙方/投标商视角的标书撰写**。当用户说"帮我写标书"、"写标书"、"编写标书"、"撰写标书"或"写投标章节"时触发。
+  **前置依赖**：必须先运行 /taa 生成招标分析报告（.md）+ 投标文件大纲（.docx）；本 skill 读取这两份产出 +
+  公司知识库，自动生成投标文件章节内容草稿（DOCX 格式）。
+  互斥提示：若用户要求生成的是**甲方招标文件**（技术规格 / 评标办法），应使用 /tpl 而非本 skill。
   用户可提供具体文件路径或目录，目录时按扩展名自动匹配文件。
 disable-model-invocation: false
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, mcp__plugin_anythingllm-mcp_anythingllm__anythingllm_search, mcp__plugin_anythingllm-mcp_anythingllm__anythingllm_list_workspaces
@@ -428,3 +429,16 @@ PY
 | 1.9 团队配置 | 团队架构 + 岗位 | 不检索 |
 | 1.10 售后服务 | 质保 / 运维 / SLA | solutions |
 | 1.11 培训方案 | 计划 / 内容 / 方式 / 考核 | 不检索 |
+
+---
+
+## Gotchas（真坑沉淀，AI 高频犯错）
+
+| Gotcha | 后果 | 正确做法 |
+|---|---|---|
+| **直接喊 /taw 而不先跑 /taa** | 报告/大纲不存在 → SKILL.md:127 硬错"报告不存在" | description 已明示前置，但 AI 仍可能跳——执行前先 ls `output/招标分析报告_*.md` 和 `output/投标文件大纲_*.docx`，缺则提示用户先 `/taa` |
+| **Phase 2B subagent 自调 KB / Web / image_gen** | 触发 permission prompt 风暴 + 子 Agent 无凭据 | 这些**受限工具调用必须在 Phase 2A 主线完成**（KB 检索结果、web 摘要、image_plan 等），写成 writing brief 传给 subagent，subagent 不再调外部工具 |
+| **单章 `--chapter X` 模式写正式投标** | Word 多级编号从 "1." 起，不会显示 "X.X.X"，章节号丢失 | 单章模式仅用于本地预览/测试；正式投标必须用 `--chapter all` 或范围 `1.1-1.11` 让 Word 编号自然连续（README §taw 单章 vs 多章） |
+| **正文里写括号来源 `（来源：xxx）`** | 违反全局约束：方案正文禁止任何括号形式来源标注 | 来源信息只能写到独立的检索报告（展示给用户），正文绝对禁止；无 KB 支撑改用 `[待确认]`，互联网数字用 `[互联网来源，请核实]` |
+| **使用绝对化措辞（保证 / 100% / 绝对）** | 触发"过度承诺防范"硬约束失败 | 改用"预期可达到 / 力争实现 / 设计目标为"（详见 §过度承诺防范） |
+| **图文共生时反复读 KB 原图字节** | 浪费上下文 + 不必要的 binary load | KB 检索时直接看 Markdown 段落里内嵌的 `![](images/HASH.jpg)` 引用，不需要 Read 图片；image_plan 里只记 hash 与上下文位置 |

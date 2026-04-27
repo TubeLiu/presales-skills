@@ -1,7 +1,8 @@
 ---
 name: twc
 description: >
-  当用户说"配置工作流"、"配置 tender"、"设置配置"时触发。
+  当用户**首次安装 tender-workflow**、说"配置工作流"、"配置 tender"、"设置配置"，
+  或在使用 /taa /taw /tpl /trv 时遇到"配置不生效"、"找不到配置"、"validate 报错"等问题时触发。
   管理 tender-workflow 统一配置文件（~/.config/tender-workflow/config.yaml）。
   支持交互式初始配置（setup）、查看（show）、修改（set）、验证（validate）、旧配置迁移（migrate）、重置（reset）等子命令。
   AI 生图相关配置（API keys / 模型）由 ai-image plugin 管理。
@@ -127,7 +128,7 @@ trv:
 
 ## 工具定义
 
-配置读写通过 `skills/twc/skills/twc/tools/tw_config.py` 执行：
+配置读写通过 `skills/twc/tools/tw_config.py` 执行：
 ```bash
 python3 $SKILL_DIR/tools/tw_config.py show [skill]          # 显示配置
 python3 $SKILL_DIR/tools/tw_config.py get <skill> <key>     # 获取单个值

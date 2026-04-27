@@ -1,21 +1,13 @@
 ---
 name: image-gen
 description: >
-  AI 图片生成统一入口。覆盖 13 个后端
-  （volcengine/ark、qwen/dashscope、gemini、openai、minimax、stability、bfl、
-  ideogram、zhipu、siliconflow、fal、replicate、openrouter）。
-  触发场景包括：
-  「生成图片 / 做配图 / AI 画图 / 生成一张插图 / 画一张 / generate image /
-  AI image / make illustration」（生图）；
-  「配置 ai-image / setup ai-image / 初始化 ai-image / 我刚装新版需要初始化 /
-  reconfigure ai-image」（首次/重新配置）；
-  「设置 ark key / 改默认图片 provider / set api key / change default model」（设置）；
-  「查看图片配置 / show config / 看一下当前 ai-image 配置」（查看）；
-  「列出图片模型 / list image models / 看支持哪些图片 provider」（列模型）；
-  「验证 API key / validate api key / 健康检查 ai-image」（验证）；
-  「加自定义图片模型 / add custom image model / 注册新 provider」（添加模型）；
-  「迁移旧 ai-image 配置 / migrate config / 合并 ai-image config」（迁移）。
+  AI 图片生成统一入口。覆盖 13 个后端（ark/dashscope/gemini/openai/minimax/stability/
+  bfl/ideogram/zhipu/siliconflow/fal/replicate/openrouter）。
+  触发：「生成图片 / 做配图 / AI 画图 / 画一张 / generate image / make illustration」（生图）；
+  「配置 ai-image / 初始化 / setup / reconfigure / migrate config / show config /
+  validate api key / list image models / add custom model」（管理子命令，详见 SKILL.md §子命令）。
   统一读取 ~/.config/presales-skills/config.yaml 获取 API key。
+  不处理本地图像编辑、视频生成或 ASCII art。
 allowed-tools: Read, Write, Bash, Glob, Grep
 ---
 

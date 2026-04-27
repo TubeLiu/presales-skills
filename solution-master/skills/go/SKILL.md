@@ -1,21 +1,16 @@
 ---
 name: solution-master
 description: >
-  AI 辅助通用解决方案撰写框架。覆盖技术方案 / 业务方案 / 咨询报告 /
-  项目建议书 / 招投标方案等结构化文档全流程。
-  触发场景：
-  「写方案 / 撰写方案 / 写解决方案 / 写技术方案 / 写业务方案 / 写项目建议书 /
-  写咨询报告 / draft solution / write solution / technical proposal /
-  business proposal」（启动方案撰写）；
-  「头脑风暴 / 澄清需求 / brainstorm / clarify requirement」（需求提取）；
-  「任务分解 / 章节计划 / planning / break down」（计划阶段）；
-  「写下一章 / 撰写章节 / write next chapter」（章节撰写）；
-  「审一下方案 / 检查方案 / 检查章节 / spec review / quality review」（双阶段审查）；
-  「知识库检索 / 找资料 / search knowledge base / search KB」（素材检索）；
-  「导出 Word / 输出 DOCX / export docx / 把方案打成 Word」（输出阶段）；
-  「配置 solution-master / 设置 / show config / validate config」（配置管理）。
-  通过苏格拉底式提问 → 任务分解 → 子智能体并行撰写 → 双阶段审查 → 组装输出，
-  产出高质量方案文档。依赖 ai-image / drawio / web-access / anythingllm-mcp（可选）插件。
+  AI 辅助通用解决方案撰写框架（技术方案 / 业务方案 / 咨询报告 / 项目建议书 / 招投标方案等
+  结构化文档全流程）。
+  触发：「写方案 / 撰写方案 / 写解决方案 / 写技术方案 / write solution / draft proposal」（启动）；
+  「头脑风暴 / 澄清需求 / brainstorm」、「任务分解 / 章节计划 / planning」、
+  「写下一章 / 撰写章节 / write next chapter」、
+  「审一下方案 / 检查章节 / spec review / quality review」、
+  「知识库检索 / 找资料 / search KB」、「导出 Word / 输出 DOCX / export docx」、
+  「配置 solution-master / show config / validate config」（流水线各阶段子命令，详见 SKILL.md）。
+  适用范围：从需求澄清到 DOCX 输出的全流程编排。
+  不直接绘图（drawio plugin 接管）、不直接生图（ai-image plugin 接管）。
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Task
 ---
 
@@ -270,3 +265,16 @@ solution-master 的配置分**两个文件分工**：
 4. `.claude/skills/go/SKILL.md`（npx 安装模式）
 
 其它 agent（vercel CLI 装到 Codex / OpenCode 等）无 hook 机制；用户首句若不含触发词，需手动调用 SKILL。Cursor 用 `hooks-cursor.json` 同款机制。
+
+---
+
+## Gotchas（真坑沉淀，AI 高频犯错）
+
+| Gotcha | 后果 | 正确做法 |
+|---|---|---|
+| **审查者信任撰写者的 self-report，不开 draft 文件** | 撰写者声称"已检索 KB"实际跳过 → 审查 PASS 但内容无依据 | spec-reviewer / quality-reviewer 必须用 Read 工具**亲自打开 draft 文件 + 证据目录**逐条核对，agents/spec-reviewer.md 和 agents/quality-reviewer.md 都明文写"不信任报告"原则 |
+| **跳过 brainstorming 直接进 planning** | 用户喊"赶紧开始写"，AI 屈服 → 设计未对齐就开始撰写 → 后期返工 | `<HARD-GATE>` 标记的"未获用户批准前不得调用任何撰写 workflow" 不可被任何理由绕过；先 `workflow/brainstorming.md` 出设计方案，等用户明确批准再 `workflow/planning.md` |
+| **子智能体（Task tool）继承父会话历史** | 子 Agent 把父对话当输入 → 上下文污染 → 输出受先前讨论扭曲 | Claude Code 的 Task tool 是**真隔离**（子 Agent 不继承）；其他 agent 在主上下文顺序执行时必须显式输出 `---RESET CONTEXT FOR <章节名>---` 边界（近似隔离） |
+| **子智能体调用受限工具被拒** | 撰写中段断 → 主 Agent 不知所措 | 派发子 Agent 前**必须先告知用户**："子智能体可能受工具限制，是否预先批准 X / Y / Z"，获用户预批准后再 dispatch（详见 §子智能体工具限制 HARD-GATE） |
+| **方案正文里写括号来源 `（来源：xxx）`** | 违反输出规范的全局约束 | 来源信息只能写到 KB 检索报告（独立给用户看）；正文绝对禁止任何括号来源标注，无 KB 支撑用 `[待确认]`、互联网数字用 `[互联网来源，请核实]` |
+| **SessionStart hook 在非项目目录注入铁律** | 全局安装下污染所有项目 context | 项目门禁的 4 个信号（drafts / docs/specs / SKILL.md / .claude/skills/go/SKILL.md）任一不满足都不应触发 hook；`hooks/session-start` 已实现该 gate |
