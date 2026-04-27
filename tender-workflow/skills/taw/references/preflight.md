@@ -95,11 +95,12 @@
 
 ### --search-tool
 
-- `tavily` → 强制 tavily_search，失败报错不降级
-- `exa` → 强制 exa_search，失败报错不降级
-- `mcp` → 用任意可用 MCP（按 priority 降级）
-- `websearch` → 强制 WebSearch
-- `auto`（默认）→ WebSearch → MCP 工具降级
+- `<FQN>`（如 `mcp__tavily__tavily_search` / `mcp__minimax__web_search`）→ 强制指定该工具，失败报错**不**降级
+- `mcp` → 按 `mcp_search.priority` FQN 列表顺序试，全失败回 WebSearch
+- `websearch` → 强制 WebSearch（内置，跳过所有 MCP）
+- `auto`（默认）→ 等同 `mcp`（按 priority 降级，最后回 WebSearch）
+
+> **去硬编码**：本段不再列 `tavily` / `exa` / `minimax` 等 provider 别名作为 flag 值——用户应直接传 FQN。老脚本传 `--search-tool tavily` 等别名时，AI 通过 LEGACY_ALIAS（tw_config.py）映射成 `mcp__tavily__tavily_search` 后按 `<FQN>` 分支处理；新代码不要写别名。
 
 ### --query
 

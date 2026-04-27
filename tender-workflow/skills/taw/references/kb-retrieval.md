@@ -111,11 +111,10 @@ Read $SKILL_DIR/prompts/vendor_sites.yaml
 
 #### 工具选择（按 SEARCH_TOOL_OVERRIDE）
 
-- `tavily` → `["tavily_search"]`
-- `exa` → `["exa_search"]`
-- `mcp` → `MCP_TOOLS_AVAILABLE`（按 priority）
-- `websearch` → `["WebSearch"]`
-- `auto`（默认）→ `["WebSearch"] + MCP_TOOLS_AVAILABLE`
+- `<FQN>`（如 `mcp__tavily__tavily_search` / `mcp__minimax__web_search`）→ `[<FQN>]`，强制只用该工具
+- `mcp` → `MCP_TOOLS_AVAILABLE`（按 `mcp_search.priority` FQN 列表）
+- `websearch` → `["WebSearch"]`，跳过所有 MCP
+- `auto`（默认）→ `["WebSearch"] + MCP_TOOLS_AVAILABLE`，按顺序试
 
 按顺序尝试每个工具：
 
@@ -135,21 +134,15 @@ WebSearch(query="{VENDOR_NAME} {章节主题} {场景关键词}", allowed_domain
 | C 案例数据 | 案例/客户/项目 | `{VENDOR_NAME} {章节主题} 案例 项目` |
 | D 行业趋势/标准 | 趋势/标准/演进 | `{项目行业} {章节主题} 趋势 标准`（`allowed_domains=authority_sites.standards+technical`） |
 
-#### 2) tavily_search
+#### 2) MCP 搜索 FQN 调用（按 priority 列表逐个）
 
-```
-tavily_search(query="{项目行业} {章节主题} 技术方案", search_depth="advanced", max_results=5)
-```
+对 priority 列表里每个 FQN（如 `mcp__tavily__tavily_search` / `mcp__minimax__web_search`），按工具自己的入参规约调一次，30s timeout。常见参数模式：
 
-超时 30s；失败尝试下一工具。
+- 含 `tavily` 字段的 FQN → `(query="...", search_depth="advanced", max_results=5)`
+- 含 `exa` 字段的 FQN → `(query="...", num_results=5, use_autoprompt=True)`
+- 其它 MCP（minimax / brave / 任意未来 server）→ 用最简 `(query="...")` 调用，按 server 实际接受的可选参数适配；返回格式按 `prompts/fact_extraction_rules.yaml` `_generic_mcp` 段解析
 
-#### 3) exa_search
-
-```
-exa_search(query="{项目行业} {章节主题} 技术方案", num_results=5, use_autoprompt=True)
-```
-
-超时 30s；失败尝试下一工具。
+每次失败（超时 / 错误 / 无 tool）→ 跳到下一 FQN，**不阻塞**列表里其它项。
 
 #### 降级链 + 强制工具
 
@@ -157,8 +150,8 @@ exa_search(query="{项目行业} {章节主题} 技术方案", num_results=5, us
 - 所有失败 → 标注 `[待补充]`
 
 强制指定时：
-- `tavily` / `exa` → 失败报错不降级
-- `mcp` → 全部失败报错
+- `<FQN>` → 失败报错**不**降级（用户明示用某工具就该看到为什么失败）
+- `mcp` → 全部 MCP 失败报错
 - `websearch` → 失败标注 `[待补充]`
 
 ## 4. 查询词构建

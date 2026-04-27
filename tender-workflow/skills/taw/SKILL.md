@@ -217,7 +217,7 @@ USE_PARALLEL_WRITING = (H3_COUNT >= 3) and (TARGET_WORDS >= 4500)
 >50% subagent 失败 → 降级到顺序写作。完成后进入 Phase 2C。
 
 <HARD-GATE>
-**Phase 2A 必须完成所有受限工具调用**——KB 检索（`mcp__plugin_anythingllm-mcp_anythingllm__*`）、Web 检索（`mcp__tavily*` / `mcp__exa*` / `WebSearch` / `WebFetch`）、AI 配图（`Skill(skill="ai-image:gen")`）的产出全部已拼进 Writing Brief 的 `image_plan` 等字段。
+**Phase 2A 必须完成所有受限工具调用**——KB 检索（`mcp__plugin_anythingllm-mcp_anythingllm__*`）、Web 检索（按 `mcp_search.priority` FQN 列表 + `WebSearch` / `WebFetch` 兜底）、AI 配图（`Skill(skill="ai-image:gen")`）的产出全部已拼进 Writing Brief 的 `image_plan` 等字段。
 
 Phase 2B subagent **只能**用 prompt 已提供的素材，**不得**自调 Skill / mcp__* / Web*。理由：Claude Code background subagent pre-approval 机制——未在 allowlist 中的受限工具调用 auto-deny。如发现 Phase 2A 素材缺漏，**回 Phase 2A** 由主 session 补全后再分派 Phase 2B。
 

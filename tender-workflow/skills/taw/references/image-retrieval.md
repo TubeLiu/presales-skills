@@ -132,8 +132,10 @@ python3 "$AI_IMAGE_DIR/scripts/image_gen.py" --type <类型> --topic "<主题>" 
 4. 失败 → 占位符（不降级）；每章互联网图上限 2 张
 
 MCP 兜底（WebSearch 无果）：
-- `tavily_search(query=..., search_depth="advanced", include_images=true)`
-- `exa web_search_exa(query=... diagram, num_results=5)`
+- 按 `mcp_search.priority` FQN 列表（如 `mcp__tavily__tavily_search`、`mcp__exa__web_search_exa`）逐个调；
+  含 `tavily` 字段的 FQN 加 `search_depth="advanced", include_images=true`，
+  含 `exa` 字段的 FQN 加 `num_results=5`，
+  其它 MCP 用最简 `query` 调用并按 `_generic_mcp` 段解析返回
 - 返回的图片 URL 直用，跳过步骤 2
 
 ### IMAGE_SOURCE="placeholder"
