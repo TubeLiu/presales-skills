@@ -593,6 +593,29 @@ def test_ai_image_default_size_is_legal_preset():
     )
 
 
+def test_skill_md_bootstrap_uses_heredoc_not_python_dash_c():
+    """所有 SKILL.md 的 SKILL_DIR bootstrap 必须用 heredoc（python - <<'PYEOF' ...）
+    而不是 $(python3 -c "<多行字符串带引号>")。
+
+    回归历史：用户在 Git Bash on Windows 跑 ai-image setup 时报
+        /usr/bin/bash: eval: line 25: syntax error near unexpected token ')'
+    根因：Claude Code Bash 工具用 eval 包脚本，eval 处理 $(python -c "...")
+    多行字符串内嵌单/双引号时，bash 引号匹配深度算错，把 python 字符串里的 ')'
+    误判为 $() 命令替换的结尾。heredoc <<'PYEOF' 把 python 脚本喂 stdin，
+    内层不再有引号嵌套，eval 解析稳定。
+    """
+    pattern_old = 'SKILL_DIR=$(python3 -c "'
+    bad_files = []
+    for skill_md in REPO_ROOT.glob("*/skills/*/SKILL.md"):
+        text = _read(skill_md)
+        if pattern_old in text:
+            bad_files.append(str(skill_md.relative_to(REPO_ROOT)))
+    assert not bad_files, (
+        f"以下 SKILL.md 仍用 $(python3 -c \"...\") 写法，Git Bash on Windows 会引号嵌套出错。"
+        f"改成 $(python3 - <<'PYEOF'\\n...\\nPYEOF\\n)：\n  " + "\n  ".join(bad_files)
+    )
+
+
 def test_ai_image_setup_md_does_not_offer_pixel_literal():
     """ai-image setup.md §5 不应该列字面像素（'2048x2048' / '1024x1024'）作为 size 候选——
     这些值传给 image_gen.py --image_size 会被 argparse 拒。

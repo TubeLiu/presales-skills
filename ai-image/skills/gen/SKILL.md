@@ -39,7 +39,7 @@ ai-image 是 presales-skills marketplace 的共享 plugin，为 solution-master 
 **首次调用本 skill 的脚本前，先跑一次以下 bootstrap 解析 SKILL_DIR**（后续命令用 `$SKILL_DIR/scripts/...`）：
 
 ```bash
-SKILL_DIR=$(python3 -c "
+SKILL_DIR=$(python3 - <<'PYEOF' 2>/dev/null
 import json, os, sys
 p = os.path.expanduser('~/.claude/plugins/installed_plugins.json')
 if os.path.exists(p):
@@ -48,7 +48,8 @@ if os.path.exists(p):
         for e in (entries if isinstance(entries, list) else [entries]):
             if isinstance(e, dict) and '/ai-image/' in e.get('installPath', ''):
                 print(e['installPath'] + '/skills/gen'); sys.exit(0)
-" 2>/dev/null)
+PYEOF
+)
 
 # vercel CLI fallback (skill subdir is 'gen'; SKILL.md name is 'image-gen' so vercel
 # CLI installs the standalone skill at ~/.<agent>/skills/image-gen/)

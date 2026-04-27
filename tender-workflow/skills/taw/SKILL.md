@@ -25,7 +25,7 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, mcp__pl
 **首次调用本 skill 的脚本/工具前，跑一次 bootstrap 解析 SKILL_DIR**：
 
 ```bash
-SKILL_DIR=$(python3 -c "
+SKILL_DIR=$(python3 - <<'PYEOF' 2>/dev/null
 import json, os, sys
 p = os.path.expanduser('~/.claude/plugins/installed_plugins.json')
 if os.path.exists(p):
@@ -34,7 +34,8 @@ if os.path.exists(p):
         for e in (entries if isinstance(entries, list) else [entries]):
             if isinstance(e, dict) and '/tender-workflow/' in e.get('installPath', ''):
                 print(e['installPath'] + '/skills/taw'); sys.exit(0)
-" 2>/dev/null)
+PYEOF
+)
 
 # vercel CLI fallback
 [ -z "$SKILL_DIR" ] && for d in ~/.cursor/skills ~/.agents/skills .cursor/skills .agents/skills; do

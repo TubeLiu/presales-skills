@@ -45,7 +45,7 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Task
 **首次调用本 skill 的脚本前，先跑一次以下 bootstrap 解析 SKILL_DIR**（后续命令用 `$SKILL_DIR/scripts/...`、`$SKILL_DIR/agents/...`、`$SKILL_DIR/prompts/...`）：
 
 ```bash
-SKILL_DIR=$(python3 -c "
+SKILL_DIR=$(python3 - <<'PYEOF' 2>/dev/null
 import json, os, sys
 p = os.path.expanduser('~/.claude/plugins/installed_plugins.json')
 if os.path.exists(p):
@@ -54,7 +54,8 @@ if os.path.exists(p):
         for e in (entries if isinstance(entries, list) else [entries]):
             if isinstance(e, dict) and '/solution-master/' in e.get('installPath', ''):
                 print(e['installPath'] + '/skills/go'); sys.exit(0)
-" 2>/dev/null)
+PYEOF
+)
 
 # vercel CLI fallback (skill subdir is 'go'; SKILL.md name is 'solution-master' so vercel
 # CLI installs the standalone skill at ~/.<agent>/skills/solution-master/)
