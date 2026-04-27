@@ -240,6 +240,50 @@ def test_install_node_unix_no_pkg_mgr_uses_fnm_curl(monkeypatch):
 
 
 # ════════════════════════════════════════════════════════
+# 5b. _resolve_cmd — Windows .cmd / .bat resolution（回归 npx FAIL WinError 2）
+# ════════════════════════════════════════════════════════
+
+def test_resolve_cmd_replaces_head_with_which_path(monkeypatch):
+    """shutil.which 找到 npx.cmd（Windows 真实场景）→ cmd[0] 替换为绝对路径。"""
+    monkeypatch.setattr(
+        mi.shutil, "which",
+        lambda name: r"C:\Program Files\nodejs\npx.cmd" if name == "npx" else None,
+    )
+    out = mi._resolve_cmd(["npx", "-y", "tavily-mcp@latest", "--version"])
+    assert out == [r"C:\Program Files\nodejs\npx.cmd", "-y",
+                   "tavily-mcp@latest", "--version"]
+
+
+def test_resolve_cmd_passthrough_when_not_found(monkeypatch):
+    """which 找不到 → 返回原 cmd，让 subprocess 抛 FileNotFoundError 走 FAIL 分支。"""
+    monkeypatch.setattr(mi.shutil, "which", lambda name: None)
+    out = mi._resolve_cmd(["uvx", "--help"])
+    assert out == ["uvx", "--help"]
+
+
+def test_resolve_cmd_handles_empty():
+    assert mi._resolve_cmd([]) == []
+
+
+def test_cmd_probe_uses_resolved_path(monkeypatch, capsys):
+    """cmd_probe 必须先把 cmd[0] 解析成 .cmd 路径再 spawn，否则 Windows 必 FAIL。"""
+    spawned: dict = {}
+    monkeypatch.setattr(
+        mi.shutil, "which",
+        lambda name: r"C:\Program Files\nodejs\npx.cmd" if name == "npx" else None,
+    )
+
+    def fake_run(cmd, **kwargs):
+        spawned["cmd"] = cmd
+        return subprocess.CompletedProcess(cmd, 0, stdout="0.1.0\n", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    rc = mi.cmd_probe("tavily")
+    assert rc == 0
+    assert spawned["cmd"][0] == r"C:\Program Files\nodejs\npx.cmd"
+
+
+# ════════════════════════════════════════════════════════
 # 6. JSON-RPC frame send / recv (MCP stdio = newline-delimited JSON)
 # ════════════════════════════════════════════════════════
 

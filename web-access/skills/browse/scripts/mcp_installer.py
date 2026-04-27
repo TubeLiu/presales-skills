@@ -77,6 +77,28 @@ TEST_CALLS = {
 
 
 # ════════════════════════════════════════════════════════
+# subprocess 工具
+# ════════════════════════════════════════════════════════
+
+def _resolve_cmd(cmd: list[str]) -> list[str]:
+    """把 cmd[0] 解析成 shutil.which 找到的真实可执行文件路径。
+
+    Windows 上 npx/uvx 是 .cmd 文件，Python subprocess (shell=False) 不走 PATHEXT，
+    直接传字符串会报 WinError 2。shutil.which 会查 PATHEXT 找到 npx.cmd，把 cmd[0]
+    替换成绝对路径后 subprocess 即可正常 spawn。
+
+    若 which 找不到（runtime 真缺）→ 保留原 cmd[0]，让 subprocess 抛 FileNotFoundError，
+    由调用方走 NEEDS_USER_ACTION / FAIL 分支。
+    """
+    if not cmd:
+        return cmd
+    resolved = shutil.which(cmd[0])
+    if resolved:
+        return [resolved] + list(cmd[1:])
+    return cmd
+
+
+# ════════════════════════════════════════════════════════
 # check / auto-install
 # ════════════════════════════════════════════════════════
 
@@ -162,7 +184,7 @@ def cmd_probe(provider: str, timeout: int = 120) -> int:
     if provider not in PROBE_CMDS:
         print(f"unknown provider: {provider}", file=sys.stderr)
         return 2
-    cmd = PROBE_CMDS[provider]
+    cmd = _resolve_cmd(PROBE_CMDS[provider])
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
     except FileNotFoundError as e:
@@ -317,7 +339,7 @@ def cmd_test(provider: str, key: Optional[str], host: Optional[str]) -> int:
         print(str(e), file=sys.stderr)
         return 2
 
-    cmd = [server_cfg["command"]] + server_cfg["args"]
+    cmd = _resolve_cmd([server_cfg["command"]] + server_cfg["args"])
     env = {**os.environ, **server_cfg["env"]}
 
     try:
