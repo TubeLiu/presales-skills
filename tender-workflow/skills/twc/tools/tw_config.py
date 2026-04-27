@@ -74,11 +74,13 @@ LEGACY_PATHS = {
 DEFAULTS = {
     "localkb": {"path": None},
     "anythingllm": {"enabled": False, "base_url": "http://localhost:3001", "workspace": None},
-    # mcp_search.priority 接受字符串候选：
-    #   "tavily_search" / "exa_search" / "minimax_search"
-    # 由 web-access plugin 的 mcp_installer.py 注册到 ~/.claude.json mcpServers；
-    # 默认值不含 minimax（避免老用户更新被注入），需手动加入或走 /twc setup。
-    "mcp_search": {"priority": ["tavily_search", "exa_search"]},
+    # mcp_search.priority 存储 FQN（Claude Code 工具完整名）：
+    #   "mcp__<server>__<tool>" 或内置 "WebSearch"
+    # 由 /twc setup §4 跑 `mcp_installer.py list-search-tools` 动态发现 + 用户选默认
+    # 后写入。空 = 工作流跑时自动兜底 ["WebSearch"]。
+    # 老 config 用别名（"tavily_search" / "exa_search"）会被 _normalize_mcp_search
+    # 透明迁移到 FQN（见 LEGACY_ALIAS）；不会破坏老 schema。
+    "mcp_search": {"priority": []},
     "drawio": {},  # cli_path 字段已废弃（v1.0.0 删 drawio-gen bin 后由 drawio plugin 自定位）；保留空 dict 兼容旧 config
     "taa": {"vendor": "灵雀云", "kb_source": "auto", "anythingllm_workspace": None},
     "taw": {"kb_source": "auto", "image_source": "auto", "anythingllm_workspace": None},
@@ -87,6 +89,58 @@ DEFAULTS = {
 }
 
 SKILLS = ("taa", "taw", "tpl", "trv")
+
+
+# 老 config 的 priority 别名 → FQN 透明迁移
+# 老用户写 "tavily_search" 时，load 时自动转成 "mcp__tavily__tavily_search"
+# 这样工作流（preflight / fact_extraction）只需识别 FQN 一种格式
+LEGACY_ALIAS = {
+    "tavily_search":   "mcp__tavily__tavily_search",
+    "exa_search":      "mcp__exa__web_search_exa",
+    "minimax_search":  "mcp__minimax__web_search",
+    "websearch":       "WebSearch",
+    "WebSearch":       "WebSearch",  # 已是 FQN，原样
+}
+
+
+def _normalize_mcp_search(value: Any) -> Dict:
+    """规范 mcp_search 字段：priority 列表的别名 → FQN，非别名也非 FQN 的值原样保留
+    （便于用户手动配新 MCP 时不被吃掉）。
+    """
+    if not isinstance(value, dict):
+        return {"priority": []}
+    priority = value.get("priority")
+    if not isinstance(priority, list):
+        priority = []
+    normalized = []
+    for item in priority:
+        if not isinstance(item, str):
+            continue
+        s = item.strip()
+        if not s:
+            continue
+        # 已经是 FQN 或保留名 → 直接用
+        if s.startswith("mcp__") or s == "WebSearch":
+            normalized.append(s)
+            continue
+        # 老别名 → 转 FQN
+        if s in LEGACY_ALIAS:
+            normalized.append(LEGACY_ALIAS[s])
+            continue
+        # 未知字符串：保留原样（让用户能手填新 MCP 别名而不被 silently 丢）
+        normalized.append(s)
+    out = dict(value)
+    out["priority"] = normalized
+    return out
+
+
+def _is_valid_fqn(s: str) -> bool:
+    """priority 列表的合法值：FQN（mcp__<server>__<tool>）或内置 WebSearch。"""
+    if not isinstance(s, str):
+        return False
+    if s == "WebSearch":
+        return True
+    return s.startswith("mcp__") and s.count("__") >= 2
 
 
 def _read_yaml(path: Path) -> Dict:
@@ -246,8 +300,10 @@ def normalize(cfg: Dict) -> Dict:
     # 如果保留 ai_keys 顶层字段，会与 ai_image_config.py migrate 形成循环：
     # migrate 抽走 api_keys，下次 normalize 又从 ai_keys 重新生成 api_keys。
 
-    # 6. mcp_search
-    result["mcp_search"] = cfg.get("mcp_search", dict(DEFAULTS["mcp_search"]))
+    # 6. mcp_search — 老别名透明迁移到 FQN（preflight / fact_extraction 只看 FQN）
+    result["mcp_search"] = _normalize_mcp_search(
+        cfg.get("mcp_search", dict(DEFAULTS["mcp_search"]))
+    )
 
     # 7. drawio — 规范化 key
     # cli_path 字段已废弃（v1.0.0 删 drawio-gen bin 后 drawio plugin 自定位 CLI）
@@ -403,6 +459,10 @@ def set_value(key: str, value: Any) -> None:
         )
     cfg = _read_yaml(CONFIG_PATH)
     _deep_set(cfg, key, value)
+    # mcp_search.priority 写入前自动迁移老别名 → FQN，保证落盘永远是 FQN
+    if key in ("mcp_search.priority", "mcp_search"):
+        if "mcp_search" in cfg:
+            cfg["mcp_search"] = _normalize_mcp_search(cfg["mcp_search"])
     _write_yaml(CONFIG_PATH, cfg)
 
 
@@ -500,6 +560,18 @@ def validate() -> List[str]:
     drawio_path = _deep_get(cfg, "drawio.cli_path")
     if drawio_path:
         issues.append("drawio.cli_path 字段已废弃（drawio plugin 自定位 CLI），建议运行 normalize 自动清理")
+
+    # 检查 mcp_search.priority：每项必须是 FQN（mcp__<server>__<tool>）或 WebSearch
+    # （load_raw 已透明迁移老别名；这里检查的是原始落盘值，发现非法项就提示重跑 setup）
+    raw_priority = _deep_get(_read_yaml(CONFIG_PATH), "mcp_search.priority", [])
+    if isinstance(raw_priority, list):
+        bad = [p for p in raw_priority if isinstance(p, str)
+               and not _is_valid_fqn(p) and p not in LEGACY_ALIAS]
+        if bad:
+            issues.append(
+                f"mcp_search.priority 含未知格式条目 {bad}（应为 FQN 'mcp__<server>__<tool>' 或 'WebSearch'）。"
+                f"运行 /twc setup §4 重新选默认 search MCP，或手动改 ~/.config/tender-workflow/config.yaml"
+            )
 
     return issues
 

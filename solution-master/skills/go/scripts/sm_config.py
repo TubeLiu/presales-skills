@@ -53,10 +53,59 @@ _SKILLS_ROOT = _SKILL_DIR.parent                        # .../skills/
 DEFAULTS = {
     "localkb": {"path": None},
     "anythingllm": {"enabled": False, "base_url": "http://localhost:3001", "workspace": None},
-    "mcp_search": {"priority": ["tavily_search", "exa_search"]},
+    # mcp_search.priority 存储 FQN（"mcp__<server>__<tool>" 或内置 "WebSearch"）
+    # 由 /solution-master setup §4 跑 mcp_installer.py list-search-tools 动态发现 + 用户选默认
+    # 后写入。空 = 工作流跑时自动兜底 ["WebSearch"]。老别名（tavily_search 等）由
+    # _normalize_mcp_search 透明迁移到 FQN，保证 preflight / knowledge-retrieval 只看 FQN。
+    "mcp_search": {"priority": []},
     "cdp_sites": {"enabled": False, "sites": []},
     "drawio": {},  # F-035: cli_path 字段已废弃（drawio-gen 自定位 CLI），从 DEFAULTS 移除以避免 setup 写入旧字段
 }
+
+
+# 老 config 的 priority 别名 → FQN 透明迁移（与 tw_config.py 同步维护）
+LEGACY_ALIAS = {
+    "tavily_search":   "mcp__tavily__tavily_search",
+    "exa_search":      "mcp__exa__web_search_exa",
+    "minimax_search":  "mcp__minimax__web_search",
+    "websearch":       "WebSearch",
+    "WebSearch":       "WebSearch",
+}
+
+
+def _normalize_mcp_search(value: Any) -> Dict:
+    """规范 mcp_search 字段：priority 列表的别名 → FQN，未知字符串原样保留。"""
+    if not isinstance(value, dict):
+        return {"priority": []}
+    priority = value.get("priority")
+    if not isinstance(priority, list):
+        priority = []
+    normalized = []
+    for item in priority:
+        if not isinstance(item, str):
+            continue
+        s = item.strip()
+        if not s:
+            continue
+        if s.startswith("mcp__") or s == "WebSearch":
+            normalized.append(s)
+            continue
+        if s in LEGACY_ALIAS:
+            normalized.append(LEGACY_ALIAS[s])
+            continue
+        normalized.append(s)
+    out = dict(value)
+    out["priority"] = normalized
+    return out
+
+
+def _is_valid_fqn(s: str) -> bool:
+    """priority 列表的合法值：FQN（mcp__<server>__<tool>）或 WebSearch。"""
+    if not isinstance(s, str):
+        return False
+    if s == "WebSearch":
+        return True
+    return s.startswith("mcp__") and s.count("__") >= 2
 
 
 def _read_yaml(path: Path) -> Dict:
@@ -149,7 +198,9 @@ def _parse_value(raw: str) -> Any:
 # ── 核心 API ─────────────────────────────────────────
 
 def load() -> Dict:
-    """读取统一配置文件，缺失项补默认值"""
+    """读取统一配置文件，缺失项补默认值。
+    mcp_search.priority 老别名透明迁移到 FQN（preflight / workflow 只看 FQN）。
+    """
     cfg = _read_yaml(CONFIG_PATH)
     # 补充默认值
     for section, defaults in DEFAULTS.items():
@@ -159,6 +210,9 @@ def load() -> Dict:
             for k, v in defaults.items():
                 if k not in cfg[section]:
                     cfg[section][k] = dict(v) if isinstance(v, dict) else v
+    # mcp_search.priority 老别名透明迁移
+    if "mcp_search" in cfg:
+        cfg["mcp_search"] = _normalize_mcp_search(cfg["mcp_search"])
     return cfg
 
 
@@ -200,6 +254,9 @@ def set_value(key: str, value: Any) -> None:
         )
     cfg = load()
     _deep_set(cfg, key, value)
+    # mcp_search.priority 写入前自动迁移老别名 → FQN，保证落盘永远是 FQN
+    if key in ("mcp_search.priority", "mcp_search") and "mcp_search" in cfg:
+        cfg["mcp_search"] = _normalize_mcp_search(cfg["mcp_search"])
     _write_yaml(CONFIG_PATH, cfg)
 
 
@@ -323,6 +380,18 @@ def validate() -> List[str]:
         if drawio_path_legacy:
             issues.append(
                 "drawio.cli_path 字段已废弃（drawio-gen 自定位 CLI），请从 config.yaml 中删除"
+            )
+
+    # 检查 mcp_search.priority：每项必须是 FQN（mcp__<server>__<tool>）或 WebSearch
+    # （load 已透明迁移老别名；这里检查的是原始落盘值）
+    raw_priority = _deep_get(_read_yaml(CONFIG_PATH), "mcp_search.priority", [])
+    if isinstance(raw_priority, list):
+        bad = [p for p in raw_priority if isinstance(p, str)
+               and not _is_valid_fqn(p) and p not in LEGACY_ALIAS]
+        if bad:
+            issues.append(
+                f"mcp_search.priority 含未知格式条目 {bad}（应为 FQN 'mcp__<server>__<tool>' 或 'WebSearch'）。"
+                f"运行 /solution-master setup §4 重新选默认 search MCP，或手动改 ~/.config/solution-master/config.yaml"
             )
 
     return issues
