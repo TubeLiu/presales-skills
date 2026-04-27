@@ -116,12 +116,11 @@
 
 ### 1. Cover Page (01_cover.svg)
 
-- Full Alauda Blue (`#3BAEE3`) background with subtle white decorative circles (top-right / bottom-right, fill-opacity 0.03–0.06)
-- Top-left: Alauda logo (alauda_logo.png) at `(62, 76)`
+- Solid Dark Navy (`#0F2B46`) background — default cover style
 - Left-aligned title stack: `{{TITLE}}` (H1, white), `{{SUBTITLE}}` (white, fill-opacity 0.85), `{{AUTHOR}}` + `{{DATE}}`
-- Footer: `Alauda` label at `(62, 706)` white fill-opacity 0.5
+- Footer: `Alauda` label at `(60, 706)` white fill-opacity 0.5
 
-> A `01_cover_dark.svg` variant also exists for dark-themed covers.
+> A `01_cover_light.svg` variant also exists with full Alauda Blue (`#3BAEE3`) background + white decorative circles, for projects that prefer the lighter brand-blue cover.
 
 ### 2. Table of Contents (02_toc.svg)
 
@@ -151,13 +150,13 @@
 
 ### 5. Ending Page (04_ending.svg)
 
-- Full Alauda Blue (`#3BAEE3`) background (mirrors the cover page)
-- Centered Alauda logo at `(540, 140, 200×62)`
-- "THANK YOU!" headline (white, 44px bold) at `(640, 280)`
+- Solid Dark Navy (`#0F2B46`) background — mirrors the default dark cover
+- Centered "THANK YOU!" headline (white, 44px bold) at `(640, 280)`
 - `{{THANK_YOU}}` Chinese tagline (white fill-opacity 0.85, 28px)
 - `{{CONTACT_INFO}}` (white fill-opacity 0.75, 16px)
+- Footer: `Alauda` label at `(60, 706)` white fill-opacity 0.5
 
-> A `04_ending_dark.svg` variant also exists using dark navy (`#0F2B46`) background.
+> A `04_ending_light.svg` variant also exists with full Alauda Blue (`#3BAEE3`) background + centered Alauda logo, paired with the light cover variant.
 
 ---
 

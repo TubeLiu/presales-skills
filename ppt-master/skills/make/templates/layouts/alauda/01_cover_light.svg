@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 720">
+    <!-- Template: Cover Page (Light) - Alauda Style -->
+
+    <!-- Solid Alauda Blue background -->
+    <rect width="1280" height="720" fill="#3BAEE3"/>
+
+    <!-- Background decorations (approximated from master EMF) -->
+    <circle cx="1350" cy="600" r="280" fill="#FFFFFF" fill-opacity="0.06"/>
+    <circle cx="1400" cy="250" r="220" fill="#FFFFFF" fill-opacity="0.05"/>
+    <ellipse cx="1150" cy="780" rx="350" ry="130" fill="#FFFFFF" fill-opacity="0.03"/>
+
+    <!-- Logo -->
+    <image x="62" y="76" width="193" height="61" href="alauda_logo.png" preserveAspectRatio="xMidYMid meet"/>
+
+    <!-- Main title (48pt = 64px) -->
+    <text x="62" y="250" font-family="&quot;Aptos Display&quot;, &quot;PingFang SC&quot;, sans-serif" font-size="64" font-weight="bold" fill="#FFFFFF">
+        {{TITLE}}
+    </text>
+
+    <!-- Subtitle (30pt = 40px) -->
+    <text x="62" y="420" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="40" fill="#FFFFFF" fill-opacity="0.85">
+        {{SUBTITLE}}
+    </text>
+
+    <!-- Author / Date (20pt = 27px) -->
+    <text x="62" y="569" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="22" fill="#FFFFFF">
+        {{AUTHOR}}
+    </text>
+    <text x="62" y="600" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="18" fill="#FFFFFF" fill-opacity="0.75">
+        {{DATE}}
+    </text>
+
+    <!-- Footer -->
+    <text x="62" y="706" font-family="Aptos, sans-serif" font-size="12" fill="#FFFFFF" fill-opacity="0.5" letter-spacing="1">
+        Alauda
+    </text>
+</svg>
