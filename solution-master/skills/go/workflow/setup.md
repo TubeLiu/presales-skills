@@ -197,17 +197,62 @@ python3 "$WA_INSTALLER" register "$provider" --key="$KEY"
   - 任一 FAIL → 转述输出末行 + 给用户三选一：①换 key（回 c）②unregister 跳过（`python3 "$WA_INSTALLER" unregister "$provider"`）③留着自己排查
 - Skip → 直接进下一个 provider
 
-### 4.4 设置优先级
+### 4.4 动态发现 + 用户选默认 search MCP
 
-按用户实际配通的子集排（推荐顺序：tavily > exa > minimax_search）。
+> **动机**：Claude Code 里有什么 MCP 搜索工具就用什么，不预设 provider 名单。这一步跑 `mcp_installer.py list-search-tools` 实时枚举当前 `~/.claude.json` 已注册的 MCP server，spawn 每个跑 MCP `tools/list`，启发式过滤出 web 搜索类 tool，让用户从**真实可用**的清单里选默认。新装的 MCP（不需要升级 plugin）下一次 setup 自动出现。
+
+**a. 枚举可用搜索工具**
 
 ```bash
-# 例：三件套都配通
-python3 "$SM_CONFIG" set mcp_search.priority "[tavily_search, exa_search, minimax_search]"
-# 例：仅配了 minimax
-python3 "$SM_CONFIG" set mcp_search.priority "[minimax_search]"
-# 例：全跳过 → 仅靠内置 WebSearch
-python3 "$SM_CONFIG" set mcp_search.priority "[]"
+python3 "$WA_INSTALLER" list-search-tools --include-builtin --timeout 60
+```
+
+输出 JSON Lines。常见情况：
+- 正常：每个找到的搜索 tool 一行（含 `server` / `tool` / `fqn` / `description`）+ 末尾 WebSearch 兜底行
+- 单 server 失败：`{"server":"<x>","error":"<reason>"}` 行（不阻塞其它）
+- 完全没 MCP：只输出 `_empty` + WebSearch 兜底
+
+**b. 把 fqn 列表展示给用户**（编号 1..N，每行：`<n>. <server>  (<fqn>)  <description>`）
+
+```
+1. tavily       (mcp__tavily__tavily_search)        Search the web for current information…
+2. exa          (mcp__exa__web_search_exa)          Search the web for any topic and get…
+3. minimax      (mcp__minimax__web_search)          MiniMax web search
+4. WebSearch    (内置兜底)                          Claude Code 内置 web 搜索
+```
+
+特殊场景：
+- 只有 1 项 → 不问，直接选它
+- 0 项 → 提示 "没检测到任何 MCP 搜索工具，建议跑 `配置 web-access` 注册 tavily/exa/minimax，或继续用 WebSearch 兜底"，把 priority 设成 `["WebSearch"]` 进 4.5
+
+**c. AskUserQuestion 让用户选默认**（单选 + "全用 + 按编号顺序降级"选项）
+
+> "选 solution-master 跑 web 检索时的默认搜索工具：
+>   - 单选某个：只用它，失败时回 WebSearch
+>   - 全用：按上面编号顺序试，前一个失败试下一个，最后回 WebSearch"
+
+**d. 写入 priority（永远存 FQN）**
+
+```bash
+# 例 1：用户选了 minimax
+python3 "$SM_CONFIG" set mcp_search.priority '["mcp__minimax__web_search"]'
+
+# 例 2：用户选了"全用"，按编号顺序排
+python3 "$SM_CONFIG" set mcp_search.priority \
+  '["mcp__tavily__tavily_search", "mcp__exa__web_search_exa", "mcp__minimax__web_search", "WebSearch"]'
+
+# 例 3：0 项兜底
+python3 "$SM_CONFIG" set mcp_search.priority '["WebSearch"]'
+```
+
+> **AI 注**：`set` 命令收到老别名（如 `tavily_search`）会自动转 FQN 落盘——但**新写的 priority 必须用 FQN**，不要再造别名。落盘后 `python3 "$SM_CONFIG" get mcp_search.priority` 查 confirm。
+
+**e. 显示当前 priority + 提示**
+
+```
+✅ 已写入 mcp_search.priority = ["mcp__minimax__web_search"]
+   工作流（knowledge-retrieval）跑 web 检索时按列表顺序试，全失败回 WebSearch。
+   未来新装其它 MCP 想加进来，重跑 /solution-master setup 这一步即可。
 ```
 
 ### 4.5 关键纪律
@@ -216,6 +261,7 @@ python3 "$SM_CONFIG" set mcp_search.priority "[]"
 - **register 后必问 test** — 不要静默写完就走，否则用户后续真检索时才发现 key 失效
 - **test 失败必须给三选一** — 不能默默跳过；unregister 提供干净回滚路径
 - **minimax sk-cp- 校验** — 普通 chat key 不能给 MCP 用（MiniMax-AI/MiniMax-M2 issue #96）
+- **4.4 不可跳过**：必须主动跑 list-search-tools 让用户选默认，不能凭"看起来 Step 4 注册完了"就 set priority；否则 priority 是空 → 工作流只能用 WebSearch，浪费用户配的 MCP
 
 ## 步骤 5：CDP 登录态站点检索（可选）
 

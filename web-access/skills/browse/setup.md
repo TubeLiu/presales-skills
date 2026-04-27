@@ -222,6 +222,11 @@ minimax 会跑 `web_search` + `understand_image` 两次 tool/call，全 PASS 才
 
 > ✅ 已配：tavily / exa / minimax 中的 [实际成功的几个]
 > ⚠ MCP server 注册需要 `/reload-plugins` 或重启 Claude Code 才生效。
+>
+> 💡 **下一步（如果你装了 solution-master / tender-workflow）**：
+>    跑 `配置 solution-master` 或 `配置 tender` 时，wizard 的 §4 会自动跑
+>    `mcp_installer.py list-search-tools` 实时枚举刚配的 MCP，让你选默认
+>    搜索工具。新装的 MCP 不需要升级 plugin，下一次 setup 自动出现。
 
 ### 4.5 → 进入步骤 5
 
