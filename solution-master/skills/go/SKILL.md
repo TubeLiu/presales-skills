@@ -138,7 +138,7 @@ fi
 <HARD-GATE>
 Claude Code background subagent（Task tool 派发）有 **pre-approval** 机制：启动前 Claude Code 把 subagent 要用的工具权限列给用户预批准；启动后**未在 allowlist 中的 Skill / mcp__\* / WebFetch / WebSearch 调用 auto-deny**。
 
-**分派子 Agent 前必须先在主 session 跑完所有需要这些工具的步骤**（配图调 `Skill(skill="ai-image:gen")`、知识库检索调 `mcp__plugin_anythingllm-mcp_anythingllm__anythingllm_search`、Web 检索调 `WebSearch`/`mcp__tavily*`/`mcp__exa*`/`WebFetch`），把结果拼到 Task prompt 里。子 Agent prompt 不能含"调 Skill / 调 mcp__\* / 调 Web\*"指令——subagent 端 `agents/*.md` §工具限制 已自检会 NEEDS_CONTEXT 报回，浪费一轮。
+**分派子 Agent 前必须先在主 session 跑完所有需要这些工具的步骤**（配图调 `Skill(skill="ai-image:gen")`、知识库检索调 `mcp__plugin_anythingllm-mcp_anythingllm__anythingllm_search`、Web 检索按 `mcp_search.priority` 配置（FQN 列表）调对应 MCP 工具，全失败回 `WebSearch` / `WebFetch`），把结果拼到 Task prompt 里。子 Agent prompt 不能含"调 Skill / 调 mcp__\* / 调 Web\*"指令——subagent 端 `agents/*.md` §工具限制 已自检会 NEEDS_CONTEXT 报回，浪费一轮。
 
 反模式：派 writer 时让它"顺便调一下 Skill 配图"——已知踩坑（用户 2026-04-27 实测）。
 

@@ -6,9 +6,9 @@
 **核心原则：** 宁多勿漏——检索阶段优先保证覆盖面，在融合阶段再精选。
 
 <HARD-GATE>
-**四层检索全部主 session 直接执行**——subagent pre-approval 限制下 `mcp__plugin_anythingllm-mcp_anythingllm__*` / `mcp__tavily*` / `mcp__exa*` / `WebSearch` / `WebFetch` 会 auto-deny（参见 SKILL.md §子智能体工具限制）。
+**四层检索全部主 session 直接执行**——subagent pre-approval 限制下 `mcp__plugin_anythingllm-mcp_anythingllm__*` / 各 web 搜索 MCP（按 `mcp_search.priority` FQN 列表，由用户在 setup §4.4 选定）/ `WebSearch` / `WebFetch` 都会 auto-deny（参见 SKILL.md §子智能体工具限制）。
 
-如果分治给子 Agent 并行执行（节省主 session 上下文，第三层 Web 搜索 / 第四层 CDP 检索的并行场景），子 Agent 收到的应是**主 session 已 fetch 完的素材**（结构化数据、URL 列表、原文摘录），不是"自己去检索"的指令。子 Agent prompt 不能含"用 WebSearch / 调 tavily / 调 anythingllm"这类指令——subagent 端 §工具限制 自检会 NEEDS_CONTEXT 报回，浪费一轮。
+如果分治给子 Agent 并行执行（节省主 session 上下文，第三层 Web 搜索 / 第四层 CDP 检索的并行场景），子 Agent 收到的应是**主 session 已 fetch 完的素材**（结构化数据、URL 列表、原文摘录），不是"自己去检索"的指令。子 Agent prompt 不能含"用 WebSearch / 调 mcp__\* / 调 anythingllm"这类指令——subagent 端 §工具限制 自检会 NEEDS_CONTEXT 报回，浪费一轮。
 </HARD-GATE>
 
 ## 四层检索架构
@@ -204,7 +204,7 @@ digraph retrieval {
    评分：...
 
 ### 补充素材
-4. **[标题/主题]**（来源：Web — tavily_search）
+4. **[标题/主题]**（来源：Web — <实际调用的 FQN，如 mcp__tavily__tavily_search / mcp__minimax__web_search / WebSearch>）
    [内容摘要]
 
 ### 知识空白
@@ -236,7 +236,7 @@ digraph retrieval {
   - `anythingllm`：仅 AnythingLLM + Web
   - `cdp`：仅 CDP 登录态站点 + Web
   - `none`：仅 Web
-- `--search-tool`：`auto`（默认）/ `tavily` / `exa` / `websearch`
+- `--search-tool`：`auto`（默认，按 `mcp_search.priority` 顺序降级到 WebSearch）/ `websearch`（强制内置，不走 MCP）/ `<FQN>`（强制指定某个工具，如 `mcp__minimax__web_search`）。priority 由 `/solution-master setup` §4.4 用户实时选择。
 
 ## 红线
 
