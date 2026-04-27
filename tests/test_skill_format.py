@@ -492,3 +492,78 @@ def test_web_access_setup_includes_mcp_step():
     assert "sk-cp-" in text, "setup.md 必须说明 minimax key 的 sk-cp- 前缀校验"
     assert "SKIP_MCP" in text, \
         "setup.md MCP 步骤必须有 SKIP_MCP 短路标记，避免 AI 跳过该步"
+
+
+# ════════════════════════════════════════════════════════
+# 动态发现 + 选默认 search MCP（list-search-tools 集成）lint
+# ════════════════════════════════════════════════════════
+
+def test_taw_allowed_tools_does_not_pin_search_mcp():
+    """taw SKILL.md frontmatter 不应在 allowed-tools 里写死 mcp__tavily/exa——
+    这违反 'Claude Code 里有什么用什么' 设计：白名单写死会挡住用户后装的新 MCP。
+    保留 anythingllm 工具（项目内必需）。
+    """
+    p = REPO_ROOT / "tender-workflow/skills/taw/SKILL.md"
+    text = _read(p)
+    m = re.search(r"^allowed-tools:\s*(.+)$", text, re.MULTILINE)
+    assert m, "taw SKILL.md 必须有 allowed-tools frontmatter"
+    allowed = m.group(1)
+    forbidden = ("mcp__tavily__", "mcp__exa__", "mcp__minimax__")
+    for tool in forbidden:
+        assert tool not in allowed, (
+            f"allowed-tools 不应写死 {tool}（动态发现+用户选默认设计要求依赖会话级权限，"
+            "首次调用 permission prompt 一次后持久 ok）"
+        )
+    # 但 anythingllm 工具必须保留
+    assert "mcp__plugin_anythingllm" in allowed, \
+        "anythingllm 工具是 plugin 内置 MCP（名字稳定+项目内必需），必须保留"
+
+
+def test_setups_invoke_list_search_tools():
+    """twc / sm setup.md §4.4 必须跑 list-search-tools 让用户选默认。
+    回归：删了这一步 → priority 永远空 → 工作流只能用 WebSearch，浪费用户配的 MCP。
+    """
+    for path_rel in (
+        "tender-workflow/skills/twc/setup.md",
+        "solution-master/skills/go/workflow/setup.md",
+    ):
+        p = REPO_ROOT / path_rel
+        text = _read(p)
+        assert "list-search-tools" in text, \
+            f"{path_rel} §4.4 必须跑 mcp_installer.py list-search-tools 实时枚举"
+        assert "mcp__" in text, \
+            f"{path_rel} 必须示例 FQN 格式 mcp__<server>__<tool>"
+
+
+def test_config_defaults_priority_is_empty():
+    """tw_config.py / sm_config.py DEFAULTS.mcp_search.priority 必须是空 []，
+    避免老用户更新后被注入硬编码 ['tavily_search', 'exa_search']。
+    """
+    import importlib.util
+
+    for rel, mod_name in (
+        ("tender-workflow/skills/twc/tools/tw_config.py", "tw_cfg_lint"),
+        ("solution-master/skills/go/scripts/sm_config.py", "sm_cfg_lint"),
+    ):
+        spec = importlib.util.spec_from_file_location(mod_name, REPO_ROOT / rel)
+        m = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(m)
+        assert m.DEFAULTS["mcp_search"]["priority"] == [], (
+            f"{rel} DEFAULTS.mcp_search.priority 必须是 []（让 setup wizard 显式写入）；"
+            f"实际：{m.DEFAULTS['mcp_search']['priority']}"
+        )
+        # LEGACY_ALIAS 表必须存在（兼容老 config）
+        assert hasattr(m, "LEGACY_ALIAS"), \
+            f"{rel} 必须导出 LEGACY_ALIAS 表（透明迁移老别名 → FQN）"
+        assert m.LEGACY_ALIAS["tavily_search"] == "mcp__tavily__tavily_search"
+        assert m.LEGACY_ALIAS["exa_search"] == "mcp__exa__web_search_exa"
+
+
+def test_mcp_installer_has_list_search_tools_subcommand():
+    """mcp_installer.py 必须含 list-search-tools 子命令（C1 加的）"""
+    p = REPO_ROOT / "web-access/skills/browse/scripts/mcp_installer.py"
+    text = _read(p)
+    assert "list-search-tools" in text, \
+        "mcp_installer.py 必须注册 list-search-tools 子命令"
+    assert "_is_web_search_tool" in text, \
+        "mcp_installer.py 必须含 _is_web_search_tool 启发式过滤函数"

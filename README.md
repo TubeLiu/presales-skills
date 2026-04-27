@@ -17,7 +17,7 @@
 | plugin | 入口 | 一句话 |
 |---|---|---|
 | **ai-image** | `/ai-image:gen` 或 `/image-gen` | 统一 AI 生图引擎——13 个后端（volcengine/ark、qwen/dashscope、gemini、openai、minimax、stability、bfl、ideogram、zhipu、siliconflow、fal、replicate、openrouter）共享一份模型注册表与配置。被 solution-master / ppt-master / tender-workflow 共同依赖 |
-| **web-access** | `/web-access:browse` 或 `/browse` | 联网操作 + CDP 浏览器自动化（搜索 / 抓取 / 登录态 / 浏览器自动化），并提供 `mcp_installer.py` 把 tavily / exa / minimax 等搜索类 MCP server 一键注册到 `~/.claude.json` |
+| **web-access** | `/web-access:browse` 或 `/browse` | 联网操作 + CDP 浏览器自动化（搜索 / 抓取 / 登录态 / 浏览器自动化），并提供 `mcp_installer.py` 把 tavily / exa / minimax 等搜索类 MCP server 一键注册到 `~/.claude.json`，且支持 `list-search-tools` 子命令实时枚举当前会话所有可用搜索 MCP（让 sm/tw setup 动态选默认） |
 | **drawio** | `/drawio:draw` 或 `/draw` | Draw.io 图表（`.drawio` XML + 可选 PNG/SVG/PDF 导出），覆盖架构图 / 流程图 / 时序图 / ER 图 / 拓扑图 / ML 模型图等 |
 | **anythingllm-mcp** | （MCP server，无 slash） | AnythingLLM 知识库语义搜索——装上自动注册 `anythingllm` MCP server，主 plugin 通过 `mcp__anythingllm__*` 工具直接调用 |
 
@@ -249,6 +249,7 @@ AI 会引导 6 步：本地知识库路径 → AnythingLLM（可选）→ drawio
 | 跨 sub-skill 引用 `$SKILL_DIR/../<other>/` | ✅（同 plugin 内）| ✅（flat layout 兄弟）| ✅（flat layout 兄弟）| ✅ |
 | 跨 plugin 引用 | ✅ 用 `installed_plugins.json` | ⚠ 用自然语言 / `Skill(skill="<plugin>:<sub>")` | ⚠ 同上 | ⚠ 同上 |
 | `mcp_installer.py` 注册 web 搜索 MCP（tavily/exa/minimax） | ✅ 写 `~/.claude.json` reload 即生效 | ⚠ 配置文件位置不同，需手动套 schema | ⚠ 同上 | ⚠ 同上 |
+| `mcp_installer.py list-search-tools` 动态发现已装 MCP（sm/tw setup 让用户选默认搜索工具） | ✅ 直接读 `~/.claude.json` + spawn 各 server `tools/list` | ⚠ 同上配置位置问题；需自行 patch list 路径 | ⚠ 同上 | ⚠ 同上 |
 
 > **维护者承诺范围**：端到端流程**仅在 Claude Code 上完整验证**。Cursor / Codex / OpenCode 上通过 vercel-labs/skills CLI 安装能跑通基础场景；hook、MCP server 自动注册、跨 plugin 引用等需自行配置或绕开——欢迎社区把验证结果反馈到 issue tracker。
 
@@ -262,8 +263,8 @@ AI 会引导 6 步：本地知识库路径 → AnythingLLM（可选）→ drawio
 |---|---|
 | `配置 ai-image` / `首次配置` | API keys（13 provider 任一）→ 默认 provider → 默认尺寸 → validate |
 | `配置 web-access` / `启用 CDP` | Node.js 22+ → Chrome remote debugging → CDP Proxy 启动验证 → 风险告知 |
-| `配置 solution-master` | localkb → AnythingLLM（可选）→ MCP 搜索（tavily/exa/minimax）→ CDP 登录态站点（可选）→ draw.io 检测 |
-| `配置 tender` / `配置工作流` | 6 步 tender 专属配置（localkb / anythingllm / drawio / mcp_search / skill 默认值） |
+| `配置 solution-master` | localkb → AnythingLLM（可选）→ MCP 搜索注册（tavily/exa/minimax）→ **动态枚举所有已装 MCP 让你选默认** → CDP 登录态站点（可选）→ draw.io 检测 |
+| `配置 tender` / `配置工作流` | 6 步 tender 专属配置（localkb / anythingllm / drawio / mcp_search 注册 + 选默认 / skill 默认值） |
 
 每个 wizard 一步问、立即写入、立即验证；任何"可选"字段都允许跳过。
 

@@ -48,7 +48,7 @@
 /taa <招标文件> [--product <产品能力.xlsx|.md>] [--vendor <厂商>] [--kb-source auto|anythingllm|local]
 
 # 撰写者
-/taw <目录> --chapter <章节号> [--vendor <厂商>] [--search-tool auto|websearch|tavily|exa|mcp] [--image-source auto|local|drawio|ai|web|placeholder] [--image-provider ark|dashscope|gemini]
+/taw <目录> --chapter <章节号> [--vendor <厂商>] [--search-tool auto|websearch|<FQN>] [--image-source auto|local|drawio|ai|web|placeholder] [--image-provider ark|dashscope|gemini]
 
 # 审核者
 /trv <文件> --type <tender_doc|analysis|outline|chapter|full_bid> [--reference <参考>] [--revise-docx --revise-scope must|all]
@@ -137,15 +137,19 @@ ai_image:
 
 ### MCP 搜索工具
 
-`/twc setup` 流程内的 "MCP 搜索工具" 步骤支持三类用户级 MCP server，全部走 web-access plugin 的 `mcp_installer.py` 注册到 `~/.claude.json`，缺 `node`/`uv` 时 wizard 自动用户级安装；register 后会询问是否实测（**前置**：先装 `web-access` plugin，未装则跳过本步不影响其他配置）：
+`/twc setup` §4 的 "MCP 搜索工具" 步骤分两半：
+
+**半部分 a — 注册** （走 web-access plugin 的 `mcp_installer.py`，缺 `node`/`uv` 时 wizard 自动用户级安装；register 后会询问是否实测；**前置**：先装 `web-access` plugin，未装则跳过本步不影响其他配置）。三类内置候选：
 
 | `<provider>` | Tool | 拿 key |
 |---|---|---|
 | `tavily` | `tavily_search` | https://tavily.com |
-| `exa` | `exa_search` | https://exa.ai |
+| `exa` | `web_search_exa` | https://exa.ai |
 | `minimax`（MiniMax Token Plan） | `web_search` + `understand_image` | 订阅 [Token Plan](https://platform.minimaxi.com/subscribe/token-plan) 拿 `sk-cp-` 前缀 key（普通 chat key 不能给 MCP 用，见 [issue #96](https://github.com/MiniMax-AI/MiniMax-M2/issues/96)） |
 
-`mcp_search.priority` 可任意组合 `tavily_search` / `exa_search` / `minimax_search`，按列表顺序检索；最终兜底走内置 WebSearch。
+**半部分 b — 选默认** （§4.4）：`mcp_installer.py list-search-tools` 会**实时枚举**当前 `~/.claude.json` 已注册的所有 MCP server（不止上面三类），让用户从真实可用的清单里挑默认搜索工具。新装的 MCP（不需要升级 plugin）下一次 setup 自动出现，符合 "Claude Code 里有什么就用什么" 的设计。
+
+`mcp_search.priority` 存 FQN 列表（`mcp__<server>__<tool>` 或内置 `WebSearch`），工作流（taw / taa）按顺序试，全失败回 `WebSearch` 兜底。老 config 写的别名（`tavily_search` 等）由 `tw_config.py` 自动透明转 FQN。
 
 ---
 
