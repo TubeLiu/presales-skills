@@ -249,7 +249,7 @@ AI 会引导 6 步：本地知识库路径 → AnythingLLM（可选）→ drawio
 | 跨 sub-skill 引用 `$SKILL_DIR/../<other>/` | ✅（同 plugin 内）| ✅（flat layout 兄弟）| ✅（flat layout 兄弟）| ✅ |
 | 跨 plugin 引用 | ✅ 用 `installed_plugins.json` | ⚠ 用自然语言 / `Skill(skill="<plugin>:<sub>")` | ⚠ 同上 | ⚠ 同上 |
 | `mcp_installer.py` 注册 web 搜索 MCP（tavily/exa/minimax） | ✅ 写 `~/.claude.json` reload 即生效 | ⚠ 配置文件位置不同，需手动套 schema | ⚠ 同上 | ⚠ 同上 |
-| `mcp_installer.py list-search-tools` 动态发现已装 MCP（sm/tw setup 让用户选默认搜索工具） | ✅ 直接读 `~/.claude.json` + spawn 各 server `tools/list` | ⚠ 同上配置位置问题；需自行 patch list 路径 | ⚠ 同上 | ⚠ 同上 |
+| `mcp_installer.py list-search-tools` 动态发现已装 MCP（sm/tw setup 让用户选默认搜索工具） | ✅ 直接读 `~/.claude.json` + spawn 各 server `tools/list` | ❌ 不可用（脚本硬编码 `~/.claude.json` 路径，Cursor/Codex 无此文件）；用户需手写 `mcp_search.priority` FQN 列表 | ❌ 同上 | ❌ 同上 |
 
 > **维护者承诺范围**：端到端流程**仅在 Claude Code 上完整验证**。Cursor / Codex / OpenCode 上通过 vercel-labs/skills CLI 安装能跑通基础场景；hook、MCP server 自动注册、跨 plugin 引用等需自行配置或绕开——欢迎社区把验证结果反馈到 issue tracker。
 

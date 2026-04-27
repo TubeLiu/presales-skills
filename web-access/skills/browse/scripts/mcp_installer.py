@@ -516,11 +516,14 @@ def _list_server_tools(server_name: str, server_cfg: dict, timeout: float) -> tu
         out_q.put(None)
 
     threading.Thread(target=_reader, daemon=True).start()
-    # 把 stderr 也读掉，避免 buffer 满阻塞 server
-    threading.Thread(
-        target=lambda: [None for _ in iter((proc.stderr.readline if proc.stderr else (lambda: "")), "")],
-        daemon=True,
-    ).start()
+    # 把 stderr 也读掉，避免 buffer 满阻塞 server。纯消费不存（chatty server
+    # 30s timeout 窗口里能憋出几 MB——别用 list comprehension 攒）
+    def _drain_stderr() -> None:
+        if proc.stderr is None:
+            return
+        for _ in iter(proc.stderr.readline, ""):
+            pass
+    threading.Thread(target=_drain_stderr, daemon=True).start()
 
     try:
         send_jsonrpc(proc, {

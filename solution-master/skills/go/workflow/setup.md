@@ -212,6 +212,12 @@ python3 "$WA_INSTALLER" list-search-tools --include-builtin --timeout 60
 - 单 server 失败：`{"server":"<x>","error":"<reason>"}` 行（不阻塞其它）
 - 完全没 MCP：只输出 `_empty` + WebSearch 兜底
 
+> **AI 注 (启发式漏判兜底)**：如果用户说"我配的 X 没出现在列表里"（启发式过滤把它当非搜索过滤掉了），重跑加 `--all` 旁路：
+> ```bash
+> python3 "$WA_INSTALLER" list-search-tools --include-builtin --all --timeout 60
+> ```
+> 然后让用户在全 tool 清单里人工挑（FQN 仍按 `mcp__<server>__<tool>` 规则）。
+
 **b. 把 fqn 列表展示给用户**（编号 1..N，每行：`<n>. <server>  (<fqn>)  <description>`）
 
 ```
