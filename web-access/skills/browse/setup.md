@@ -116,12 +116,121 @@ node "$SKILL_DIR/scripts/check-deps.mjs"   # 重启
 web-access 已内置防护措施但无法完全避免，继续操作即视为接受。
 ```
 
-收到用户确认（任何 ack 即可，比如"知道了 / OK / 继续"）后视为配置通过。
+收到用户确认（任何 ack 即可，比如"知道了 / OK / 继续"）后视为配置通过，进入步骤 4。
 
-## 步骤 4：完成提示
+## 步骤 4：MCP 搜索工具（tavily / exa / minimax）
+
+> web-access 内置 `scripts/mcp_installer.py`，把 web 搜索类 MCP server 一键注册到 `~/.claude.json`。这是 web-access 配置的一部分，**不要跳过本步直接到步骤 5**——先问用户要不要配，再按用户决定执行。
+
+### 4.1 显示当前 mcpServers 状态
+
+```bash
+python3 -c "
+import json, os
+p = os.path.expanduser('~/.claude.json')
+try:
+    d = json.load(open(p, encoding='utf-8'))
+    s = d.get('mcpServers', {})
+except Exception:
+    s = {}
+for k in ('tavily', 'exa', 'minimax'):
+    print(f'{k}: ' + ('已配' if k in s else '未配'))
+"
+```
+
+把三行 `<provider>: 已配/未配` 直接展示给用户。
+
+### 4.2 询问要不要配 MCP 搜索
+
+AskUserQuestion 一次性问全：
+
+> 要配 web 搜索 MCP 吗？这些工具被 solution-master / tender-workflow 等 plugin 用来做联网检索，是 web-access 的标配能力。
+>
+> 选项（多选；可以全跳过）：
+> - **tavily** — 通用 web 搜索（[tavily.com](https://tavily.com)，需 API key）
+> - **exa** — 语义搜索 + 深度抓取（[exa.ai](https://exa.ai)，需 API key）
+> - **minimax** — `web_search` + `understand_image`（图理解）；需订阅 [MiniMax Token Plan 套餐](https://platform.minimaxi.com/subscribe/token-plan) 拿 `sk-cp-` 前缀的 key
+> - **跳过** — 不配 MCP，直接进步骤 5
+
+> **AI 注 (SKIP 短路)**：用户选"跳过"或全部不选 → echo `SKIP_MCP` 后**整个步骤 4 结束**，跳到步骤 5。下面 4.3-4.5 不要执行。
+
+### 4.3 对每个被选中的 provider 走完整流程
+
+对每个 provider（tavily/exa/minimax）依次：
+
+**a. 检测 runtime**（tavily/exa→`node`；minimax→`uv`）：
+
+```bash
+python3 "$SKILL_DIR/scripts/mcp_installer.py" check <runtime>
+```
+
+- `OK <path>` → 进 b
+- `MISSING` → 跑 auto-install：
+
+```bash
+python3 "$SKILL_DIR/scripts/mcp_installer.py" auto-install <runtime>
+```
+
+- 用户级安装路径成功（`OK`）→ 重检测 `check` → 进 b
+- `NEEDS_USER_ACTION: <command>` → 把命令转述给用户（"装好告诉我'装好了'"），等回话后回 a 重新 check
+
+**b. 探活**：
+
+```bash
+python3 "$SKILL_DIR/scripts/mcp_installer.py" probe <provider>
+```
+
+- `PASS` → 进 c
+- `FAIL: <err>` → 转述末行错误，让用户决定重试 / 跳过该 provider（跳过 → 直接进下个 provider）
+
+**c. AskUserQuestion 收 key**：
+
+> 请贴一下 `<provider>` 的 API key：
+> （minimax 的 key 必须以 `sk-cp-` 开头，是 Token Plan 套餐 key，不是普通 chat key）
+
+minimax 收到的 key 不是 `sk-cp-` 开头 → 立即重新问；连续 3 次错 → 提示用户去 [Token Plan 订阅页](https://platform.minimaxi.com/subscribe/token-plan)拿正确 key 后回话。
+
+**d. 写入 `~/.claude.json`**：
+
+```bash
+python3 "$SKILL_DIR/scripts/mcp_installer.py" register <provider> --key=<KEY>
+```
+
+- 输出 `OK` → 显示 "✅ <provider> 已写入 ~/.claude.json"
+- `INVALID_KEY_PREFIX` → 回 c 重新问 key
+- 其它错误（写文件失败 / JSON 损坏） → 转述给用户，跳过该 provider
+
+**e. AskUserQuestion 是否实测**：
+
+> 现在测一下 `<provider>` 通不通？（实际跑 MCP 握手 + tools/call，约 30-60 秒）
+> - **测一下**
+> - **跳过**（之后想测可以说"测一下 <provider>"）
+
+选"测一下" → 跑：
+
+```bash
+python3 "$SKILL_DIR/scripts/mcp_installer.py" test <provider>
+```
+
+minimax 会跑 `web_search` + `understand_image` 两次 tool/call，全 PASS 才 ✅。
+
+任一 FAIL → 转述错误，三选一：换 key（回 c）/ unregister 跳过 / 留着自己排查（用 `python3 "$SKILL_DIR/scripts/mcp_installer.py" unregister <provider>` 删除）。
+
+### 4.4 完成提示
+
+把成功配的 provider 列一遍：
+
+> ✅ 已配：tavily / exa / minimax 中的 [实际成功的几个]
+> ⚠ MCP server 注册需要 `/reload-plugins` 或重启 Claude Code 才生效。
+
+### 4.5 → 进入步骤 5
+
+## 步骤 5：完成提示
 
 > "web-access 配置完成。现在你可以让我搜信息 / 抓登录态网页 / 操作浏览器界面，
 > 我会通过 cdp-proxy（:3456）在你 Chrome 后台 tab 里执行（不打扰你正在用的 tab）。"
+>
+> （如果步骤 4 配了 MCP 搜索工具，提醒一句 `/reload-plugins` 或重启）
 
 ## 关键纪律
 
@@ -129,3 +238,4 @@ web-access 已内置防护措施但无法完全避免，继续操作即视为接
 - 每次重新检测 = 重新跑 `check-deps.mjs`，不靠记忆
 - 端口冲突时**不要默认 kill**，先让用户看占用进程让他决定
 - Node.js 安装引导：非 sudo 必须先 print + 等用户 y 才执行；需 sudo 永远只打印让用户复制
+- **步骤 4（MCP 搜索工具）不可跳过**——必须主动询问用户，不能因为"看起来 CDP 已配完"就直接到步骤 5；MCP server 注册是 web-access 配置的标配项，跳过会造成 solution-master / tender-workflow 联网检索失能

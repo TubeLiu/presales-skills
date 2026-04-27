@@ -309,5 +309,6 @@ updated: 2026-03-19
 完整 setup wizard 见同目录 [`setup.md`](setup.md)。**当用户说「配置 web-access / 帮我配置 web-access / 启用 CDP / 初始化 web-access」，或本 SKILL 被 solution-master 的 CDP 配置流程委托时**：
 
 1. 用 Read 工具加载 `$SKILL_DIR/setup.md`（路径 `$SKILL_DIR` 由 §路径自定位 段解析）
-2. 严格按 setup.md 引导用户完成配置（含 Node.js 依赖前置 + Chrome remote-debug 启用 + cdp-proxy 启动 + 风险告知）
+2. 严格按 setup.md 引导用户完成配置（含 Node.js 依赖前置 + Chrome remote-debug 启用 + cdp-proxy 启动 + 风险告知 + **MCP 搜索工具注册**）
 3. 不要凭记忆执行 — 每次都 Read 当前版本
+4. **不要只跑到 CDP 风险告知就结束** — setup.md 步骤 4（MCP 搜索工具 tavily/exa/minimax）是 web-access 配置的标配项，必须主动询问；solution-master 委托场景例外（由委托方自己控制 MCP 步骤）

@@ -475,3 +475,20 @@ def test_tender_workflow_readme_lists_minimax():
     section = m.group(1)
     assert "minimax" in section.lower(), "MCP 段必须列 minimax provider"
     assert "sk-cp-" in section, "MCP 段必须说明 minimax key 必须 sk-cp- 前缀"
+
+
+def test_web_access_setup_includes_mcp_step():
+    """web-access setup.md 必须含 MCP 搜索工具配置步骤（tavily/exa/minimax + sk-cp-）。
+
+    回归历史：用户报告 `配置 web-access` 只走完 CDP 就结束，没引导 MCP。
+    web-access 是 mcp_installer.py 的宿主 plugin，setup wizard 必须主动询问。
+    """
+    p = REPO_ROOT / "web-access/skills/browse/setup.md"
+    text = _read(p)
+    assert "mcp_installer.py" in text, \
+        "setup.md 必须引用 $SKILL_DIR/scripts/mcp_installer.py"
+    for provider in ("tavily", "exa", "minimax"):
+        assert provider in text.lower(), f"setup.md 必须列 {provider} provider"
+    assert "sk-cp-" in text, "setup.md 必须说明 minimax key 的 sk-cp- 前缀校验"
+    assert "SKIP_MCP" in text, \
+        "setup.md MCP 步骤必须有 SKIP_MCP 短路标记，避免 AI 跳过该步"
