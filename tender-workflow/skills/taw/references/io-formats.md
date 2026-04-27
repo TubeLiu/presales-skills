@@ -75,8 +75,8 @@ KB 图片路径（v3.0 Local-KnowledgeBase 格式）：`{KB_ROOT}/{dir}/images/{
    - AnythingLLM：✅ 可用（workspace: [name]）/ ⚠️ 不可用
    - KB 目录索引：✅ 已加载 [N 个文档] / ⚠️ 未建立
 4. 搜索工具：
-   - MCP 可用：tavily_search / exa_search ✅ 或 ⚠️ 仅 WebSearch
-   - 优先级：WebSearch → tavily → exa
+   - MCP_TOOLS_AVAILABLE：[列出 preflight 探活通过的 FQN，如 mcp__tavily__tavily_search / mcp__minimax__web_search] ✅ 或 ⚠️ 仅 WebSearch
+   - 优先级：[按用户 mcp_search.priority 顺序，最后回 WebSearch]
 5. 图片来源：--image-source = [auto/local/drawio/ai/web/placeholder]
 
 目标章节：[章节号] [章节名]

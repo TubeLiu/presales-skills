@@ -4,20 +4,29 @@
 
 ## 1. 搜索工具检测（MCP_TOOLS_AVAILABLE）
 
-逐个尝试调用所有已知 MCP 搜索工具（测试查询 `"test"`，`max_results=1`）：
+> **设计原则**：Claude Code 里有什么 MCP 搜索工具就用什么——**不预设 provider 名单**。priority 列表由用户在 /twc setup §4.4 用 `list-search-tools` 实时枚举后选定（写到 `mcp_search.priority`，存的是 FQN：`mcp__<server>__<tool>` 或内置 `WebSearch`）。
 
-- `tavily_search` → 成功则加入 `MCP_TOOLS_AVAILABLE`
-- `exa_search` → 成功则加入 `MCP_TOOLS_AVAILABLE`
-- 全失败 → `MCP_TOOLS_AVAILABLE=[]`
+**步骤**：
 
-记录：
-- `MCP_TOOL_PRIORITY`: 默认 `["tavily_search", "exa_search"]`，可被配置覆盖：
-  ```bash
-  python3 $SKILL_DIR/../twc/tools/tw_config.py get taw mcp_search.priority
-  ```
-- `WEBSEARCH_AVAILABLE`: 内置工具始终 true
+1. 读用户配置的 priority 列表：
+   ```bash
+   python3 $SKILL_DIR/../twc/tools/tw_config.py get taw mcp_search.priority
+   ```
+   - 返回非空列表（如 `["mcp__tavily__tavily_search", "mcp__minimax__web_search"]`） → 进 step 2
+   - 返回空列表 `[]` → 兜底 `["WebSearch"]`，进 step 3
+   - 老 config 写的别名（`tavily_search` 等）由 `tw_config.py` 自动透明转 FQN，preflight 这里只看 FQN，不需要别名映射
 
-策略：MCP 工具按 priority 顺序使用，失败降级到 WebSearch。
+2. 对 priority 里**每个 FQN** 尝试调用（测试查询 `"test"`，`max_results=1`）：
+   - `mcp__<server>__<tool>` 形式 → 直接用对应 MCP 工具调（首次调时 Claude Code 会弹 permission prompt，允许后持久 ok）；成功 → 加入 `MCP_TOOLS_AVAILABLE`
+   - `WebSearch` → 内置工具，永远视为可用，加入 `MCP_TOOLS_AVAILABLE`
+   - 调用失败（错误 / 超时 / no tool）→ 跳过该 FQN，**不阻塞**列表里其它项
+
+3. 记录变量供后续 phase 用：
+   - `MCP_TOOL_PRIORITY`: 用户配置的 priority 列表（保留全部，包括探活失败的——便于 fallback 二次尝试时判断顺序）
+   - `MCP_TOOLS_AVAILABLE`: priority 中**探活通过**的子集（按 priority 顺序保留）
+   - 若 `MCP_TOOLS_AVAILABLE = []`（全部探活失败 + 无 WebSearch）→ 强制兜底 `["WebSearch"]` 并 emit 一行 warn `所有配置的 MCP 搜索工具都不可用，已兜底 WebSearch`
+
+**策略**：检索时按 `MCP_TOOLS_AVAILABLE` 顺序使用，前一个失败试下一个，最后回 `WebSearch`。
 
 ## 2. AnythingLLM 检测
 

@@ -6,7 +6,7 @@ description: >
   自动生成投标文件章节内容草稿（DOCX 格式）。
   用户可提供具体文件路径或目录，目录时按扩展名自动匹配文件。
 disable-model-invocation: false
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, mcp__tavily__tavily_search, mcp__exa__web_search_exa, mcp__plugin_anythingllm-mcp_anythingllm__anythingllm_search, mcp__plugin_anythingllm-mcp_anythingllm__anythingllm_list_workspaces
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebSearch, WebFetch, mcp__plugin_anythingllm-mcp_anythingllm__anythingllm_search, mcp__plugin_anythingllm-mcp_anythingllm__anythingllm_list_workspaces
 ---
 
 > **跨平台兼容性 checklist**（Win / macOS / Linux）：
@@ -108,7 +108,7 @@ anythingllm:
 **Step 1-7：preflight 检测**（细节见 `references/preflight.md`）：
 
 - Step 1：输出目录初始化（`./drafts/`）
-- Step 1.5：搜索工具检测（`MCP_TOOLS_AVAILABLE`、`MCP_TOOL_PRIORITY`）
+- Step 1.5：搜索工具检测（`MCP_TOOLS_AVAILABLE`、`MCP_TOOL_PRIORITY`）—— 读 `mcp_search.priority` 配置（FQN 列表，如 `["mcp__minimax__web_search"]`），逐项探活；空列表自动兜底 `["WebSearch"]`。**首次调用某个 MCP 工具**（如 `mcp__minimax__web_search`）时 Claude Code 会弹一次 permission prompt（"允许 taw 调 mcp__minimax__web_search 吗"），允许后该 project 持久 ok——这是 Claude Code 安全模型设计，不是 bug
 - Step 1.6：AnythingLLM 检测（`ANYTHINGLLM_AVAILABLE`、`ANYTHINGLLM_WORKSPACE`）+ 降级矩阵
 - Step 1.7：draw.io 检测（`DRAWIO_AVAILABLE`）
 - Step 2：`--set-kb <路径>` → 写配置后退出

@@ -7,9 +7,11 @@
 # ═══════════════════════════════════════════
 
 # ── 搜索结果格式适配 ──
+# 设计原则：用户可以接通任何 web 搜索 MCP（不止 tavily / exa）。下面是常见 MCP 的
+# 返回格式参考；遇到下面没列的 MCP，按 _generic_mcp 兜底解析。
 search_result_formats:
   tavily:
-    description: "Tavily Search 返回格式"
+    description: "Tavily Search 返回格式（参考）"
     schema:
       results:
         - title: "..."
@@ -23,7 +25,7 @@ search_result_formats:
       低: "score < 0.5"
 
   exa:
-    description: "Exa Search 返回格式"
+    description: "Exa Search 返回格式（参考）"
     schema:
       results:
         - title: "..."
@@ -35,7 +37,7 @@ search_result_formats:
     confidence_mapping: "同 Tavily"
 
   websearch:
-    description: "WebSearch 返回格式"
+    description: "WebSearch 返回格式（Claude Code 内置）"
     schema:
       results:
         - title: "..."
@@ -43,6 +45,14 @@ search_result_formats:
           url: "..."
     extract_fields: ["snippet", "url"]
     confidence_mapping: "基于域名（官方文档 → 高，技术博客 → 中）"
+
+  _generic_mcp:
+    description: "未在上面列出的其它 MCP（如 minimax / brave / perplexity 等）兜底解析规则"
+    extract_fields_priority:
+      - "results[*].content / results[*].text / results[*].snippet（按存在性优先）"
+      - "results[*].url（必需，没有 url 的结果丢弃）"
+      - "results[*].score / results[*].confidence（如有 → 沿用 Tavily 的高/中/低映射；无 → 按域名权威性归档）"
+    fallback_extraction: "若返回是字符串而非结构化 JSON，整段当 content，url 标 [MCP 未返回]"
 
 # ── 统一提取流程 ──
 unified_extraction_flow:
@@ -66,15 +76,14 @@ degradation_rules:
 preferred_sources: "官方文档、InfoQ/CNCF/云厂商官网；过滤广告及泛泛问答"
 
 # ── 标注规则 ──
+# 通用模式：来源标签按实际调用的工具命名，例如 "[mcp__tavily__tavily_search 来源，请核实]"
+# 或简化版 "[<server>来源，请核实]"。避免硬编码限定 provider 列表。
 annotation_rules:
   labels:
-    - source: "Tavily Search"
-      label: "[Tavily来源，请核实]"
+    - source: "MCP 搜索工具（mcp__<server>__<tool>）"
+      label_pattern: "[<server>来源，请核实]    # 例：[tavily来源，请核实]、[minimax来源，请核实]"
       scope: "具体数字/指标"
-    - source: "Exa Search"
-      label: "[Exa来源，请核实]"
-      scope: "具体数字/指标"
-    - source: "WebSearch"
+    - source: "WebSearch（内置）"
       label: "[互联网来源，请核实]"
       scope: "具体数字/指标"
     - source: "知识库"
@@ -160,8 +169,9 @@ extraction_execution:
   steps:
     - step: 1
       action: "搜索工具获取结果（每次搜索返回 3-5 条结果）"
-      primary: "MCP 工具（Tavily/Exa）— 如果 MCP_TOOLS_AVAILABLE 非空 且 SEARCH_TOOL_OVERRIDE 允许"
-      fallback: "WebSearch — 如果 MCP 不可用或 SEARCH_TOOL_OVERRIDE='websearch'"
+      primary: "按 MCP_TOOLS_AVAILABLE 顺序调用（来自用户 mcp_search.priority 配置；FQN 形式如 mcp__minimax__web_search）。前一个失败 → 试列表里下一个"
+      fallback: "全部 MCP 失败 → WebSearch（内置兜底，永远可用）"
+      override: "SEARCH_TOOL_OVERRIDE 仅接受 'websearch'（强制内置）或 FQN（强制指定 mcp__<server>__<tool>）；不接受老别名"
     - step: 2
       action: "对白名单域名 URL，执行 WebFetch 获取完整页面（Markdown 格式）"
       whitelist:
