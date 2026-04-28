@@ -149,8 +149,8 @@ def test_vercel_cli_discovery():
     m = re.search(r"Found (\d+) skills?", output)
     assert m, f"Could not parse skill count from vercel CLI output:\n{output[:500]}"
     found = int(m.group(1))
-    # 当前预期：drawio + ai-image + ppt-make + web-access + solution-master + 5 tender = 10
-    assert found == 10, f"Expected 10 skills, vercel CLI found {found}. Output:\n{output[:1000]}"
+    # 当前预期：drawio + ai-image + ppt-make + web-access + solution-master + 5 tender + skill-optimizer = 11
+    assert found == 11, f"Expected 11 skills, vercel CLI found {found}. Output:\n{output[:1000]}"
 
 
 # ---------------------------------------------------------------------------

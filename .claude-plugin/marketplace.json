@@ -6,8 +6,8 @@
     "homepage": "https://github.com/Alauda-io/presales-skills"
   },
   "metadata": {
-    "description": "Presales skills monorepo — 7 个聚焦 plugin（solution-master 写方案 / ppt-master 做 PPT / tender-workflow 招投标 / drawio 画图 / ai-image 生图 / web-access 联网 / anythingllm-mcp 知识库），同时支持 Claude Code（marketplace 安装）和 Cursor / Codex / OpenCode（vercel-labs/skills CLI 安装）。",
-    "version": "1.0.0"
+    "description": "Presales skills monorepo — 8 个聚焦 plugin（solution-master 写方案 / ppt-master 做 PPT / tender-workflow 招投标 / drawio 画图 / ai-image 生图 / web-access 联网 / anythingllm-mcp 知识库 / skill-optimizer 审查 skill），同时支持 Claude Code（marketplace 安装）和 Cursor / Codex / OpenCode（vercel-labs/skills CLI 安装）。",
+    "version": "1.1.0"
   },
   "plugins": [
     {
@@ -116,6 +116,21 @@
         "tender",
         "招投标",
         "中文"
+      ]
+    },
+    {
+      "name": "skill-optimizer",
+      "source": "./skill-optimizer",
+      "description": "Skill 审查与优化器——按 5 步流程（Scope → Review → Plan → Implement → Verify）审查目标 skill 的触发语义、工作流门槛、资源组织、安全边界、依赖可安装性与 README/SKILL 职责分层；默认先给诊断与计划，等用户明确确认后才改文件。slash 调用 /skill-optimizer:optimize 或自然语言触发（'优化 skill' / '检查 skill 质量' / '审一下 SKILL.md'）。Meta plugin，独立运行不依赖其它 plugin。",
+      "version": "1.0.0",
+      "author": {
+        "name": "LiuZiJiao"
+      },
+      "category": "developer-tools",
+      "tags": [
+        "skill-review",
+        "meta",
+        "developer-tools"
       ]
     }
   ]

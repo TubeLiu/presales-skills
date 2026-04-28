@@ -8,9 +8,9 @@
 
 ---
 
-## 7 个 plugin 一览
+## 8 个 plugin 一览
 
-按角色拆分：4 个**共享 plugin** 提供底层能力（被主 plugin 调用，也可独立使用），3 个**主 plugin** 串成端到端业务流程。
+按角色拆分：4 个**共享 plugin** 提供底层能力（被主 plugin 调用，也可独立使用），3 个**主 plugin** 串成端到端业务流程，1 个**开发者工具 plugin** 用于审查和优化 skill 自身。
 
 ### 共享 plugin（底层能力 / 4 个）
 
@@ -28,6 +28,12 @@
 | **solution-master** | `/solution-master:go` 或 `/solution-master` | 通用解决方案撰写：苏格拉底式提问 → 任务分解 → 子智能体并行撰写 → 双阶段审查（spec + quality）→ 多源知识检索 → 配图 → Markdown + DOCX 输出 |
 | **ppt-master** | `/ppt-master:make` 或 `/make` | 多源文档（PDF / DOCX / URL / Markdown）→ 原生可编辑 PPTX（SVG 流水线 + 真实 PowerPoint shape，**默认套灵雀云模板**） |
 | **tender-workflow** | `/tender-workflow:taa` / `:taw` / `:tpl` / `:trv` / `:twc` | 四角色招投标 + 配置：`tpl` 招标策划（甲方）/ `taa` 招标分析（乙方）/ `taw` 标书撰稿（乙方，并行写）/ `trv` 多维度审核 / `twc` 配置 |
+
+### 开发者工具 plugin（meta / 1 个）
+
+| plugin | 入口 | 一句话 |
+|---|---|---|
+| **skill-optimizer** | `/skill-optimizer:optimize` 或 `/optimize` | Skill 审查与优化器——按 5 步流程（Scope → Review → Plan → Implement → Verify）审查目标 skill 的触发语义、工作流门槛、资源组织、安全边界、依赖可安装性与 README/SKILL 职责分层；默认先给诊断与计划，等用户明确说"按计划执行"才改文件。独立 plugin，不依赖其它 plugin |
 
 > **触发方式两种皆可**：
 > - **slash 命令**：`/<plugin>:<sub-skill>`（如 `/solution-master:go`），Claude Code 自动补全短 alias 到 canonical
@@ -48,12 +54,13 @@
 /plugin install solution-master@presales-skills
 /plugin install ppt-master@presales-skills
 /plugin install tender-workflow@presales-skills
+/plugin install skill-optimizer@presales-skills        # 可选（开发者工具：审查 / 优化 skill 自身）
 /reload-plugins
 ```
 
-依赖顺序：先装共享 plugin，再装主 plugin。`anythingllm-mcp` 可选，未装时主 plugin 自动降级为本地 YAML 索引 + 联网检索。
+依赖顺序：先装共享 plugin，再装主 plugin。`anythingllm-mcp` 可选，未装时主 plugin 自动降级为本地 YAML 索引 + 联网检索。`skill-optimizer` 可选，仅在你打算审查 / 优化 skill 时装。
 
-预期 reload 输出：`7 plugins · 10 skills · 1 hook · 1 plugin MCP server`
+预期 reload 输出：`8 plugins · 11 skills · 1 hook · 1 plugin MCP server`
 - 1 hook：solution-master 的 SessionStart 注入主 SKILL（仅在 SM 项目内 cwd 时触发）
 - 1 MCP server：`anythingllm`（来自 anythingllm-mcp plugin；不装时无）
 
@@ -77,7 +84,7 @@ npx --yes skills add Alauda-io/presales-skills -a codex    # Codex
 npx --yes skills add Alauda-io/presales-skills -a opencode # OpenCode
 ```
 
-vercel-labs/skills CLI 会扫描所有 SKILL.md 并 symlink/copy 到目标 agent 的标准目录。**默认装到 cwd `.agents/skills/`**（项目级），加 `-g` 装到 `~/.agents/skills/`（全局）。只装部分 sub-skill：`-s '*'` 装全部，或 `-s image-gen,draw,make` 指定。完整 CLI 参数：`npx --yes skills --help`。
+vercel-labs/skills CLI 会扫描所有 SKILL.md 并 symlink/copy 到目标 agent 的标准目录。**默认装到 cwd `.agents/skills/`**（项目级），加 `-g` 装到 `~/.agents/skills/`（全局）。只装部分 sub-skill：`-s '*'` 装全部，或 `-s image-gen,draw,make,optimize` 指定。完整 CLI 参数：`npx --yes skills --help`。
 
 ---
 
@@ -234,6 +241,39 @@ AI 会引导 6 步：本地知识库路径 → AnythingLLM（可选）→ drawio
 
 ---
 
+### 第 5 步：（可选）使用 `skill-optimizer` —— 审查 / 优化 skill
+
+**无专属配置**：skill-optimizer 是只读+按计划改的 meta 工具，装上即用。
+
+**使用**：
+
+```
+> 优化这个 skill: <path/to/SKILL.md>
+> 审一下 ai-image 的 SKILL.md
+> 检查 solution-master skill 的触发语义
+> /skill-optimizer:optimize tender-workflow/skills/taa
+```
+
+固定 5 步流程：
+
+```
+Scope（确认范围）
+  ↓
+Review（读 SKILL.md + 按需读 references / scripts）
+  ↓
+Plan（输出审查结论 + 优化计划）—— ⚠ 等你明确说"按计划执行"才进下一步
+  ↓
+Implement（小步改文件）
+  ↓
+Verify（多维校验 + 汇报）
+```
+
+**关键约束**："我看看"/"有道理"/"先这样"不算确认；只有"按计划执行"/"开始修改"/"确认修改"等明确的开始执行类语句才会真正改文件。审查阶段发现疑似敏感信息（API Key / Token / Cookie / 账号）只描述类型与位置，不回显完整值。
+
+适用场景见 `skill-optimizer/README.md`。
+
+---
+
 ## 跨 agent 兼容性矩阵
 
 主用 Claude Code；其它 agent 通过 vercel-labs/skills CLI 装得到核心能力，但 hook / MCP / 跨 plugin 引用等高级特性会降级。
@@ -268,7 +308,7 @@ AI 会引导 6 步：本地知识库路径 → AnythingLLM（可选）→ drawio
 
 每个 wizard 一步问、立即写入、立即验证；任何"可选"字段都允许跳过。
 
-**其它 plugin 不需要专属配置**：`ppt-master` 复用 ai-image API keys；`drawio` 运行时自动检测桌面版 CLI；`anythingllm-mcp` 装上自动注册 MCP server。
+**其它 plugin 不需要专属配置**：`ppt-master` 复用 ai-image API keys；`drawio` 运行时自动检测桌面版 CLI；`anythingllm-mcp` 装上自动注册 MCP server；`skill-optimizer` 装上即用。
 
 ### 配置文件分布
 
@@ -347,7 +387,7 @@ pip install -r ~/.claude/plugins/cache/presales-skills/ai-image/*/skills/gen/req
 
 ### 仅用 `skills/`（不用 `commands/` / `agents/`）
 
-5 个有用户入口的 plugin（drawio / ai-image / ppt-master / solution-master / web-access）和 5 个 tender-workflow sub-skill 全部用 `skills/<X>/SKILL.md` 注册。**不用** Claude Code 的 `commands/` 或 `agents/` 机制，原因：
+6 个有用户入口的 plugin（drawio / ai-image / ppt-master / solution-master / web-access / skill-optimizer）和 5 个 tender-workflow sub-skill 全部用 `skills/<X>/SKILL.md` 注册。**不用** Claude Code 的 `commands/` 或 `agents/` 机制，原因：
 - `skills/` 是唯一被 [vercel-labs/skills](https://github.com/vercel-labs/skills) CLI 识别 + 拷贝的格式 → 同一 SKILL.md 既给 Claude Code 用又给 Cursor / Codex / OpenCode 用
 - `description:` 字段提供自然语言 auto-trigger，省去用户记忆 slash 名
 - `commands/` 仅 Claude Code 识别，加了它 = Cursor/Codex 用户体验降级
@@ -380,7 +420,7 @@ vercel CLI 装到 Codex/Cursor 时按 SKILL.md `name:` 命名 dir，slash 直接
 
 ### SessionStart hook（仅 solution-master）
 
-7 个 plugin 中**仅 solution-master** 注册 SessionStart hook（Claude Code 用 `hooks.json`，Cursor 用 `hooks-cursor.json`）：
+8 个 plugin 中**仅 solution-master** 注册 SessionStart hook（Claude Code 用 `hooks.json`，Cursor 用 `hooks-cursor.json`）：
 
 - 项目门禁：仅当 cwd 含 `drafts/` / `docs/specs/` / `skills/go/SKILL.md` / `.claude/skills/go/SKILL.md` 任一时触发
 - 触发后 cat 主 SKILL.md 全文注入到 additionalContext（铁律 + 文件导航 + 子智能体调度全量）
@@ -452,7 +492,7 @@ python3 -m pytest tests/test_skill_format.py -v
 - 含 §跨平台兼容性 checklist + `<SUBAGENT-STOP>` 段
 - 不引用已删的 `commands/` 路径 / `${CLAUDE_PLUGIN_ROOT}` 占位符（仅 anythingllm-mcp 豁免）
 - 不用 `command -v <bin>`（统一走 5 段式 installed_plugins.json fallback）
-- vercel CLI 实测识别 10 skills（draw / image-gen / browse / solution-master / make / taa / taw / tpl / trv / twc）
+- vercel CLI 实测识别 11 skills（draw / image-gen / browse / solution-master / make / taa / taw / tpl / trv / twc / optimize）
 - 跨 sub-skill `$SKILL_DIR/../<sibling>/` 引用必须是同 plugin 真实 sibling
 - subagent prompt body 含工具限制段
 - taw writer 标题去编号 / reviewer STATUS 协议 / image_plan 字段结构 / SKILL.md ≤500 行
