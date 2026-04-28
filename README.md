@@ -91,6 +91,10 @@ npx --yes skills add Alauda-io/presales-skills -a codex    # Codex
 npx --yes skills add Alauda-io/presales-skills -a opencode # OpenCode
 ```
 
+跑起来后 vercel-labs/skills CLI 会列出全部 11 个 skill，按空格多选 + 回车确认即装：
+
+![vercel-labs/skills CLI 安装界面：列出 11 个 skill，空格多选](docs/images/install/install-codex.png)
+
 详细装载选项与跨 agent 能力差异见 [docs/cross-agent.md](docs/cross-agent.md)。
 
 ### 系统级依赖
