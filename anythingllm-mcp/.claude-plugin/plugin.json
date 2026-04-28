@@ -1,13 +1,13 @@
 {
   "name": "anythingllm-mcp",
   "description": "AnythingLLM MCP server — 知识库语义搜索 + workspace 列举。独立共享 plugin，solution-master 和 tender-workflow 均可选依赖；不装也能降级为本地 YAML 索引或联网检索。",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": {
     "name": "LiuZiJiao"
   },
   "license": "MIT",
-  "homepage": "https://github.com/Alauda-io/presales-skills",
-  "repository": "https://github.com/Alauda-io/presales-skills.git",
+  "homepage": "https://github.com/TubeLiu/presales-skills",
+  "repository": "https://github.com/TubeLiu/presales-skills.git",
   "category": "productivity",
   "tags": [
     "mcp",

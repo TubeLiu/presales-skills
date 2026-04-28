@@ -62,7 +62,7 @@
 ### Claude Code（主要用户）
 
 ```
-/plugin marketplace add Alauda-io/presales-skills     # 或本地路径 /path/to/presales-skills
+/plugin marketplace add TubeLiu/presales-skills     # 或本地路径 /path/to/presales-skills
 /plugin install solution-master@presales-skills
 /reload-plugins
 ```
@@ -80,12 +80,12 @@
 ### Cursor / Codex / OpenCode（其它 agent）
 
 ```bash
-npx skills add Alauda-io/presales-skills -a <agent>   # vercel-labs/skills CLI
+npx skills add TubeLiu/presales-skills -a <agent>   # vercel-labs/skills CLI
 ```
 
 注：vercel CLI 装到 Codex/Cursor 时按 SKILL.md `name:` 字段建 `.agents/skills/<name>/`。本 plugin 是 `name: solution-master`，slash 短形式 `/solution-master`（distinctive，与 Claude Code canonical `/solution-master:go` 互补）。
 
-完整跨 agent 兼容性矩阵见仓库外层 [README.md](https://github.com/Alauda-io/presales-skills#readme)。
+完整跨 agent 兼容性矩阵见仓库外层 [README.md](https://github.com/TubeLiu/presales-skills#readme)。
 
 ## 快速开始
 

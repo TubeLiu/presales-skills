@@ -1,11 +1,11 @@
 # ppt-master
 
-PPT Master 是 [presales-skills](https://github.com/Alauda-io/presales-skills) marketplace 中的一个 plugin，将 PDF / DOCX / URL / Markdown 等多源文档转换为**原生可编辑的 PPTX**——真正的 PowerPoint 形状、文本框、图表，不是图片。
+PPT Master 是 [presales-skills](https://github.com/TubeLiu/presales-skills) marketplace 中的一个 plugin，将 PDF / DOCX / URL / Markdown 等多源文档转换为**原生可编辑的 PPTX**——真正的 PowerPoint 形状、文本框、图表，不是图片。
 
 [English](./README.md) | [中文](./README_CN.md)
 
 <p align="center">
-  <img src="https://github.com/Alauda-io/presales-skills/releases/download/ppt-master-assets-v1/hero-liziqi-colors.gif" alt="演示：端到端生成 12 页 PPT" width="860" />
+  <img src="https://github.com/TubeLiu/presales-skills/releases/download/ppt-master-assets-v1/hero-liziqi-colors.gif" alt="演示：端到端生成 12 页 PPT" width="860" />
 </p>
 
 <p align="center">
@@ -34,7 +34,7 @@ PPT Master 是一个在 AI IDE（Claude Code / Cursor / VS Code + Copilot / Code
 ppt-master 作为 `presales-skills` umbrella marketplace 的成员 plugin 分发：
 
 ```
-/plugin marketplace add Alauda-io/presales-skills
+/plugin marketplace add TubeLiu/presales-skills
 /plugin install ppt-master@presales-skills
 /plugin install ai-image@presales-skills        # 必需：AI 配图能力
 /reload-plugins
@@ -42,7 +42,7 @@ ppt-master 作为 `presales-skills` umbrella marketplace 的成员 plugin 分发
 
 安装后，内置 SKILL 会自动响应 "做 PPT" / "生成 PPT" / "做演示稿" / "make a PPT" / "generate slides" 等触发语。Claude 通过 `${CLAUDE_SKILL_DIR}/scripts/...` 调用内部脚本——**plugin 模式下你不需要手动 cd 进项目或执行下文的脚本**。
 
-完整 marketplace 安装步骤见 umbrella [README](https://github.com/Alauda-io/presales-skills#readme)。
+完整 marketplace 安装步骤见 umbrella [README](https://github.com/TubeLiu/presales-skills#readme)。
 
 ### 配置 AI 图片生成
 
@@ -79,16 +79,16 @@ AI：好的，先确认设计规范：
 
 <table>
   <tr>
-    <td align="center"><img src="https://github.com/Alauda-io/presales-skills/releases/download/ppt-master-assets-v1/preview_magazine_garden.png" alt="杂志风" width="400"/><br/><sub><b>杂志风</b> — 暖色调，大图排版，生活方式感</sub></td>
-    <td align="center"><img src="https://github.com/Alauda-io/presales-skills/releases/download/ppt-master-assets-v1/preview_academic_medical.png" alt="学术风" width="400"/><br/><sub><b>学术风</b> — 严谨结构，数据图表，论文答辩场景</sub></td>
+    <td align="center"><img src="https://github.com/TubeLiu/presales-skills/releases/download/ppt-master-assets-v1/preview_magazine_garden.png" alt="杂志风" width="400"/><br/><sub><b>杂志风</b> — 暖色调，大图排版，生活方式感</sub></td>
+    <td align="center"><img src="https://github.com/TubeLiu/presales-skills/releases/download/ppt-master-assets-v1/preview_academic_medical.png" alt="学术风" width="400"/><br/><sub><b>学术风</b> — 严谨结构，数据图表，论文答辩场景</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="https://github.com/Alauda-io/presales-skills/releases/download/ppt-master-assets-v1/preview_dark_art_mv.png" alt="暗色艺术风" width="400"/><br/><sub><b>暗色艺术风</b> — 电影感深色背景，美术馆陈列感</sub></td>
-    <td align="center"><img src="https://github.com/Alauda-io/presales-skills/releases/download/ppt-master-assets-v1/preview_nature_wildlife.png" alt="自然风" width="400"/><br/><sub><b>自然纪录风</b> — 沉浸式摄影，简洁信息层级</sub></td>
+    <td align="center"><img src="https://github.com/TubeLiu/presales-skills/releases/download/ppt-master-assets-v1/preview_dark_art_mv.png" alt="暗色艺术风" width="400"/><br/><sub><b>暗色艺术风</b> — 电影感深色背景，美术馆陈列感</sub></td>
+    <td align="center"><img src="https://github.com/TubeLiu/presales-skills/releases/download/ppt-master-assets-v1/preview_nature_wildlife.png" alt="自然风" width="400"/><br/><sub><b>自然纪录风</b> — 沉浸式摄影，简洁信息层级</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="https://github.com/Alauda-io/presales-skills/releases/download/ppt-master-assets-v1/preview_tech_claude_plans.png" alt="科技 / SaaS 风" width="400"/><br/><sub><b>科技 / SaaS 风</b> — 白底卡片，定价表格，产品说明书</sub></td>
-    <td align="center"><img src="https://github.com/Alauda-io/presales-skills/releases/download/ppt-master-assets-v1/preview_launch_xiaomi.png" alt="发布会风" width="400"/><br/><sub><b>发布会风</b> — 高对比度，参数突出，发布会感</sub></td>
+    <td align="center"><img src="https://github.com/TubeLiu/presales-skills/releases/download/ppt-master-assets-v1/preview_tech_claude_plans.png" alt="科技 / SaaS 风" width="400"/><br/><sub><b>科技 / SaaS 风</b> — 白底卡片，定价表格，产品说明书</sub></td>
+    <td align="center"><img src="https://github.com/TubeLiu/presales-skills/releases/download/ppt-master-assets-v1/preview_launch_xiaomi.png" alt="发布会风" width="400"/><br/><sub><b>发布会风</b> — 高对比度，参数突出，发布会感</sub></td>
   </tr>
 </table>
 

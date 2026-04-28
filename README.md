@@ -46,7 +46,7 @@
 ### 路径 A：Claude Code（主要使用方式）
 
 ```
-/plugin marketplace add Alauda-io/presales-skills
+/plugin marketplace add TubeLiu/presales-skills
 ```
 
 添加 marketplace 后，剩余安装步骤都在 `/plugins` UI 里完成（不用逐个敲 install 命令）：
@@ -86,9 +86,9 @@
 ### 路径 B：Cursor / Codex / OpenCode 等其它 agent
 
 ```bash
-npx --yes skills add Alauda-io/presales-skills -a cursor   # Cursor
-npx --yes skills add Alauda-io/presales-skills -a codex    # Codex
-npx --yes skills add Alauda-io/presales-skills -a opencode # OpenCode
+npx --yes skills add TubeLiu/presales-skills -a cursor   # Cursor
+npx --yes skills add TubeLiu/presales-skills -a codex    # Codex
+npx --yes skills add TubeLiu/presales-skills -a opencode # OpenCode
 ```
 
 跑起来后 vercel-labs/skills CLI 会列出全部 11 个 skill，按空格多选 + 回车确认即装：

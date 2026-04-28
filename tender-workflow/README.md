@@ -9,7 +9,7 @@
 `tender-workflow` 是 `presales-skills` umbrella marketplace 的成员 plugin：
 
 ```bash
-/plugin marketplace add Alauda-io/presales-skills
+/plugin marketplace add TubeLiu/presales-skills
 /plugin install drawio@presales-skills
 /plugin install ai-image@presales-skills
 /plugin install anythingllm-mcp@presales-skills        # 可选；不装则降级为本地索引或联网

@@ -14,7 +14,7 @@ Claude Code 会把它们暴露为 `mcp__anythingllm__anythingllm_search` 和 `mc
 作为 `presales-skills` marketplace 的一员安装：
 
 ```
-/plugin marketplace add Alauda-io/presales-skills
+/plugin marketplace add TubeLiu/presales-skills
 /plugin install anythingllm-mcp@presales-skills
 ```
 

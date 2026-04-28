@@ -3,18 +3,18 @@
   "owner": {
     "name": "LiuZiJiao",
     "email": "tubeliu1@gmail.com",
-    "homepage": "https://github.com/Alauda-io/presales-skills"
+    "homepage": "https://github.com/TubeLiu/presales-skills"
   },
   "metadata": {
     "description": "Presales skills monorepo — 8 个聚焦 plugin（solution-master 写方案 / ppt-master 做 PPT / tender-workflow 招投标 / drawio 画图 / ai-image 生图 / web-access 联网 / anythingllm-mcp 知识库 / skill-optimizer 审查 skill），同时支持 Claude Code（marketplace 安装）和 Cursor / Codex / OpenCode（vercel-labs/skills CLI 安装）。",
-    "version": "1.4.2"
+    "version": "1.4.3"
   },
   "plugins": [
     {
       "name": "drawio",
       "source": "./drawio",
       "description": "Draw.io 图表生成（.drawio XML + PNG/SVG/PDF 导出）。slash 调用 /drawio:draw 或自然语言触发（'画一张架构图' / 'draw a flowchart'）。独立共享 plugin，solution-master 与 tender-workflow 均依赖。",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": {
         "name": "LiuZiJiao"
       },
@@ -29,7 +29,7 @@
       "name": "ai-image",
       "source": "./ai-image",
       "description": "统一 AI 图片生成：13 个后端（volcengine/ark、qwen/dashscope、gemini、openai、minimax、stability、bfl、ideogram、zhipu、siliconflow、fal、replicate、openrouter）+ 共享 YAML 模型注册表 + 79 个结构化提示词模板（PPT/信息图/UI/学术图/技术图等 17 类，源自 garden-skills MIT）。slash 调用 /ai-image:gen 或自然语言触发（'生成图片：xxx' / 'generate image' / '配置 ai-image'）。OpenAI 后端额外支持 inpainting（--mode edit）+ 透明背景 + webp/jpeg 输出。独立共享 plugin，三个主 plugin（solution-master / ppt-master / tender-workflow）都依赖。",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "author": {
         "name": "LiuZiJiao"
       },
@@ -45,7 +45,7 @@
       "name": "anythingllm-mcp",
       "source": "./anythingllm-mcp",
       "description": "AnythingLLM MCP server — 知识库语义搜索 + workspace 列举。独立共享 plugin，solution-master 和 tender-workflow 均可选依赖；不装也能降级为本地 YAML 索引或联网检索。",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": {
         "name": "LiuZiJiao"
       },
@@ -61,7 +61,7 @@
       "name": "web-access",
       "source": "./web-access",
       "description": "联网操作 + CDP 浏览器自动化 skill（搜索、网页抓取、登录后操作、浏览器自动化、CDP 远程调试）。slash 调用 /web-access:browse 或自然语言触发。独立 plugin，solution-master 可选依赖（cdp_sites.enabled=true 时必需）。",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": {
         "name": "LiuZiJiao"
       },
@@ -77,7 +77,7 @@
       "name": "solution-master",
       "source": "./solution-master",
       "description": "AI 辅助通用解决方案撰写框架（技术方案 / 业务方案 / 咨询报告 / 项目建议书 / 招投标方案）。覆盖头脑风暴 → 任务分解 → 子智能体并行撰写 → 双阶段审查 → DOCX 输出全流程。slash 调用 /solution-master:go 或自然语言触发（'写方案' / '撰写技术方案'）。依赖 drawio、ai-image plugin（结构化配图走 ai-image templates/）；anythingllm-mcp、web-access 可选。Claude Code + Cursor 用户额外有 SessionStart hook 自动注入铁律防脱轨。",
-      "version": "1.0.3",
+      "version": "1.0.4",
       "author": {
         "name": "LiuZiJiao"
       },
@@ -92,7 +92,7 @@
       "name": "ppt-master",
       "source": "./ppt-master",
       "description": "PPT 生成器（PDF/DOCX/URL/Markdown → SVG 中间层 → 原生可编辑 PPTX，含真实 PowerPoint shape / 文本框 / 图表）。默认 free-design，22 个内置模板按需切换（用户在 ~/.config/presales-skills/config.yaml 设 ppt_master.default_layout 可持久化指定）。slash 调用 /ppt-master:make 或自然语言触发（'做 PPT' / 'generate slides'）。依赖 ai-image plugin（结构化配图自动走 ai-image templates/）。",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "author": {
         "name": "LiuZiJiao"
       },
@@ -107,7 +107,7 @@
       "name": "tender-workflow",
       "source": "./tender-workflow",
       "description": "四角色招投标工作流——tpl（甲方策划，技术规格 + 评标办法）/ taa（乙方分析，招标分析报告 + 投标大纲）/ taw（乙方撰稿，章节内容并行写，AI 生图分支自动走 ai-image templates/）/ trv（多维度审核，含 AI 智能修订）/ twc（统一配置）。slash 调用 /tender-workflow:taa 等或自然语言触发（'写标书' / '审一下标书'）。首次使用前需 /twc setup 配置厂商名（taa.vendor 必填）。依赖 drawio、ai-image plugin；anythingllm-mcp 可选（未装时降级本地 KB）；web-access 可选（/twc setup 配 MCP 搜索工具 tavily/exa/minimax 时使用其 mcp_installer.py，未装则跳过该步走内置 WebSearch 兜底）。",
-      "version": "1.2.2",
+      "version": "1.2.3",
       "author": {
         "name": "LiuZiJiao"
       },
@@ -122,7 +122,7 @@
       "name": "skill-optimizer",
       "source": "./skill-optimizer",
       "description": "Skill 审查与优化器——按 5 步流程（Scope → Review → Plan → Implement → Verify）审查目标 skill 的触发语义、工作流门槛、资源组织、安全边界、依赖可安装性与 README/SKILL 职责分层；默认先给诊断与计划，等用户明确确认后才改文件。slash 调用 /skill-optimizer:optimize 或自然语言触发（'优化 skill' / '检查 skill 质量' / '审一下 SKILL.md'）。Meta plugin，独立运行不依赖其它 plugin。",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": {
         "name": "LiuZiJiao"
       },

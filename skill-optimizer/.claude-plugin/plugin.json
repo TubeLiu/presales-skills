@@ -1,13 +1,13 @@
 {
   "name": "skill-optimizer",
   "description": "审查并优化已有 skill 的触发语义、工作流、确认门槛、资源组织、安全边界与文档分层。slash 调用 /skill-optimizer:optimize 或自然语言触发（'优化 skill' / '检查 skill 质量' / '改进某个 skill' / '重构技能说明'）。默认先审查并给计划，只有在用户明确确认后才修改。",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": {
     "name": "LiuZiJiao"
   },
   "license": "MIT",
-  "homepage": "https://github.com/Alauda-io/presales-skills",
-  "repository": "https://github.com/Alauda-io/presales-skills.git",
+  "homepage": "https://github.com/TubeLiu/presales-skills",
+  "repository": "https://github.com/TubeLiu/presales-skills.git",
   "category": "developer-tools",
   "tags": [
     "skill-review",
