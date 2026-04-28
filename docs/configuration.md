@@ -61,7 +61,7 @@ python3 "$WA_DIR/skills/browse/scripts/mcp_installer.py" register minimax --key=
 python3 "$WA_DIR/skills/browse/scripts/mcp_installer.py" test minimax
 ```
 
-`$AI_IMAGE_DIR` / `$SM_DIR` / `$TW_DIR` / `$WA_DIR` 通过各自 SKILL.md 顶部的 §路径自定位 段（`installed_plugins.json` 五段式 fallback）解析。详见 [docs/architecture.md §3](architecture.md#3-跨-plugin-调用约定)。
+`$AI_IMAGE_DIR` / `$SM_DIR` / `$TW_DIR` / `$WA_DIR` 是跨 plugin 调用的占位符 —— 各 plugin 自家 SKILL.md 顶部的 §路径自定位 段只设 `$SKILL_DIR`（指本 plugin），跨 plugin 用法请复用 [`ai-image/skills/gen/SKILL.md`](../ai-image/skills/gen/SKILL.md) 中"建议跨 plugin 复用"段的 bootstrap heredoc 模板，仅替换其中的 plugin 名（`/ai-image/` → `/tender-workflow/` 等）和输出变量名。完整路径解析约定见 [docs/architecture.md §3](architecture.md#3-跨-plugin-调用约定)。
 
 ---
 
