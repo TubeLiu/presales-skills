@@ -1,7 +1,7 @@
 {
   "name": "ppt-master",
-  "description": "PPT 生成器（PDF/DOCX/URL/Markdown → SVG 中间层 → 原生可编辑 PPTX，含真实 PowerPoint shape / 文本框 / 图表）。**默认套 Alauda 模板**（free design 与切换其它模板需用户明说）。slash 调用 /ppt-master:make 或自然语言触发（'做 PPT' / 'generate slides'）。依赖 ai-image plugin。",
-  "version": "1.0.1",
+  "description": "PPT 生成器（PDF/DOCX/URL/Markdown → SVG 中间层 → 原生可编辑 PPTX，含真实 PowerPoint shape / 文本框 / 图表）。默认 free-design，22 个内置模板按需切换（用户在 ~/.config/presales-skills/config.yaml 设 ppt_master.default_layout 可持久化指定）。slash 调用 /ppt-master:make 或自然语言触发（'做 PPT' / 'generate slides'）。依赖 ai-image plugin。",
+  "version": "1.1.0",
   "author": {
     "name": "LiuZiJiao"
   },

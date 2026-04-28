@@ -182,39 +182,42 @@ Import source content (choose based on the situation):
 
 🚧 **GATE**: Step 2 complete; project directory structure is ready.
 
-**Default path — Alauda template, no question asked.** Auto-load the Alauda layout（v1.0.0 起的 default，反 0.x 时代的 free design 默认）：
+**Default path — free design.** AI tailors structure and style to the specific content; no template files copied.
+
+If the user has set `ppt_master.default_layout` in `~/.config/presales-skills/config.yaml`, the Default path auto-loads that template instead of free design — read the override first:
 
 ```bash
-# 读 user 配置覆盖（如有），否则 fallback 到 alauda
+# 读 user 配置覆盖（如有），否则继续 free design（空串 = 不 cp 任何模板文件）
 DEFAULT_LAYOUT=$(python3 -c "
 import os
 try:
     import yaml
     p = os.path.expanduser('~/.config/presales-skills/config.yaml')
     d = yaml.safe_load(open(p)) or {}
-    print(d.get('ppt_master', {}).get('default_layout', 'alauda'))
+    print(d.get('ppt_master', {}).get('default_layout', ''))
 except Exception:
-    print('alauda')
-" 2>/dev/null || echo alauda)
+    print('')
+" 2>/dev/null || echo '')
 
-cp $SKILL_DIR/templates/layouts/$DEFAULT_LAYOUT/*.svg <project_path>/templates/
-cp $SKILL_DIR/templates/layouts/$DEFAULT_LAYOUT/design_spec.md <project_path>/templates/
-cp $SKILL_DIR/templates/layouts/$DEFAULT_LAYOUT/*.png <project_path>/images/ 2>/dev/null || true
-cp $SKILL_DIR/templates/layouts/$DEFAULT_LAYOUT/*.jpg <project_path>/images/ 2>/dev/null || true
+if [ -n "$DEFAULT_LAYOUT" ]; then
+    cp $SKILL_DIR/templates/layouts/$DEFAULT_LAYOUT/*.svg <project_path>/templates/
+    cp $SKILL_DIR/templates/layouts/$DEFAULT_LAYOUT/design_spec.md <project_path>/templates/
+    cp $SKILL_DIR/templates/layouts/$DEFAULT_LAYOUT/*.png <project_path>/images/ 2>/dev/null || true
+    cp $SKILL_DIR/templates/layouts/$DEFAULT_LAYOUT/*.jpg <project_path>/images/ 2>/dev/null || true
+fi
 ```
 
-Proceed to Step 4 with the default layout applied.
+Proceed to Step 4. With `default_layout` set in config = use that template; without = AI free design.
 
-**Free design 与其它模板** flow is opt-in. 仅当 prior messages 命中以下 trigger 时才退出 default：
+**其它模板 flow is opt-in.** 仅当 prior messages 命中以下 trigger 时才走具体模板：
 
-1. **用户明说具体非 default 模板**（如 "用 mckinsey 模板" / "use the academic_defense template"）—— 把命令中的 `$DEFAULT_LAYOUT` 替换为指定模板名
+1. **用户明说具体模板**（如 "用 mckinsey 模板" / "use the academic_defense template"）—— 把命令中的 `$DEFAULT_LAYOUT` 替换为指定模板名
 2. **用户明说风格 / brand 引用映射到某模板**（如 "McKinsey 那种" / "Google style" / "学术答辩样式"）—— 读 `$SKILL_DIR/templates/layouts/layouts_index.json` 解析匹配，把命令中的 `$DEFAULT_LAYOUT` 替换为匹配到的模板名
-3. **用户明说要 free design**（如 "free design" / "自由设计" / "不要模板" / "不用模板"）—— 跳过整个 cp 块，直接 Proceed to Step 4，AI tailors structure and style to the specific content
-4. **用户问 "有哪些模板可以用"**（列表）—— 读 `$SKILL_DIR/templates/layouts/layouts_index.json`，列出所有可用模板，等用户选
+3. **用户问 "有哪些模板可以用"**（列表）—— 读 `$SKILL_DIR/templates/layouts/layouts_index.json`，列出所有可用模板，等用户选
 
-**Soft hint (non-blocking, optional).** Before Step 4, if the user's content is a strong match for a non-default template (e.g., clearly an academic defense matching `academic_defense`, a government report matching `government_report`) AND the user has given no template signal, the AI MAY emit a single-sentence notice and continue with the default Alauda template without waiting:
+**Soft hint (non-blocking, optional).** Before Step 4, if the user's content is a strong match for a specific template (e.g., clearly an academic defense matching `academic_defense`, a government report matching `government_report`) AND the user has given no template signal, the AI MAY emit a single-sentence notice and continue with free design without waiting:
 
-> Note: 内容看起来更适合 `<name>` 模板。说一声如果想换；否则我继续用默认 Alauda 模板。
+> Note: 内容看起来更适合 `<name>` 模板。说一声如果想换；否则我继续 free design。
 
 This is a hint, not a question — do NOT block, do NOT require an answer. Skip the hint entirely when the match is weak or ambiguous.
 

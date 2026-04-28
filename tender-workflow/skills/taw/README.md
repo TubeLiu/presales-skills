@@ -91,7 +91,7 @@
 # 撰写整个技术部分（第一章全部子节）
 /taw --outline output/ --report output/ --chapter 一
 
-# 指定厂商身份（默认灵雀云）
+# 指定厂商身份（必填，可在 /twc setup 配持久值）
 /taw output/ --chapter 1.3 --vendor "博云"
 
 # 撰写所有章节（一、技术部分，共 11 节）
@@ -131,7 +131,7 @@
 | `--build-kb-index` | 扫描 Local-KnowledgeBase 目录，生成 kb_catalog.yaml 索引并退出 |
 | `--image-source <来源>` | 图片来源控制：`auto`（默认，按 H3 子节上下文独立选择）、`local`（本地知识库图片）、`ai`、`web`、`drawio`、`placeholder` |
 | `--search-tool <工具>` | 搜索工具控制：`auto`（默认）、`tavily`、`exa`、`mcp`、`websearch` |
-| `--vendor <厂商名>` | 指定投标厂商身份（默认 `灵雀云`） |
+| `--vendor <厂商名>` | 指定投标厂商身份（必填，可在 /twc setup 配持久值） |
 | `--query <查询词>` | 手动指定补充查询词 |
 | `--anythingllm-workspace <slug>` | 指定 AnythingLLM workspace slug |
 | `--l2-words <字数>` | 二级章节（X.X 级）目标字数，覆盖模板默认值 |
@@ -195,7 +195,7 @@ taw 的完整执行流程分为四个 Phase。
        ├─ 文件路径解析
        ├─ KB 路径解析（优先级：--kb > 配置文件 > 首次运行引导）
        ├─ --kb-source 解析 → 知识库来源控制
-       ├─ --vendor 解析 → VENDOR_NAME（默认"灵雀云"）
+       ├─ --vendor 解析 → VENDOR_NAME（必填，缺则报错引导用户配置）
        ├─ --query 解析 → EXTRA_QUERY（空则用默认模板）
        └─ --chapter 解析 → CHAPTERS_TO_WRITE 列表
 ```

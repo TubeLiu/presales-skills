@@ -1,8 +1,8 @@
-# presales-skills — 灵雀云售前工作 skill 集合
+# presales-skills — 售前工作 skill 集合
 
-灵雀云（Alauda）售前与市场团队建设和维护的 SKILL 集合，统一通过 marketplace 分发。
+面向售前 / 解决方案 / 咨询场景的 SKILL 集合，统一通过 marketplace 分发。
 
-**目标用户**：灵雀云售前 / 解决方案 / 市场团队成员，希望帮助大家少掉头发，多产输出；少熬夜加班，多陪陪自己和家人。
+**目标用户**：做售前 / 写方案 / 招投标 / 做 PPT 的人，希望帮助大家少掉头发，多产输出；少熬夜加班，多陪陪自己和家人。
 
 **兼容性**：同时支持 **Claude Code**（marketplace 直装）和 **Cursor / Codex / OpenCode**（[vercel-labs/skills](https://github.com/vercel-labs/skills) CLI 装）。
 
@@ -26,7 +26,7 @@
 | plugin | 入口 | 一句话 |
 |---|---|---|
 | **solution-master** | `/solution-master:go` 或 `/solution-master` | 通用解决方案撰写：苏格拉底式提问 → 任务分解 → 子智能体并行撰写 → 双阶段审查（spec + quality）→ 多源知识检索 → 配图 → Markdown + DOCX 输出 |
-| **ppt-master** | `/ppt-master:make` 或 `/make` | 多源文档（PDF / DOCX / URL / Markdown）→ 原生可编辑 PPTX（SVG 流水线 + 真实 PowerPoint shape，**默认套灵雀云模板**） |
+| **ppt-master** | `/ppt-master:make` 或 `/make` | 多源文档（PDF / DOCX / URL / Markdown）→ 原生可编辑 PPTX（SVG 流水线 + 真实 PowerPoint shape，默认 free-design，可切 22 个内置模板） |
 | **tender-workflow** | `/tender-workflow:taa` / `:taw` / `:tpl` / `:trv` / `:twc` | 四角色招投标 + 配置：`tpl` 招标策划（甲方）/ `taa` 招标分析（乙方）/ `taw` 标书撰稿（乙方，并行写）/ `trv` 多维度审核 / `twc` 配置 |
 
 ### 开发者工具 plugin（meta / 1 个）
@@ -228,7 +228,7 @@ docx 输出
 > /ppt-master:make /path/to/source.pdf
 ```
 
-**默认套灵雀云模板**（v1.0.0 起的 default path）。要切换或退出：
+**默认 free-design**（AI 自由排版，不预设模板）。22 个内置模板可按需切换：
 
 ```
 > 用 mckinsey 模板做这份 PPT          # 切换到 mckinsey 模板

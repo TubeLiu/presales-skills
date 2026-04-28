@@ -258,5 +258,38 @@ class TestLoadSkillView:
         assert view["taw"]["image_source"] == "ai"
 
 
+class TestValidateVendor:
+    """validate() 对 taa.vendor 必填的报错路径（默认空，强制用户配置避免投标文件出现空厂商名）"""
+
+    def test_empty_vendor_reports_issue(self, tmp_path):
+        """taa.vendor = "" → validate() 必须返回包含 'taa.vendor 未设置' 的 issue"""
+        kb = tmp_path / "kb"
+        (kb / ".index").mkdir(parents=True)
+        cfg = {"taa": {"vendor": ""}, "localkb": {"path": str(kb)}}
+        with patch("tw_config.load_raw", return_value=cfg):
+            issues = validate()
+        assert any("taa.vendor 未设置" in i for i in issues), \
+            f"应报告 vendor 未设置，实际 issues: {issues}"
+
+    def test_set_vendor_silences_issue(self, tmp_path):
+        """taa.vendor 设置后 → validate() 不再报 vendor issue"""
+        kb = tmp_path / "kb"
+        (kb / ".index").mkdir(parents=True)
+        cfg = {"taa": {"vendor": "MyCompany"}, "localkb": {"path": str(kb)}}
+        with patch("tw_config.load_raw", return_value=cfg):
+            issues = validate()
+        assert not any("taa.vendor 未设置" in i for i in issues), \
+            f"vendor 已设置却仍报错，issues: {issues}"
+
+    def test_missing_vendor_key_reports_issue(self, tmp_path):
+        """taa 段不含 vendor 字段 → 同样报错（兼容旧 config）"""
+        kb = tmp_path / "kb"
+        (kb / ".index").mkdir(parents=True)
+        cfg = {"taa": {}, "localkb": {"path": str(kb)}}
+        with patch("tw_config.load_raw", return_value=cfg):
+            issues = validate()
+        assert any("taa.vendor 未设置" in i for i in issues)
+
+
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

@@ -321,11 +321,11 @@ python3 "$SM_CONFIG" set cdp_sites.enabled true
 
 ##### 5.1.a.1 name（站点显示名）
 
-> "这个 CDP 站点叫什么名字？给个能识别的中文名就行，比如 `内部 Confluence` / `公司知识库` / `灵雀云 Wiki`。"
+> "这个 CDP 站点叫什么名字？给个能识别的中文名就行，比如 `内部 Confluence` / `公司知识库` / `团队 Wiki`。"
 
 ##### 5.1.a.2 domain（站点域名）
 
-> "这个站点的域名是什么？只要主域名，不要带 `https://` 前缀，比如 `confluence.alauda.cn`。"
+> "这个站点的域名是什么？只要主域名，不要带 `https://` 前缀，比如 `confluence.example.com`。"
 
 ##### 5.1.a.3 search_url（搜索 URL 模板，最关键）
 

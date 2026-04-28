@@ -107,7 +107,7 @@ drawio:
 
 # Skill 专属覆盖
 taa:
-  vendor: 灵雀云
+  vendor: ""                              # 必填，首次使用前配置
   kb_source: auto
   anythingllm_workspace: null          # null = 用全局值
 

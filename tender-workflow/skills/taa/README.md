@@ -46,7 +46,7 @@ git clone https://github.com/TubeLiu/tender-assistant-skills ~/.claude/skills/te
 # 分析时保存索引到默认位置
 /taa <招标文件路径> --product <产品能力说明书.xlsx> --save-index
 
-# 指定厂商名称（默认灵雀云）
+# 指定厂商名称（必填，可在 /twc setup 配持久值）
 /taa <招标文件路径> --vendor "博云"
 
 # 组合使用
@@ -94,7 +94,7 @@ AI 模糊评估
 |------|------|------|
 | `<招标文件>` | 位置参数 | 必选。招标文件路径 |
 | `--product` | 文件路径 | 可选。产品能力说明书（Excel/Markdown），用于精确评估产品与招标要求匹配度。**注意**：若同时使用 `--kb-source anythingllm`，此参数将被忽略（强制使用 AnythingLLM） |
-| `--vendor` | 字符串 | 可选。厂商名称，默认"灵雀云" |
+| `--vendor` | 字符串 | 必填。厂商名称（可在 /twc setup 配持久值；缺失会报错引导） |
 | `--build-index` | 标志 | 可选。仅构建产品能力索引并保存到默认位置，不执行分析 |
 | `--save-index` | 标志 | 可选。分析时将索引保存到默认位置（需配合 `--product` 使用） |
 | `--anythingllm-workspace` | 字符串 | 可选。指定 AnythingLLM workspace slug（推荐）或名称。未指定时使用配置文件，否则自动取第一个 workspace |

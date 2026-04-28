@@ -48,7 +48,7 @@
                         仅当 --image-source 为 auto 或 ai 时生效
   --build-kb-index      扫描 Local-KnowledgeBase 目录生成索引并退出
                         可配合 --kb-path 指定（默认从配置读取）
-  --vendor <厂商名>     指定投标厂商身份（默认 "灵雀云"）
+  --vendor <厂商名>     指定投标厂商身份（必填，首次使用前 /twc setup 或在命令行加 --vendor）
   --query <查询词>      手工指定补充查询词，覆盖默认模板
   --search-tool <工具>  强制指定搜索工具：mcp / websearch / auto（默认 auto）
   --anythingllm-workspace <slug>

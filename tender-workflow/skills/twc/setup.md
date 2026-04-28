@@ -336,8 +336,9 @@ AI 在记忆里记录本次有没有新增/变更任一 MCP server（tavily / ex
 #### Step 5：Skill 默认值（可选）
 
 1. **taa 厂商名**：
-   - 当前默认"灵雀云"，询问是否修改
-   - 若修改 → `python3 $SKILL_DIR/tools/tw_config.py set taa.vendor <名称>`
+   - **必填字段**，默认空。问用户："你的厂商 / 公司名是什么？（投标方身份；用于 {VENDOR_NAME} 占位符替换）"
+   - 用户给名 → `python3 $SKILL_DIR/tools/tw_config.py set taa.vendor <名称>`
+   - 用户暂不填 → 提醒"可以现在跳过，但运行 /taa /taw /tpl 时会报 vendor 未配置错误，需要在命令行加 --vendor <名>"
 
 2. **tpl 默认模板**：
    - 显示可选模板：government / finance / soe / enterprise

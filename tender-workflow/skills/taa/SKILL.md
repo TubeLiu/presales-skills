@@ -6,7 +6,7 @@ description: >
   深度分析招标文件并生成招标分析报告（.md）+ 投标文件大纲（.docx），下游交给 /taw 撰写。
   互斥提示：若用户要求**审核招标文件本身的质量/合规性**（甲方视角），应使用 /trv --type tender_doc 而非本 skill。
   支持 --product 参数指定产品能力说明书（Excel/Markdown）精确评估匹配情况；
-  --vendor 指定厂商名（默认"灵雀云"）；--build-index / --save-index 构建并保存产品能力索引。
+  --vendor 指定厂商名（必填，可在 /twc setup 配持久值）；--build-index / --save-index 构建并保存产品能力索引。
 disable-model-invocation: false
 allowed-tools: Read, Write, Bash, Glob, mcp__plugin_anythingllm-mcp_anythingllm__anythingllm_search, mcp__plugin_anythingllm-mcp_anythingllm__anythingllm_list_workspaces
 ---
@@ -123,7 +123,7 @@ Phase 2：大纲生成 → 投标文件大纲（.docx）
 - 索引构建流程（--build-index）
 
 按 phase0_params.md 中的流程完成参数解析后，设置以下变量：
-- `VENDOR_NAME`：厂商名称（默认"灵雀云"）
+- `VENDOR_NAME`：厂商名称（必填，从 --vendor 或 taa.vendor config 读取，缺则报错引导用户配置）
 - `PRODUCT_INDEX`/`PRODUCT_SOURCE`：产品能力数据来源
 - `ANYTHINGLLM_AVAILABLE`/`ANYTHINGLLM_WS`：AnythingLLM 状态
 - `ENV_TYPE`：运行环境（CLI）

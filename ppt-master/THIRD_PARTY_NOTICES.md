@@ -20,10 +20,10 @@ ppt-master plugin 是基于 hugohe3/ppt-master 整仓 vendor 后，按 presales-
 | 目录结构 | `skills/ppt-master/` → `skills/make/`（v1.0.0）| 消除 Claude Code `<plugin>:<plugin>` 双名（`/ppt-master:ppt-master` → `/ppt-master:make`）|
 | 目录结构 | `requirements.txt` 移到 `skills/make/requirements.txt`（v1.0.0）| 修复 vercel-labs/skills CLI 装到 Codex / Cursor / OpenCode 时仅拷贝 `skills/<name>/` 单元的文件丢失问题 |
 | SKILL.md frontmatter | `name: ppt-make` → `name: make` | 与新目录名对齐 |
-| SKILL.md 主体 | Step 3 默认从 "free design, no question asked" 反转为 "Alauda template, no question asked"；新增 4 条 opt-in 触发条件（用户明说模板名 / 风格 / "free design" / 问列表）+ `~/.config/presales-skills/config.yaml` 字段 `ppt_master.default_layout` 全局覆盖 | 适配 Alauda 团队 presales 场景的默认风格策略 |
 | Python 脚本 | `skills/make/scripts/_ensure_deps.py`：`_PLUGIN_ROOT = _SCRIPTS_DIR.parent.parent.parent` → `_SKILL_DIR = _SCRIPTS_DIR.parent`；变量名同步 `_PLUGIN_ROOT` → `_SKILL_DIR` | requirements.txt 位置变更后路径计算同步 |
 | 跨 plugin 引用 | 文档 + 脚本中的 image-gen 调用从历史 `image-gen` CLI 改为新形式 `Skill(skill="ai-image:gen")` / `/ai-image:gen` | 适配 presales-skills monorepo 中 ai-image plugin 的 v1.0.0 sub-skill split |
-| 模板新增 | `skills/make/templates/layouts/alauda/`（含 SVG layout + design_spec.md + component_library.md） | Alauda 团队自添加，**非 vendored 内容**，本仓自有版权 |
+| SKILL.md 主体 | Step 3 加入 `~/.config/presales-skills/config.yaml` 字段 `ppt_master.default_layout` 全局覆盖（未设置时走 free design 默认）；opt-in 触发条件：用户明说模板名 / 风格 / 问列表 | 让用户能持久化选择默认模板，无需每次切换 |
+| 模板新增 | `skills/make/templates/layouts/alauda/`（含 SVG layout + design_spec.md + component_library.md） | 本仓自添加，**非 vendored 内容**，本仓自有版权 |
 | 删除 | 移除 upstream `.env.example` / `examples/` / `requirements.txt`（顶层）等与 plugin 集成无关或位置冲突的文件 | monorepo plugin 体例不再需要顶层运行环境样例；examples/ 在 plugin 安装场景下不实用 |
 
 注：以上不是穷尽列表，详见仓 git log（`git log -- ppt-master/`）。

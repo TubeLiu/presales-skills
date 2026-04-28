@@ -17,7 +17,7 @@
 # 分析时保存索引到默认位置
 /taa <招标文件路径> --product <产品能力说明书.xlsx> --save-index
 
-# 指定厂商名称（默认灵雀云）
+# 指定厂商名称（必填，可在 /twc setup 配持久值）
 /taa <招标文件路径> --vendor "博云"
 
 # 组合使用
@@ -49,7 +49,7 @@
 |------|------|------|
 | `<招标文件>` | 位置参数 | 必选。招标文件路径（PDF/Word/图片） |
 | `--product` | 文件路径 | 可选。产品能力说明书（Excel 或 Markdown），用于精确评估产品与招标要求的匹配度。**注意**：若同时使用 `--kb-source anythingllm`，此参数将被忽略（强制使用 AnythingLLM） |
-| `--vendor` | 字符串 | 可选。厂商名称，默认"灵雀云"。影响角色定义、报告标题、支持度列名等 |
+| `--vendor` | 字符串 | 必填。厂商名称（可在 /twc setup 配持久值；缺失会报错引导）。影响角色定义、报告标题、支持度列名等 |
 | `--build-index` | 标志 | 可选。仅构建产品能力索引并保存到默认位置，不执行分析。需配合 `--product` 或配置环境变量 `TAA_DEFAULT_PRODUCT` |
 | `--save-index` | 标志 | 可选。分析时将索引保存到默认位置（需配合 `--product` 使用） |
 | `--anythingllm-workspace` | 字符串 | 可选。指定 AnythingLLM workspace slug 或名称。未指定时使用配置文件，否则自动取第一个 workspace |
@@ -114,7 +114,7 @@ taa:
 参数：
   <招标文件路径>        必选。招标文件路径（PDF/Word/图片）
   --product <文件>      可选。产品能力说明书（Excel/Markdown），用于精确评估
-  --vendor <名称>       可选。厂商名称，默认"灵雀云"
+  --vendor <名称>       必填。厂商名称（可在 /twc setup 配持久值）
   --build-index         可选。仅构建索引并保存，不执行分析
   --save-index          可选。分析时保存索引到默认位置
   --anythingllm-workspace <名称>  可选。指定 AnythingLLM workspace
@@ -135,7 +135,7 @@ taa:
 
 从用户指令中解析以下参数（`-h`/`--help` 除外）：
 
-1. **`--vendor`**：若用户提供 `--vendor "厂商名"` → `VENDOR_NAME = 用户提供的厂商名`；否则 → `VENDOR_NAME = "灵雀云"`（默认值）
+1. **`--vendor`**：若用户提供 `--vendor "厂商名"` → `VENDOR_NAME = 用户提供的厂商名`；否则 → 读 `taa.vendor` config（`python3 $TW_DIR/skills/twc/tools/tw_config.py get taa.vendor`），仍为空 → **报错并引导用户**：`vendor 未配置。请运行 /twc setup 或 tw_config.py set taa.vendor <你的厂商名>，或在命令行加 --vendor`
 2. **`--product`**：产品能力说明书路径（见下方解析规则）
 3. **`--build-index`**：仅构建索引标志
 4. **`--save-index`**：保存索引标志

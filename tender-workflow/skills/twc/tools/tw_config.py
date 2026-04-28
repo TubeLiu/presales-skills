@@ -82,7 +82,7 @@ DEFAULTS = {
     # 透明迁移到 FQN（见 LEGACY_ALIAS）；不会破坏老 schema。
     "mcp_search": {"priority": []},
     "drawio": {},  # cli_path 字段已废弃（v1.0.0 删 drawio-gen bin 后由 drawio plugin 自定位）；保留空 dict 兼容旧 config
-    "taa": {"vendor": "灵雀云", "kb_source": "auto", "anythingllm_workspace": None},
+    "taa": {"vendor": "", "kb_source": "auto", "anythingllm_workspace": None},
     "taw": {"kb_source": "auto", "image_source": "auto", "anythingllm_workspace": None},
     "tpl": {"default_template": None, "default_level": "standard"},
     "trv": {"default_level": "all"},
@@ -525,6 +525,14 @@ def validate() -> List[str]:
             issues.append(f"知识库索引目录不存在: {lib_path}/.index（可运行 /taa --build-index 构建）")
     else:
         issues.append("localkb.path 未设置")
+
+    # 检查 taa.vendor 必填（默认空，强制用户配置避免投标文件出现空厂商名）
+    vendor = _deep_get(cfg, "taa.vendor")
+    if not vendor:
+        issues.append(
+            "taa.vendor 未设置（生成的投标文件 / 招标分析会出现空厂商名）。"
+            "运行 /twc setup 或：python3 $TW_DIR/skills/twc/tools/tw_config.py set taa.vendor <你的厂商名>"
+        )
 
     # AI 生图配置由 ai-image plugin 管理；轻量检查 ~/.config/presales-skills/config.yaml 是否存在
     ai_image_cfg = Path.home() / ".config" / "presales-skills" / "config.yaml"
