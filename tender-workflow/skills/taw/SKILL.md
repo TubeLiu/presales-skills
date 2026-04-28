@@ -210,6 +210,8 @@ USE_PARALLEL_WRITING = (H3_COUNT >= 3) and (TARGET_WORDS >= 4500)
 
 主 session 在 brief 生成前必须**一次性完成所有图片获取**（KB 匹配 / drawio gen / AI gen / web 下载 / placeholder），把绝对路径写入 `image_plan: [{path: abs, caption: "图 X-Y ...", placement_hint: "..."}, ...]`，空数组 `[]` = 无图。详见 `references/image-retrieval.md`。
 
+> 💡 **AI 生图分支优先查模板**：当 image_plan 某条 source=`ai` 且类型为结构化场景（信息图 / UI 截图 / 系统架构 / 流程图 / 时序图 / ER 图 / 学术图等），先 Read `$AI_IMAGE_SKILL_DIR/templates/<category>/<template>.md` 填槽位，再调 ai-image 生图——比自由 prompt 输出更稳定。详见 ai-image SKILL.md §模板驱动生成。
+
 完成后进入 Phase 2B。
 
 ### Phase 2B：并发 subagent 撰写（仅并行模式）

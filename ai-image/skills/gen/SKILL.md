@@ -4,10 +4,13 @@ description: >
   AI 图片生成统一入口。覆盖 13 个后端（ark/dashscope/gemini/openai/minimax/stability/
   bfl/ideogram/zhipu/siliconflow/fal/replicate/openrouter）。
   触发：「生成图片 / 做配图 / AI 画图 / 画一张 / generate image / make illustration」（生图）；
+  「PPT 配图 / 信息图 / Bento grid / UI 截图 / ER 图 / 图形摘要 / 学术配图 /
+  方法流程图 / 系统架构图 / mind map」等结构化场景（自动匹配 templates/ 模板）；
+  「图像编辑 / inpainting / 局部重绘 / 替换背景 / 移除元素」（仅 openai 后端，--mode edit）；
   「配置 ai-image / 初始化 / setup / reconfigure / migrate config / show config /
   validate api key / list image models / add custom model」（管理子命令，详见 SKILL.md §子命令）。
   统一读取 ~/.config/presales-skills/config.yaml 获取 API key。
-  不处理本地图像编辑、视频生成或 ASCII art。
+  不处理视频生成或 ASCII art。
 allowed-tools: Read, Write, Bash, Glob, Grep
 ---
 
@@ -68,9 +71,10 @@ fi
 ## 工作流（生成图片场景）
 
 1. **读取用户意图**：图片主题、风格、尺寸、数量
-2. **选 provider**：按场景 + 用户默认偏好（来自 `~/.config/presales-skills/config.yaml` 的 `ai_image.default_provider`）
-3. **准备 prompt**：如果用户只给了简要主题，扩展为详细描述
-4. **执行生成**：调 `image_gen.py`：
+2. **判断是否走模板分支**：用户描述涉及「PPT 配图 / 信息图 / Bento grid / UI 截图 / 聊天截图 / ER 图 / 系统架构图 / 流程图 / 思维导图 / 时序图 / 状态机 / 网络拓扑 / 学术图形摘要 / 神经网络架构图 / 论文图表 / 海报 / 头像 / 角色图 / 包装设计 / 漫画分镜 / 地图 / 产品图 / 字体排版」等**结构化高密度场景** → 走 §模板驱动生成；否则继续 step 3 简单生成路径
+3. **选 provider**：按场景 + 用户默认偏好（来自 `~/.config/presales-skills/config.yaml` 的 `ai_image.default_provider`）
+4. **准备 prompt**：如果用户只给了简要主题，扩展为详细描述
+5. **执行生成**：调 `image_gen.py`：
    - 设定 `IMAGE_BACKEND` 为选定 provider 的 canonical 名（ark→volcengine，dashscope→qwen，其他同名）
    - 通过 `-o` 指定输出目录
    - 用户没显式给 size / ratio 时，分别从 `ai_image.default_size`（preset 如 `2K`）和 `ai_image.default_aspect_ratio`（比例如 `16:9`）读默认值。**两个独立参数**：size preset 决定分辨率，aspect ratio 决定形状
@@ -89,8 +93,56 @@ IMAGE_BACKEND=ark python3 "$SKILL_DIR/scripts/image_gen.py" "用户提示词" \
 > `--aspect_ratio` 只接受 `1:1` / `16:9` / `9:16` 等比例。配置里 `default_size` 写错值，
 > CLI 会被 argparse 拒，此时跑 `python3 ai_image_config.py validate` 看具体提示。
 
-5. **验证输出**：文件存在且 > 10KB，否则降级或报错
-6. **返回给用户**：图片路径 + 简要描述
+6. **验证输出**：文件存在且 > 10KB，否则降级或报错
+7. **返回给用户**：图片路径 + 简要描述
+
+## 模板驱动生成（高密度结构化场景）
+
+`templates/` 目录提供 79 个结构化提示词模板，分 17 类，源自 [garden-skills/gpt-image-2](https://github.com/ConardLi/garden-skills)（MIT，见 `templates/LICENSE-gpt-image-2`）。每个模板用 JSON 描述视觉层结构 + `{argument name="..." default="..."}` 槽位 + 缺失字段提问优先级。
+
+### 模板类别速查
+
+| 类别 | 用途 | 适用主 plugin |
+|---|---|---|
+| `slides-and-visual-docs/` | 高密度讲解 slide / 教育 slide / 政策风 slide | ppt-master |
+| `infographics/` | Bento grid / KPI dashboard / 对比信息图 / 步骤图 | solution-master / ppt-master |
+| `ui-mockups/` | 聊天界面 / 短视频封面 / 直播带货 UI / 社交 UI | tender-workflow / solution-master |
+| `academic-figures/` | 图形摘要 / 神经网络架构 / 论文图表 / 方法流程图 | solution-master |
+| `technical-diagrams/` | ER 图 / 流程图 / 时序图 / 状态机 / 系统架构 / 网络拓扑（PNG，非矢量；可编辑用 drawio）| solution-master |
+| `infographics/` `maps/` `poster-and-campaigns/` `product-visuals/` `branding-and-packaging/` `portraits-and-characters/` `avatars-and-profile/` `editing-workflows/` `grids-and-collages/` `scenes-and-illustrations/` `storyboards-and-sequences/` `typography-and-text-layout/` `assets-and-props/` | 海报 / 地图 / 产品图 / 头像 / 漫画 / 等 | 通用 |
+
+### 模板匹配工作流
+
+```
+T1. 用 Grep / find 在 $SKILL_DIR/templates/ 下找类别 → 文件
+    例：用户要"PPT 配图，4 块 Bento grid 信息图" → templates/infographics/bento-grid-infographic.md
+
+T2. Read 模板文件，重点读"## 缺失信息优先提问顺序"或"参数策略"小节
+    → 找出 must-ask 字段（必须问用户）和 defaultable 字段（可用默认）
+
+T3. 按 must-ask 列表向用户提问（一次问完，避免反复打断）
+
+T4. 把模板里的 JSON prompt 块拷贝出来，逐个替换 {argument name="..."} 占位符
+    → 得到一个填好的 JSON
+
+T5. 把这段 JSON 整体当 prompt 字符串传给 image_gen.py
+    （JSON 不需要"展开"成自然语言；模型能直接解析结构化 JSON prompt）
+
+T6. 标准 generate 流程（同 §工作流 step 5-7）
+```
+
+### 模板调用范例
+
+```bash
+# 假设 T4 已得到填好的 JSON 字符串保存在 /tmp/prompt.txt
+PROMPT=$(cat /tmp/prompt.txt)
+IMAGE_BACKEND=ark python3 "$SKILL_DIR/scripts/image_gen.py" "$PROMPT" \
+  --image_size 2K --aspect_ratio 3:4 -o /path/to/output/
+```
+
+> 💡 **provider 选择提示**：模板里多含中文文字层时优先 dashscope（中文渲染最稳）；
+> 学术图 / 技术图（强调结构清晰度）优先 ark / openai；纯英文 UI mockup 用 gemini / openai。
+> ER 图 / 系统架构图等"工程图"场景，如果用户接受可编辑矢量，**优先 drawio plugin** 而非本插件。
 
 ### Provider 选择策略
 
@@ -102,6 +154,51 @@ IMAGE_BACKEND=ark python3 "$SKILL_DIR/scripts/image_gen.py" "用户提示词" \
 | 聚合平台、多模型切换 | `openrouter` / `fal` / `replicate` |
 
 详细列表：`python3 "$SKILL_DIR/scripts/ai_image_config.py" models`
+
+## OpenAI 高级参数（透明背景 / 输出格式）
+
+仅 `IMAGE_BACKEND=openai` 生效，其他后端会忽略：
+
+| 参数 | 取值 | 用途 |
+|---|---|---|
+| `--background` | `auto` / `transparent` / `opaque` | logo / icon 抠图：`transparent` 强制 PNG |
+| `--output-format` | `png` / `jpeg` / `webp` | 控制输出文件格式 |
+| `--output-compression` | `0-100` | 仅对 jpeg / webp 生效，控制体积 |
+
+```bash
+# 透明背景 PNG（logo / icon 场景）
+IMAGE_BACKEND=openai python3 "$SKILL_DIR/scripts/image_gen.py" "logo of a fox, vector style" \
+  --background transparent --aspect_ratio 1:1 -o /path/to/output/
+
+# webp 输出 + 高压缩（节省体积）
+IMAGE_BACKEND=openai python3 "$SKILL_DIR/scripts/image_gen.py" "background landscape" \
+  --output-format webp --output-compression 85 -o /path/to/output/
+```
+
+## 图像编辑（Inpainting）
+
+仅 `IMAGE_BACKEND=openai` 支持。给定原始图像 PNG 与可选 mask，执行局部或整图重绘。
+
+| 参数 | 必填 | 说明 |
+|---|---|---|
+| `--mode edit` | 是 | 切换到编辑模式（默认 `generate`）|
+| `--input-image` | 是 | 原图 PNG 路径 |
+| `--mask` | 否 | mask PNG 路径：透明=待编辑区域，不透明=保留；省略则全图重绘 |
+| `--input-fidelity` | 否 | `low` / `high`（默认 `high`，越高越保留原图） |
+
+```bash
+# 全图编辑（无 mask）
+IMAGE_BACKEND=openai python3 "$SKILL_DIR/scripts/image_gen.py" \
+  "添加一只橘猫坐在窗边" \
+  --mode edit --input-image /path/to/photo.png \
+  --input-fidelity high -o /path/to/output/
+
+# Inpainting（带 mask）
+IMAGE_BACKEND=openai python3 "$SKILL_DIR/scripts/image_gen.py" \
+  "替换为蓝天白云" \
+  --mode edit --input-image /path/to/photo.png --mask /path/to/sky_mask.png \
+  -o /path/to/output/
+```
 
 ## 配置
 

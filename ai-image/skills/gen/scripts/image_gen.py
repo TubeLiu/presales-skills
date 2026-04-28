@@ -475,12 +475,50 @@ def main() -> None:
         "--list-backends", action="store_true",
         help="List available backends grouped by support tier and exit."
     )
+    # 图像编辑（inpainting）模式：仅 openai 后端支持
+    parser.add_argument(
+        "--mode", default="generate", choices=["generate", "edit"],
+        help="generate=文生图（默认）；edit=图像编辑/inpainting，仅 openai 后端支持。"
+    )
+    parser.add_argument(
+        "--input-image", dest="input_image", default=None,
+        help="edit 模式必填：原始图像 PNG 路径。"
+    )
+    parser.add_argument(
+        "--mask", default=None,
+        help="edit 模式可选：mask PNG 路径（透明区域=待编辑，不透明=保留）；省略则全图编辑。"
+    )
+    parser.add_argument(
+        "--input-fidelity", dest="input_fidelity", default="high",
+        choices=["low", "high"],
+        help="edit 模式：原图保留强度。Default: high."
+    )
+    # OpenAI-only 高级参数（其他后端忽略）
+    parser.add_argument(
+        "--background", default="auto",
+        choices=["auto", "transparent", "opaque"],
+        help="OpenAI only: 透明背景控制。transparent 强制 PNG。Default: auto."
+    )
+    parser.add_argument(
+        "--output-format", dest="output_format", default="png",
+        choices=["png", "jpeg", "webp"],
+        help="OpenAI only: 输出图片格式。Default: png."
+    )
+    parser.add_argument(
+        "--output-compression", dest="output_compression", default=None,
+        type=int, metavar="0-100",
+        help="OpenAI only: jpeg/webp 压缩率 0-100。仅当 --output-format 非 png 时生效。"
+    )
 
     args = parser.parse_args()
 
     if args.list_backends:
         _print_backend_list()
         return
+
+    if args.output_compression is not None and not (0 <= args.output_compression <= 100):
+        print("Error: --output-compression must be between 0 and 100.")
+        sys.exit(1)
 
     try:
         _load_image_env_file()
@@ -497,16 +535,50 @@ def main() -> None:
     backend, backend_name = _resolve_backend()
     print(f"Using backend: {backend_name}\n")
 
-    try:
-        backend.generate(
-            prompt=args.prompt,
-            negative_prompt=args.negative_prompt,
-            aspect_ratio=args.aspect_ratio,
-            image_size=args.image_size,
-            output_dir=args.output,
-            filename=args.filename,
-            model=args.model,
+    # OpenAI-only 扩展参数：仅在 backend 为 openai 时透传
+    backend_extras = {}
+    if backend_name == "openai":
+        backend_extras = dict(
+            background=args.background,
+            output_format=args.output_format,
+            output_compression=args.output_compression,
         )
+
+    # edit 模式：仅 openai 支持
+    if args.mode == "edit":
+        if backend_name != "openai":
+            print(f"Error: --mode edit 仅 openai 后端支持，当前 backend={backend_name}")
+            sys.exit(1)
+        if not args.input_image:
+            print("Error: --mode edit 需要 --input-image 指定原始图像路径。")
+            sys.exit(1)
+
+    try:
+        if args.mode == "edit":
+            backend.edit(
+                prompt=args.prompt,
+                input_image=args.input_image,
+                mask=args.mask,
+                negative_prompt=args.negative_prompt,
+                aspect_ratio=args.aspect_ratio,
+                image_size=args.image_size,
+                output_dir=args.output,
+                filename=args.filename,
+                model=args.model,
+                input_fidelity=args.input_fidelity,
+                **backend_extras,
+            )
+        else:
+            backend.generate(
+                prompt=args.prompt,
+                negative_prompt=args.negative_prompt,
+                aspect_ratio=args.aspect_ratio,
+                image_size=args.image_size,
+                output_dir=args.output,
+                filename=args.filename,
+                model=args.model,
+                **backend_extras,
+            )
     except (ValueError, FileNotFoundError) as e:
         print(f"Error: {e}")
         sys.exit(1)

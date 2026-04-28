@@ -7,7 +7,7 @@
   },
   "metadata": {
     "description": "Presales skills monorepo — 8 个聚焦 plugin（solution-master 写方案 / ppt-master 做 PPT / tender-workflow 招投标 / drawio 画图 / ai-image 生图 / web-access 联网 / anythingllm-mcp 知识库 / skill-optimizer 审查 skill），同时支持 Claude Code（marketplace 安装）和 Cursor / Codex / OpenCode（vercel-labs/skills CLI 安装）。",
-    "version": "1.2.0"
+    "version": "1.3.0"
   },
   "plugins": [
     {
@@ -28,8 +28,8 @@
     {
       "name": "ai-image",
       "source": "./ai-image",
-      "description": "统一 AI 图片生成：13 个后端（volcengine/ark、qwen/dashscope、gemini、openai、minimax、stability、bfl、ideogram、zhipu、siliconflow、fal、replicate、openrouter）+ 共享 YAML 模型注册表。slash 调用 /ai-image:gen 或自然语言触发（'生成图片：xxx' / 'generate image' / '配置 ai-image'）。独立共享 plugin，三个主 plugin（solution-master / ppt-master / tender-workflow）都依赖。",
-      "version": "1.0.0",
+      "description": "统一 AI 图片生成：13 个后端（volcengine/ark、qwen/dashscope、gemini、openai、minimax、stability、bfl、ideogram、zhipu、siliconflow、fal、replicate、openrouter）+ 共享 YAML 模型注册表 + 79 个结构化提示词模板（PPT/信息图/UI/学术图/技术图等 17 类，源自 garden-skills MIT）。slash 调用 /ai-image:gen 或自然语言触发（'生成图片：xxx' / 'generate image' / '配置 ai-image'）。OpenAI 后端额外支持 inpainting（--mode edit）+ 透明背景 + webp/jpeg 输出。独立共享 plugin，三个主 plugin（solution-master / ppt-master / tender-workflow）都依赖。",
+      "version": "1.1.0",
       "author": {
         "name": "LiuZiJiao"
       },
@@ -76,8 +76,8 @@
     {
       "name": "solution-master",
       "source": "./solution-master",
-      "description": "AI 辅助通用解决方案撰写框架（技术方案 / 业务方案 / 咨询报告 / 项目建议书 / 招投标方案）。覆盖头脑风暴 → 任务分解 → 子智能体并行撰写 → 双阶段审查 → DOCX 输出全流程。slash 调用 /solution-master:go 或自然语言触发（'写方案' / '撰写技术方案'）。依赖 drawio、ai-image plugin；anythingllm-mcp、web-access 可选。Claude Code + Cursor 用户额外有 SessionStart hook 自动注入铁律防脱轨。",
-      "version": "1.0.1",
+      "description": "AI 辅助通用解决方案撰写框架（技术方案 / 业务方案 / 咨询报告 / 项目建议书 / 招投标方案）。覆盖头脑风暴 → 任务分解 → 子智能体并行撰写 → 双阶段审查 → DOCX 输出全流程。slash 调用 /solution-master:go 或自然语言触发（'写方案' / '撰写技术方案'）。依赖 drawio、ai-image plugin（结构化配图走 ai-image templates/）；anythingllm-mcp、web-access 可选。Claude Code + Cursor 用户额外有 SessionStart hook 自动注入铁律防脱轨。",
+      "version": "1.0.2",
       "author": {
         "name": "LiuZiJiao"
       },
@@ -91,8 +91,8 @@
     {
       "name": "ppt-master",
       "source": "./ppt-master",
-      "description": "PPT 生成器（PDF/DOCX/URL/Markdown → SVG 中间层 → 原生可编辑 PPTX，含真实 PowerPoint shape / 文本框 / 图表）。**默认套 Alauda 模板**（free design 与切换其它模板需用户明说）。slash 调用 /ppt-master:make 或自然语言触发（'做 PPT' / 'generate slides'）。依赖 ai-image plugin。",
-      "version": "1.0.0",
+      "description": "PPT 生成器（PDF/DOCX/URL/Markdown → SVG 中间层 → 原生可编辑 PPTX，含真实 PowerPoint shape / 文本框 / 图表）。**默认套 Alauda 模板**（free design 与切换其它模板需用户明说）。slash 调用 /ppt-master:make 或自然语言触发（'做 PPT' / 'generate slides'）。依赖 ai-image plugin（结构化配图自动走 ai-image templates/）。",
+      "version": "1.0.1",
       "author": {
         "name": "LiuZiJiao"
       },
@@ -106,8 +106,8 @@
     {
       "name": "tender-workflow",
       "source": "./tender-workflow",
-      "description": "四角色招投标工作流——tpl（甲方策划，技术规格 + 评标办法）/ taa（乙方分析，招标分析报告 + 投标大纲）/ taw（乙方撰稿，章节内容并行写）/ trv（多维度审核，含 AI 智能修订）/ twc（统一配置）。slash 调用 /tender-workflow:taa 等或自然语言触发（'写标书' / '审一下标书'）。依赖 drawio、ai-image plugin；anythingllm-mcp 可选（未装时降级本地 KB）；web-access 可选（/twc setup 配 MCP 搜索工具 tavily/exa/minimax 时使用其 mcp_installer.py，未装则跳过该步走内置 WebSearch 兜底）。",
-      "version": "1.1.0",
+      "description": "四角色招投标工作流——tpl（甲方策划，技术规格 + 评标办法）/ taa（乙方分析，招标分析报告 + 投标大纲）/ taw（乙方撰稿，章节内容并行写，AI 生图分支自动走 ai-image templates/）/ trv（多维度审核，含 AI 智能修订）/ twc（统一配置）。slash 调用 /tender-workflow:taa 等或自然语言触发（'写标书' / '审一下标书'）。依赖 drawio、ai-image plugin；anythingllm-mcp 可选（未装时降级本地 KB）；web-access 可选（/twc setup 配 MCP 搜索工具 tavily/exa/minimax 时使用其 mcp_installer.py，未装则跳过该步走内置 WebSearch 兜底）。",
+      "version": "1.1.1",
       "author": {
         "name": "LiuZiJiao"
       },

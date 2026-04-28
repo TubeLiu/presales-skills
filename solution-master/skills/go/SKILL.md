@@ -125,7 +125,7 @@ fi
 | 导出 DOCX / 输出 Word / 字体规范 | `$SKILL_DIR/workflow/docx.md` |
 | 配置管理 / setup / show / set / validate | `$SKILL_DIR/workflow/config.md` |
 | 生成架构图 / 流程图 / 拓扑图 | drawio plugin（按其 SKILL.md 指引） |
-| 生成业务配图 / 概念示意 / 海报 | ai-image plugin（按其 SKILL.md 指引） |
+| 生成业务配图 / 概念示意 / 海报 | ai-image plugin（结构化场景如信息图 / UI 截图 / 学术图，按 ai-image SKILL.md §模板驱动生成走 templates/）|
 | 浏览器操作 / 访问登录态站点 / Confluence 等 | web-access plugin（按其 SKILL.md 指引） |
 | 维护本框架本身（创建新 workflow / 编辑现有 workflow） | `$SKILL_DIR/../../docs/writing-skills.md` |
 
@@ -194,7 +194,7 @@ Task(
 4. **未修复不可继续** — 审查发现的问题必须修复并重新通过审查后，才能进入下一个任务
 5. **不可跳过头脑风暴** — 任何方案撰写前必须经过 brainstorming 提取需求，无论需求看起来多明确
 6. **不可跳过知识检索** — 撰写前必须执行 knowledge-retrieval，检索结果必须反映在撰写子智能体拿到的素材中
-7. **不可跳过配图规划** — 撰写前必须检查计划中的配图需求字段，若需要配图则必须生成配图方案（drawio / ai-image 调用）并传给撰写子智能体（配图需求明确为"无"的任务除外）。ASCII 文本图表不能替代正式配图
+7. **不可跳过配图规划** — 撰写前必须检查计划中的配图需求字段，若需要配图则必须生成配图方案（drawio / ai-image 调用）并传给撰写子智能体（配图需求明确为"无"的任务除外）。ASCII 文本图表不能替代正式配图。结构化配图（信息图 / 流程图 / 系统架构 / 学术图）优先调 ai-image templates/ 避免重写 prompt
 
 不要以"太简单"、"已经很清楚"、"自己检查过"、"先写完再说"等借口绕过任何规则。
 </EXTREMELY-IMPORTANT>
