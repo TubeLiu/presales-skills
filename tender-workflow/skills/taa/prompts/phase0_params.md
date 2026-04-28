@@ -135,7 +135,7 @@ taa:
 
 从用户指令中解析以下参数（`-h`/`--help` 除外）：
 
-1. **`--vendor`**：若用户提供 `--vendor "厂商名"` → `VENDOR_NAME = 用户提供的厂商名`；否则 → 读 `taa.vendor` config（`python3 $TW_DIR/skills/twc/tools/tw_config.py get taa.vendor`），仍为空 → **报错并引导用户**：`vendor 未配置。请运行 /twc setup 或 tw_config.py set taa.vendor <你的厂商名>，或在命令行加 --vendor`
+1. **`--vendor`**：若用户提供 `--vendor "厂商名"` → `VENDOR_NAME = 用户提供的厂商名`；否则 → 读 `taa.vendor` config（`python3 $SKILL_DIR/../twc/tools/tw_config.py get taa.vendor`），仍为空 → **报错并引导用户**：`vendor 未配置。请运行 /twc setup 或 /twc set taa.vendor <你的厂商名>，或在命令行加 --vendor`
 2. **`--product`**：产品能力说明书路径（见下方解析规则）
 3. **`--build-index`**：仅构建索引标志
 4. **`--save-index`**：保存索引标志

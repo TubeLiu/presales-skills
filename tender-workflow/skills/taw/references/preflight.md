@@ -90,10 +90,9 @@
 ### --vendor
 
 - 含 `--vendor <名>` → `VENDOR_NAME=<名>`
-- 否则 → 读 `taa.vendor` config（`python3 $TW_DIR/skills/twc/tools/tw_config.py get taa.vendor`）
+- 否则 → 读 `taa.vendor` config（`python3 $SKILL_DIR/../twc/tools/tw_config.py get taa.vendor`）
 - config 也为空 → **报错并引导用户**，不要用空字符串继续：
-  > `vendor 未配置。请运行 /twc setup 或 python3 $TW_DIR/skills/twc/tools/tw_config.py set taa.vendor <你的厂商名>`
-  > `或在命令行临时指定 --vendor <名>`
+  > `vendor 未配置。请运行 /twc setup 或 /twc set taa.vendor <你的厂商名>，或在命令行临时指定 --vendor <名>`
 - Phase 0 完成后立即把所有 `{VENDOR_NAME}` 占位符替换
 
 ### --search-tool

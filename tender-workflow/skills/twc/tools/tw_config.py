@@ -531,7 +531,7 @@ def validate() -> List[str]:
     if not vendor:
         issues.append(
             "taa.vendor 未设置（生成的投标文件 / 招标分析会出现空厂商名）。"
-            "运行 /twc setup 或：python3 $TW_DIR/skills/twc/tools/tw_config.py set taa.vendor <你的厂商名>"
+            "运行 /twc setup 或 /twc set taa.vendor <你的厂商名>"
         )
 
     # AI 生图配置由 ai-image plugin 管理；轻量检查 ~/.config/presales-skills/config.yaml 是否存在
