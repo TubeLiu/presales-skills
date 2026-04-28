@@ -177,7 +177,7 @@ ai_image:
 长章节（H3 ≥ 3 且目标字数 ≥ 4500）`taw` 自动启用并行写作：
 
 ```
-Phase 2A 主 session 准备素材 + image_plan（KB / Web / AI 配图全部本地化）
+Phase 2A 主 session 准备素材 + image_plan（KB / Web / AI 配图全部本地化；结构化 AI 配图自动走 ai-image 79 模板）
    ↓
 Phase 2B 并发分派 H3 writer subagent（Read agents/writer.md）
    ↓

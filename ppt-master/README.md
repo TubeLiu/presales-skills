@@ -18,6 +18,8 @@ PPT Master 是 [presales-skills](https://github.com/Alauda-io/presales-skills) m
 
 PPT Master 是一个在 AI IDE（Claude Code / Cursor / VS Code + Copilot / Codebuddy 等）里运行的 Claude Code skill。你在对话框里描述需求——"用这份 PDF 做一份 PPT"——skill 会带 AI 走一套多阶段管线：源文档抽取 → 策略师（strategist）→ 配图 → 执行者（executor）→ 后处理 → PPTX 导出。
 
+> 📐 **结构化配图走模板**：当某页需要 Bento grid 信息图、政策风 slide、教育图解 slide、图形摘要等结构化样式时，会自动从 ai-image 的 79 个内置模板里挑匹配项填槽位生图，比自由 prompt 输出稳定得多。
+
 ```
 源文档 → 创建项目 → 选择模板 → 策略师 → [配图生成器]
   → 执行者 → 后处理 → 导出 PPTX
