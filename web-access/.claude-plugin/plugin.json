@@ -1,7 +1,7 @@
 {
   "name": "web-access",
   "description": "联网操作 + CDP 浏览器自动化 skill（搜索、网页抓取、登录后操作、浏览器自动化、CDP 远程调试）。slash 调用 /web-access:browse 或自然语言触发。独立 plugin，solution-master 可选依赖（cdp_sites.enabled=true 时必需）。",
-  "version": "1.0.2",
+  "version": "1.0.1",
   "author": {
     "name": "LiuZiJiao"
   },

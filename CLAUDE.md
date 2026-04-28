@@ -27,29 +27,27 @@
 
 **不要** "顺手" 把别的 plugin 也 +1。只 bump 改动涉及的 plugin entry，其他不动——这样用户升级只会拉到你改的，不会被误更新别的。
 
+### 关键判别准则（先看这条）
+
+**这次改动会让用户 `/plugin update` 后看到不同的"东西"吗？**
+
+- **运行时行为变化**（功能 / 命令 / 工作流 / 配置生效路径）→ 必须 bump
+- **plugin 元数据变化**（`description` / `homepage` / `repository` / `name` / `version` 等用户可见的 marketplace 字段）→ 必须 bump
+- **纯文字 nit**（typo / 删冗余 / 措辞调整 / 标点 / 排版）→ **不 bump**，无论文件位于何处
+
 ### 不需要 bump 的改动
 
-**仓库根级文档**——`README.md` / `CLAUDE.md` / `docs/` / `tests/`——这些**不随任何 plugin 分发**（plugin install 拉的是 `<plugin>/.claude-plugin/plugin.json` 的 `installPath`，即各 plugin 子目录，不含仓库根）。改它们不影响任何已装客户端，所以 `plugin.json` / `marketplace.json` 都**不动**。
+- **仓库根级文档**：`README.md` / `CLAUDE.md` / `docs/` / `tests/` / `.gitignore`（不进任何 plugin 分发物）
+- **plugin 内的纯文字 nit**：plugin README/SKILL.md/workflow 内的 typo、冗余删除、措辞调整——只要不改语义、不改命令、不改流程
+- **dev 工具**：`.claude/commands/`、`tests/` 内新增 / 修改
 
-例子：
-
-- 改 repo 根 `README.md` → 不 bump
-- 改 `docs/architecture.md` → 不 bump
-- 改 `CLAUDE.md`（本文件）→ 不 bump
-- 加 `tests/test_*.py` → 不 bump
-- 改 `.gitignore` / `.github/` → 不 bump
-
-### bump level 规则（影响 plugin 分发物时才适用）
+### bump level 规则（影响功能或元数据时才适用）
 
 | 改动类型 | level | 例子 |
 |---|---|---|
-| 修 plugin 内 bug / 改 plugin 内文档（SKILL.md / `<plugin>/README.md` / `<plugin>/CLAUDE.md`）/ 内部重构 | **patch +1** | `1.0.0 → 1.0.1` |
-| 破坏性变更（删 SKILL / 改命令字符串 / 改 sub-skill dir 名 / 改公开入口 / 改 bin 命名）| **minor +1** | `1.0.0 → 1.1.0` |
-| marketplace 整体重构（影响所有用户）| **major +1** | `1.x → 2.0.0`(commit message + marketplace.json description 醒目说明) |
-
-> ⚠️ 关键判别：**这次改动会让用户 `/plugin update` 后看到不同的运行时行为吗？**
-> - 是 → 必须 bump（patch / minor / major 看影响面）
-> - 否（仓库根级文档 / 测试 / dev 工具）→ 不 bump，三处版本号原样不动
+| 修 plugin 内 bug / 改影响行为的文档（SKILL description / 工作流步骤 / CLI 参数 / 必读教程）/ 改 plugin 元数据（description / homepage / repository）/ 内部重构 | **patch +1** | `1.0.0 → 1.0.1` |
+| 破坏性变更（删 SKILL / 改命令字符串 / 改 sub-skill dir 名 / 改公开入口 / 改 bin 命名 / 改默认行为）| **minor +1** | `1.0.0 → 1.1.0` |
+| marketplace 整体重构（影响所有用户）| **major +1** | `1.x → 2.0.0`（commit message + marketplace.json description 醒目说明） |
 
 > ⚠️ 不按"才发了几分钟"打折——破坏公开入口 = minor，不论上一版多新。
 >
