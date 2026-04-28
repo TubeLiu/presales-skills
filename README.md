@@ -47,33 +47,40 @@
 
 ```
 /plugin marketplace add Alauda-io/presales-skills
-/plugin install ai-image@presales-skills
-/plugin install web-access@presales-skills
-/plugin install drawio@presales-skills
-/plugin install anythingllm-mcp@presales-skills        # 可选
-/plugin install solution-master@presales-skills
-/plugin install ppt-master@presales-skills
-/plugin install tender-workflow@presales-skills
-/plugin install skill-optimizer@presales-skills        # 可选（开发者工具：审查 / 优化 skill 自身）
-/reload-plugins
 ```
 
-依赖顺序：先装共享 plugin，再装主 plugin。`anythingllm-mcp` 可选，未装时主 plugin 自动降级为本地 YAML 索引 + 联网检索。`skill-optimizer` 可选，仅在你打算审查 / 优化 skill 时装。
+添加 marketplace 后，剩余安装步骤都在 `/plugins` UI 里完成（不用逐个敲 install 命令）：
+
+**Step 1 — `/plugins` 进 Marketplaces tab，看到 presales-skills 已添加**
+
+![Step 1 — Marketplaces tab 找到 presales-skills](docs/images/install/install-1.png)
+
+**Step 2 — 方向键移到 presales-skills 回车，选 Browse plugins**
+
+![Step 2 — manage menu 选 Browse plugins](docs/images/install/install-2.png)
+
+**Step 3 — Discover tab 列出全部 plugin。空格多选 → `i` 批量安装（推荐），或回车单选某个组件单独安装**
+
+![Step 3 — Discover tab 批量安装](docs/images/install/install-3.png)
+
+**Step 4 — `/reload-plugins` 加载（或退出 Claude Code 重进，更保险）**
+
+![Step 4 — /reload-plugins 加载](docs/images/install/install-4.png)
 
 预期 reload 输出：`8 plugins · 11 skills · 1 hook · 1 plugin MCP server`
 - 1 hook：solution-master 的 SessionStart 注入主 SKILL（仅在 SM 项目内 cwd 时触发）
 - 1 MCP server：`anythingllm`（来自 anythingllm-mcp plugin；不装时无）
 
+依赖顺序：先装共享 plugin（ai-image / web-access / drawio / anythingllm-mcp），再装主 plugin（solution-master / ppt-master / tender-workflow）。`anythingllm-mcp` 可选，未装时主 plugin 自动降级为本地 YAML 索引 + 联网检索；`skill-optimizer` 可选，仅在你打算审查 / 优化 skill 时装。
+
 也支持本地路径：`/plugin marketplace add /path/to/presales-skills`
 
-#### Granular install 示例
+#### 单独安装某个 plugin（可选）
 
-只装一两个 plugin 也完全可行（每个 plugin 独立运行）：
+只装一两个 plugin 也完全可行——每个 plugin 独立运行。Step 3 用回车单选即可，或者直接敲命令：
 
 ```
-/plugin install drawio@presales-skills              # 仅画图
-/plugin install ai-image@presales-skills            # 仅 AI 生图
-/plugin install ppt-master@presales-skills + ai-image@presales-skills   # 做 PPT 含 AI 配图
+/plugin install drawio@presales-skills              # 仅装 drawio
 ```
 
 ### 路径 B：Cursor / Codex / OpenCode 等其它 agent
