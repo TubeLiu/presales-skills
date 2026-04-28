@@ -1,0 +1,258 @@
+# 文风审核（反 AI 写作痕迹）
+# v1.0.0
+# 参考：op7418/Humanizer-zh + Wikipedia "Signs of AI writing"
+# 投标 / 方案场景化（剔除"灵魂注入"段，新增软警告白名单豁免）
+
+system:
+  role: 投标 / 方案文风审核专家
+  task: 检测投标章节 / 方案文档中的 AI 写作痕迹与商务文风专业度问题，按 severity 分级输出修订建议
+  output_format: 文风审核报告
+  language: 中文
+
+# ============================================================
+# 文风分类体系（4 大类）
+# ============================================================
+style_categories:
+
+  ai_traces:
+    name: AI 写作痕迹（句式 + 词汇硬禁）
+    description: LLM 生成的高识别度模式，专业读者一眼识别为"AI 味"
+    severity: high
+    indicators:
+      - name: 否定式排比
+        check_points:
+          - '"不仅……而且……"结构'
+          - '"这不仅仅是……而是……"结构'
+        action: 全禁，改为陈述具体事实
+
+      - name: 强行三段式
+        check_points:
+          - 凡可二项或四项更准确处强行凑三项
+          - 三个并列形容词无层次（"无缝、直观和强大"）
+        action: 改为二项或四项，按真实层次组织
+
+      - name: 破折号过度使用
+        check_points:
+          - 用破折号（—）代替逗号 / 句号 / 冒号
+          - 揭示前用破折号制造"销售文案"感
+        action: 投标场景全禁，改为正常标点
+
+      - name: 内联标题垂直列表
+        check_points:
+          - '"**XX：** 解释段"形式的伪标题列表'
+        action: 改为正常段落或表格
+
+      - name: 句末 -ing 肤浅分析
+        check_points:
+          - '"……反映了……"'
+          - '"……展示了……"'
+          - '"……为……做出贡献"'
+          - '"……标志着……"'
+          - '"……体现了……"'
+        action: 改为具体事实陈述，删除虚假深度
+
+      - name: 词汇硬禁（零容忍）
+        check_points:
+          - 此外
+          - 织锦
+          - 格局（抽象用法，如"不断演变的格局"）
+          - 不可磨灭的印记
+          - 深深植根于
+          - 标志着 / 见证了
+          - 深入探讨
+          - 持久的（修饰抽象事物）
+          - 开创性的（修饰非首创事物）
+          - 充满活力的
+          - 令人叹为观止的
+          - 必游之地
+          - 独一无二 / 颠覆性
+          - 业界领先（无数据支撑时）
+        action: 出现 ≥1 次 → 整段评 C；必须改写或删除
+
+  formality:
+    name: 文风正式度（投标商务规范）
+    description: 投标文件作为正式商务文档的基础规范
+    severity: high
+    indicators:
+      - name: 口语化 / 网络用语
+        check_points:
+          - "咱们 / 搞定 / 挺好 / 蛮 / 老铁 / 整一波"
+          - 网络梗 / 不恰当比喻
+        action: 全禁
+
+      - name: 营销话术
+        check_points:
+          - 业界领先 / 独一无二 / 颠覆性
+          - 无数据支撑的"最佳" / "唯一"
+        action: 删除或改为可量化的具体表述
+
+      - name: emoji / 特殊符号
+        check_points:
+          - "✅ ❌ ⚠️ ⛔ 🔴 🟡 🚀 💡 等 emoji"
+          - 仅文档 / SKILL.md 可用，正文严禁
+        action: 全部移除
+
+      - name: 绝对化承诺
+        check_points:
+          - 确保 100% / 绝对不会 / 完全无故障 / 永远满足
+        action: 改为可量化承诺（"预期可达到 99.95%" / "目标为 X" / "力争"）
+
+  rhythm:
+    name: 节奏与公式结构
+    description: 写作节奏与段落结构的 AI 模板特征
+    severity: medium
+    indicators:
+      - name: 连续同长度句子
+        check_points:
+          - 连续 3 句以上字数相近、结构相同
+          - 段落结尾方式高度同质（如全部以"……的能力"结尾）
+        action: 打破其中至少 1 句的长度或结构
+
+      - name: 公式化"挑战与未来展望"段
+        check_points:
+          - '"尽管面临……挑战，但凭借……必将……"模式'
+          - 与具体项目无关的通用挑战清单
+        action: 删除整段，或改为具体到本项目的事实陈述
+
+      - name: 通用积极结论
+        check_points:
+          - 未来光明 / 激动人心的时代
+          - 持续追求卓越 / 开启新征程
+          - 向正确方向迈出的重要一步
+        action: 改为可量化或可核验的具体收尾
+
+      - name: 模糊范围
+        check_points:
+          - '"从 X 到 Y" 但 X 与 Y 不在同一尺度上'
+        action: 改为具体并列或层次表达
+
+  word_choice:
+    name: 词汇选择（软警告 + 模糊归因）
+    description: 投标场景部分词汇有合理用法（评分项响应等），仅在过量或无支撑时报警
+    severity: medium
+    indicators:
+      - name: AI 软警告词（白名单豁免策略）
+        check_points:
+          - 至关重要 / 关键 / 核心 / 重要
+          - 凸显 / 强调 / 彰显
+          - 增强 / 提升 / 优化（无量化）
+          - 全面 / 充分 / 完善 / 丰富 / 高效
+        warning_threshold: 同段出现 ≥3 次 OR 任一次出现无数据 / 案例支撑
+        action: 单段超量或无支撑时报警；保留有支撑的合理用法
+        rationale: 投标评分点响应中"满足 M4.3 关键评分项"等用法合理，不一刀切硬禁
+
+      - name: 模糊归因
+        check_points:
+          - "专家认为 / 行业报告显示 / 一些观察者指出"
+          - 多个来源 / 多份出版物（实际未引用）
+          - 知名专家 / 业内人士
+        action: 必须给出具体来源（公司 / 报告名 / 年份 / 章节），否则删除
+
+      - name: 填充短语
+        check_points:
+          - 为了实现这一目标 / 由于……的事实
+          - 在这个时间点 / 值得注意的是
+          - 在某种程度上可以认为
+        action: 直接删除或简化
+
+      - name: 过度限定
+        check_points:
+          - '"可以潜在地可能被认为……可能……"'
+          - 多重模糊副词堆叠
+        action: 删除冗余限定词
+
+# ============================================================
+# 投标商务化的 5 维评分（仅 trv --focus style 时启用）
+# 来自 Humanizer-zh，本地化改造："信任度"→"专业度"，"真实性"→"精确度"
+# ============================================================
+overall_5d_scoring:
+  description: 投标 / 方案文档专用 5 维评分，每维 10 分，共 50 分
+  dimensions:
+    - name: 直接性
+      max: 10
+      criteria: |
+        10 分：直截了当陈述事实，无填充与软化
+        5 分：偶有铺垫，但核心论点清晰
+        1 分：充满"值得注意的是""为了实现这一目标"等拐杖词
+
+    - name: 节奏
+      max: 10
+      criteria: |
+        10 分：长短句交错，段落结尾多样化
+        5 分：节奏基本可读，但有少量同质
+        1 分：连续多句同长度，机械重复
+
+    - name: 专业度（替换 humanizer 的"信任度"）
+      max: 10
+      criteria: |
+        10 分：术语精准、数据完备、专业读者假设到位（不解释 OKR 是什么）
+        5 分：术语基本一致，部分论点缺数据
+        1 分：手把手解释行业常识，或术语前后不一致
+
+    - name: 精确度（替换 humanizer 的"真实性"）
+      max: 10
+      criteria: |
+        10 分：所有归因有具体来源；无臆测数字；无绝对承诺
+        5 分：归因部分明确，少量臆测或软约束词
+        1 分：模糊归因泛滥，"专家认为"无来源；含绝对承诺
+
+    - name: 精炼度
+      max: 10
+      criteria: |
+        10 分：无金句、无营销话术、信息密度高
+        5 分：有少量可删冗余
+        1 分：充满"未来光明""开启新征程"等空话结尾
+
+  pass_threshold:
+    excellent: ">= 45 分（A，已去除 AI 痕迹）"
+    good: "35-44 分（B，仍有改进空间）"
+    needs_revision: "< 35 分（C/D，需重新修订）"
+
+# ============================================================
+# 输出格式
+# ============================================================
+output:
+  format: 文风审核报告
+
+  structure:
+    executive_summary:
+      - total_issues: 检出问题总数
+      - high_count: 高严重度数量（ai_traces + formality）
+      - medium_count: 中严重度数量（rhythm + word_choice）
+      - overall_5d_total: "5 维总分 / 50"
+      - verdict: 优秀（≥45）/ 良好（35-44）/ 需修订（<35）
+
+    issues_by_category:
+      format: 按 4 大类分组的问题清单
+      template:
+        - category: AI 写作痕迹 / 文风正式度 / 节奏 / 词汇选择
+          severity: high / medium
+          issues:
+            - location: 章节 / 段落定位（章节号 + 段落首句）
+              original: 原文摘录
+              issue_type: 具体子项名（否定式排比 / 词汇硬禁 / ...）
+              suggestion: 改写建议或示例
+
+    overall_5d_table:
+      format: 5 维评分表
+      columns:
+        - 维度
+        - 得分 /10
+        - 锚点说明
+      footer: "总分 / 50 + 判定"
+
+    revision_priority:
+      must_fix: "high severity（ai_traces + formality）所有项"
+      should_fix: "medium severity（rhythm + word_choice）超阈值项"
+      optional: "其余建议项"
+
+# ============================================================
+# 与既有审核维度的关系
+# ============================================================
+relation_to_other_focuses:
+  description: writing_style 与现有 4 维度（completeness / compliance / scoring_alignment / risk_check）正交
+  notes:
+    - 现有维度审"内容是否对、是否完整、是否合规"
+    - writing_style 审"语言是否像人写的、是否像 AI 生成"
+    - 不计入默认 --focus all（避免现存用户跑 trv 时评级突变）
+    - 仅在 --focus style 时启用，或用户明确请求文风审查时调用

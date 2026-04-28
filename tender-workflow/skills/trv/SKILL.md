@@ -97,6 +97,7 @@ fi
   - `compliance`: 仅检查合规性
   - `scoring`: 仅分析评分契合度
   - `risk`: 仅识别风险
+  - `style`: 仅检查文风 / 反 AI 写作痕迹（**不计入默认 all**，需显式指定才启用；详见 `prompts/writing_style.yaml`）
 - `--revise-docx`: 审核完成后自动生成修订版 DOCX（仅对 `.docx` 输入有效，优先支持 `outline` / `chapter` / `full_bid`）
 - `--revise-scope`: 自动修订范围（可选，默认 `must`）
   - `must`: 仅处理必须修改项/严重和重要问题
@@ -136,8 +137,9 @@ fi
    - 如果无效，输出警告并使用默认值 all
 
 6. **解析 --focus 参数**（可选）：
-   - 验证值是否有效（completeness/compliance/scoring/risk）
+   - 验证值是否有效（completeness/compliance/scoring/risk/style）
    - 如果无效，输出警告并忽略
+   - **注意**：`style` 仅在显式指定时启用，**不计入默认全维度审核**（向后兼容，避免现存用户跑 trv 时评级突变）
 
 7. **解析 --revise-docx 参数**（可选）：
    - 若提供该参数，记录 `REVISE_DOCX=true`
@@ -285,11 +287,11 @@ python3 $SKILL_DIR/../twc/tools/tw_config.py get trv default_level
 **步骤**：
 
 1. **如果提供了 --focus 参数**：
-   - 仅执行指定的维度
+   - 仅执行指定的维度（含 `style` 时执行 1.5 文风审核）
    - 输出：`审核维度: <focus_name>`
 
 2. **如果未提供 --focus 参数**：
-   - 执行所有 4 个维度
+   - 执行默认 4 个维度（**不含 style**——向后兼容）
    - 输出：`审核维度: 完整性检查、合规性审查、评分契合度分析、风险识别`
 
 3. **维度执行顺序**：
@@ -297,6 +299,7 @@ python3 $SKILL_DIR/../twc/tools/tw_config.py get trv default_level
    - 1.2 合规性审查（Compliance）
    - 1.3 评分契合度分析（Scoring Alignment）
    - 1.4 风险识别（Risk Check）
+   - 1.5 文风审核（Writing Style，**仅 `--focus style` 时执行**）
 
 ### 1.0.1 上下文模式决策
 
@@ -357,8 +360,17 @@ python3 $SKILL_DIR/../twc/tools/tw_config.py get trv default_level
 | 1.2 合规性 | `compliance` | compliance.yaml | 审查项 / 合规状态 / 法规引用 |
 | 1.3 评分契合度 | `scoring` | scoring_alignment.yaml | 评分项 / 覆盖程度 / 匹配度 |
 | 1.4 风险识别 | `risk` | risk_check.yaml | 风险分类 / 等级 / 应对措施 |
+| 1.5 文风审核 | `style` | writing_style.yaml | AI 痕迹类别 / severity / 5 维评分 |
 
-未指定 `--focus` = 全部 4 维度都执行。
+未指定 `--focus` = 默认执行 1.1-1.4 这 4 维度（**不含 1.5 style**）。要审文风必须显式 `--focus style`。
+
+**1.5 文风审核执行要点**：
+
+- 仅在 `--focus style` 时执行
+- 加载 `prompts/writing_style.yaml` 的 4 大类（ai_traces / formality / rhythm / word_choice）+ 5 维评分
+- 输出独立段落"## 文风审核（writing_style）"嵌入审核报告，含每项检出位置 + 原文 + 改写建议
+- 评分判定：≥45 分（A，优秀）/ 35-44（B，良好）/ <35（C/D，需修订）
+- 与 1.1-1.4 正交：1.1-1.4 审"内容是否对、是否完整、是否合规"，1.5 审"语言是否像 AI 生成"
 
 ---
 
