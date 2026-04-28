@@ -4,6 +4,8 @@
 
 审查和优化已有 Skill，重点看触发语义、工作流门槛、资源组织、安全边界、依赖可安装性，以及 README / SKILL 的职责分层。
 
+> 🙏 **致谢上游**：`references/` 三件套（`review-checklist.md` / `skill-design-review-framework.md` / `skill-creation-best-practices-claude-api-docs.md`）的方法论与原始内容来自 [chujianyun/skills](https://github.com/chujianyun/skills/tree/main/skills/skill-optimizer/references) —— 9 维度审查清单、5 种 Skill 设计模式（Tool Wrapper / Generator / Reviewer / Inversion / Pipeline）、Anthropic Skill 创作最佳实践。本仓直接 vendor 这三份 ref 作为 skill-optimizer 的设计基线。感谢 chujianyun 的开源工作。
+
 ## Slash 入口
 
 | 触发方式 | 形式 |

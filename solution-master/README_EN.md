@@ -2,7 +2,9 @@
 
 [中文](./README.md) | **English**
 
-**A plugin that makes Claude Code produce delivery-grade solution documents.** Solution Master is not "another prompt template" — it assembles Socratic requirement extraction, isolated subagent writing, two-stage independent review, four-source knowledge fusion, and enterprise-grade DOCX layout into one auditable pipeline. Every solution goes through a "write → review content → review writing-quality" closed loop, not a one-shot "write and ship".
+**A plugin that makes Claude Code produce delivery-grade solution documents.**
+
+> 🙏 **Upstream attribution**: the SessionStart hook injection mechanism, the two-stage subagent review framework (writer / spec-reviewer / quality-reviewer roles + "do not trust the report" principle), `<HARD-GATE>` anti-rationalization tags, iron-rule injection-text format, and other core anti-derail mechanisms are vendored from [jnMetaCode/superpowers-zh](https://github.com/jnMetaCode/superpowers-zh) (MIT License © 2026 jnMetaCode; upstream English original: [obra/superpowers](https://github.com/obra/superpowers) © Jesse Vincent). This repo adapts the layout from superpowers-zh to solution-master conventions (role rename `implementer` → `writer`, `code-reviewer` → `quality-reviewer`, wording shifted from code development to document writing, injection text rewritten for Solution Master context). Thanks to the upstream authors. See [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md) for the full borrowed-files list, change notes relative to upstream, and the original LICENSE. Solution Master is not "another prompt template" — it assembles Socratic requirement extraction, isolated subagent writing, two-stage independent review, four-source knowledge fusion, and enterprise-grade DOCX layout into one auditable pipeline. Every solution goes through a "write → review content → review writing-quality" closed loop, not a one-shot "write and ship".
 
 ### Why not just "ask Claude to write a solution"
 

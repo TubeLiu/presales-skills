@@ -4,6 +4,8 @@
 
 Review and optimize existing Skills, focusing on trigger semantics, workflow gates, resource organization, safety boundaries, dependency installability, and the division of responsibility between README and SKILL.
 
+> 🙏 **Upstream attribution**: the methodology and original content of the `references/` triplet (`review-checklist.md` / `skill-design-review-framework.md` / `skill-creation-best-practices-claude-api-docs.md`) come from [chujianyun/skills](https://github.com/chujianyun/skills/tree/main/skills/skill-optimizer/references) — the 9-dimension review checklist, 5 Skill design patterns (Tool Wrapper / Generator / Reviewer / Inversion / Pipeline), and Anthropic Skill creation best practices. This repo directly vendors the three refs as the design baseline for skill-optimizer. Thanks to chujianyun for the open-source work.
+
 ## Slash entry points
 
 | Trigger | Form |
