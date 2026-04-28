@@ -57,35 +57,9 @@
 2. **强化的子智能体 prompts** — `agents/spec-reviewer.md` + `agents/quality-reviewer.md` 保留 vendored from superpowers-zh 的"不要信任报告"原文段，强制审查者亲自 Read 文件逐条核对。
 3. **HARD-GATE 标签** — `workflow/brainstorming.md` 等用 `<HARD-GATE>` 框住"不可绕过"检查点（如"未获用户批准前不能开写"），prompt engineering 强制约束。
 
-## 安装
-
-### Claude Code（主要用户）
-
-```
-/plugin marketplace add TubeLiu/presales-skills     # 或本地路径 /path/to/presales-skills
-/plugin install solution-master@presales-skills
-/reload-plugins
-```
-
-安装后 Claude Code 会自动：
-- 设置 `${CLAUDE_PLUGIN_ROOT}` 指向 plugin 目录
-- 加载 `.claude-plugin/plugin.json`
-- 注册 `hooks/hooks.json` 中的 SessionStart hook
-- 发现 `skills/go/SKILL.md`
-
-**验证**：`/plugin list`
-
-**卸载**：`/plugin uninstall solution-master@presales-skills` + `/plugin marketplace remove presales-skills`
-
-### Cursor / Codex / OpenCode（其它 agent）
-
-```bash
-npx skills add TubeLiu/presales-skills -a <agent>   # vercel-labs/skills CLI
-```
-
-注：vercel CLI 装到 Codex/Cursor 时按 SKILL.md `name:` 字段建 `.agents/skills/<name>/`。本 plugin 是 `name: solution-master`，slash 短形式 `/solution-master`（distinctive，与 Claude Code canonical `/solution-master:go` 互补）。
-
-完整跨 agent 兼容性矩阵见仓库外层 [README.md](https://github.com/TubeLiu/presales-skills#readme)。
+> **安装**：见仓库根 [README.md#安装](../README.md#安装)（Claude Code marketplace 与 Cursor / Codex / OpenCode 跨 agent 装载都在那里）。
+>
+> 装好后 Claude Code 会自动设置 `${CLAUDE_PLUGIN_ROOT}` 指向 plugin 目录、注册 `hooks/hooks.json` 中的 SessionStart hook、发现 `skills/go/SKILL.md`。验证：`/plugin list`。卸载：`/plugin uninstall solution-master@presales-skills`。
 
 ## 快速开始
 

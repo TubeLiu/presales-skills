@@ -9,16 +9,7 @@ AnythingLLM MCP server — 提供知识库语义搜索能力，被 `presales-ski
 
 Claude Code 会把它们暴露为 `mcp__anythingllm__anythingllm_search` 和 `mcp__anythingllm__anythingllm_list_workspaces`。
 
-## 安装
-
-作为 `presales-skills` marketplace 的一员安装：
-
-```
-/plugin marketplace add TubeLiu/presales-skills
-/plugin install anythingllm-mcp@presales-skills
-```
-
-插件安装后，Claude Code 会根据 `plugin.json` 里的 `mcpServers` 字段自动注册 `anythingllm` MCP server，无需手工改写 `~/.claude.json`。
+> **安装**：见仓库根 [README.md#安装](../README.md#安装)。装好后 Claude Code 会根据 `plugin.json` 的 `mcpServers` 字段自动注册 `anythingllm` MCP server，无需手工改写 `~/.claude.json`。
 
 ## 配置（环境变量）
 

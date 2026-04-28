@@ -29,20 +29,7 @@ PPT Master 是一个在 AI IDE（Claude Code / Cursor / VS Code + Copilot / Code
 
 ---
 
-## 安装（Claude Code plugin）
-
-ppt-master 作为 `presales-skills` umbrella marketplace 的成员 plugin 分发：
-
-```
-/plugin marketplace add TubeLiu/presales-skills
-/plugin install ppt-master@presales-skills
-/plugin install ai-image@presales-skills        # 必需：AI 配图能力
-/reload-plugins
-```
-
-安装后，内置 SKILL 会自动响应 "做 PPT" / "生成 PPT" / "做演示稿" / "make a PPT" / "generate slides" 等触发语。Claude 通过 `${CLAUDE_SKILL_DIR}/scripts/...` 调用内部脚本——**plugin 模式下你不需要手动 cd 进项目或执行下文的脚本**。
-
-完整 marketplace 安装步骤见 umbrella [README](https://github.com/TubeLiu/presales-skills#readme)。
+> **安装**：见仓库根 [README.md#安装](../README.md#安装)。装好后内置 SKILL 会自动响应"做 PPT" / "生成 PPT" / "做演示稿" / "make a PPT" / "generate slides" 等触发语，Claude 通过 `${CLAUDE_SKILL_DIR}/scripts/...` 调用内部脚本——**plugin 模式下你不需要手动 cd 进项目或执行下文的脚本**。
 
 ### 配置 AI 图片生成
 

@@ -4,21 +4,7 @@
 
 ---
 
-## 安装（Claude Code plugin）
-
-`tender-workflow` 是 `presales-skills` umbrella marketplace 的成员 plugin：
-
-```bash
-/plugin marketplace add TubeLiu/presales-skills
-/plugin install drawio@presales-skills
-/plugin install ai-image@presales-skills
-/plugin install anythingllm-mcp@presales-skills        # 可选；不装则降级为本地索引或联网
-/plugin install tender-workflow@presales-skills
-```
-
-装完即可在任意目录调用 `/tpl` `/taa` `/taw` `/trv` `/twc` 五个命令。
-
-源码模式（直接 `cd` 进本目录）也可工作，下文 `python skills/...` 命令在源码模式下直接执行。
+> **安装**：见仓库根 [README.md#安装](../README.md#安装)。装完即可在任意目录调用 `/tpl` `/taa` `/taw` `/trv` `/twc` 五个命令。源码模式（直接 `cd` 进本目录）也可工作，下文 `python skills/...` 命令在源码模式下直接执行。
 
 ---
 

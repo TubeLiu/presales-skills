@@ -72,34 +72,9 @@ AI Agent 原本的联网能力（WebSearch、WebFetch）缺少调度策略和浏
 - **子 Agent prompt 指引优化** — 明确加载写法，增加避免动词暗示执行方式的说明
 </details>
 
-## 安装
-
-**方式一：npx skills 一键安装（推荐）**
-
-```bash
-npx skills add eze-is/web-access
-```
-
-> [skills CLI](https://github.com/vercel-labs/skills) 是开源的 Agent Skill 包管理器，自动检测你的 Agent 环境并安装到正确位置。
-
-**方式二：让 Agent 自动安装**
-
-```
-帮我安装这个 skill：https://github.com/eze-is/web-access
-```
-
-**方式三：Plugin 安装（Claude Code）**
-
-```bash
-claude plugin marketplace add https://github.com/eze-is/web-access
-claude plugin install web-access@web-access --scope user
-```
-
-**方式四：作为 presales-skills umbrella marketplace 的成员 plugin 安装**
-
-```bash
-/plugin install web-access@presales-skills
-```
+> **安装**：见仓库根 [README.md#安装](../../../README.md#安装)（作为 `presales-skills` umbrella marketplace 的 shared plugin 一并装）。
+>
+> 上游独立分发：[eze-is/web-access](https://github.com/eze-is/web-access)（不通过 presales-skills 时的独立装载路径）。
 
 ## 前置配置（CDP 模式）
 
