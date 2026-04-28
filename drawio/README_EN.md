@@ -4,6 +4,8 @@
 
 Generate `.drawio` XML files via natural language, with optional PNG / SVG / PDF / JPG export (requires draw.io desktop CLI).
 
+> 🙏 **Upstream attribution**: This plugin is vendored from [Agents365-ai/drawio-skill](https://github.com/Agents365-ai/drawio-skill) v1.4.0 (MIT License) and adapted to the presales-skills marketplace conventions — the SKILL.md, references, styles, assets, and the 6 diagram presets all follow upstream design and implementation. Thanks to the Agents365-ai team for the open-source work. See [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md) for the full borrowed-files list, change notes relative to upstream, and the original LICENSE.
+
 ## Slash entry points
 
 | Trigger | Form |

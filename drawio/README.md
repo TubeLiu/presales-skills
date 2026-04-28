@@ -4,6 +4,8 @@
 
 通过自然语言生成 `.drawio` XML 文件，可选导出 PNG / SVG / PDF / JPG（依赖 draw.io desktop CLI）。
 
+> 🙏 **致谢上游**：本 plugin 基于 [Agents365-ai/drawio-skill](https://github.com/Agents365-ai/drawio-skill) v1.4.0（MIT License）vendor + 适配 presales-skills marketplace 体例改写而来——SKILL.md、references、styles、assets 以及 6 种 diagram preset 均沿用上游设计与实现。感谢 Agents365-ai 团队的开源工作。详细借用清单、相对 upstream 的改写说明以及原项目 LICENSE 见 [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md)。
+
 ## Slash 入口
 
 | 触发方式 | 形式 |
