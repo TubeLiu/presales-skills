@@ -1,5 +1,7 @@
 # trv — 招投标审核助手
 
+**中文** | [English](./README_EN.md)
+
 **trv**（Tender Reviewer）对招标文件、分析报告、投标大纲、章节草稿、完整标书进行多维度审核。
 
 **版本**：v1.5.0 | **详细文档**：[SKILL.md](./SKILL.md)

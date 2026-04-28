@@ -1,25 +1,27 @@
-# User Project Workspace
+# 用户项目工作区
 
-This directory is used for storing in-progress projects.
+**中文** | [English](./README_EN.md)
 
-## Create a New Project
+此目录用于存放进行中的项目。
+
+## 新建项目
 
 ```bash
 python3 skills/make/scripts/project_manager.py init my_project --format ppt169
 ```
 
-## Directory Structure
+## 目录结构
 
-A typical project usually contains the following:
+典型项目通常包含以下内容：
 
 ```
 project_name_format_YYYYMMDD/
 ├── README.md
 ├── design_spec.md
 ├── sources/
-│   ├── Raw files / URL archives / Converted Markdown
-│   └── *_files/                  # Markdown companion resource directory (e.g., images)
-├── images/                       # Image assets used by the project
+│   ├── 原始文件 / URL 归档 / 转换后的 Markdown
+│   └── *_files/                  # Markdown 配套资源目录（如图片）
+├── images/                       # 项目使用的图片资源
 ├── notes/
 │   ├── 01_xxx.md
 │   ├── 02_xxx.md
@@ -30,19 +32,19 @@ project_name_format_YYYYMMDD/
 ├── svg_final/
 │   ├── 01_xxx.svg
 │   └── ...
-├── templates/                    # Project-level templates (if any)
+├── templates/                    # 项目级模板（如有）
 ├── *.pptx
-└── image_analysis.csv            # Optional, image scan analysis results
+└── image_analysis.csv            # 可选，图片扫描分析结果
 ```
 
-Projects can remain at different stages and do not necessarily have all artifacts at once. For example:
+项目可处于不同阶段，未必同时具备所有产物。例如：
 
-- Only `sources/` archiving and the Design Specification & Content Outline (design_spec) are complete
-- `svg_output/` has been generated, but post-processing has not yet been executed
-- `svg_final/`, `notes/`, and `*.pptx` are all complete
+- 仅完成 `sources/` 归档与设计规范 & 内容大纲（design_spec）
+- `svg_output/` 已生成，但后处理尚未执行
+- `svg_final/`、`notes/`、`*.pptx` 全部完成
 
-## Notes
+## 备注
 
-- Contents under this directory are excluded by `.gitignore`
-- Completed projects can be moved to the `examples/` directory for sharing
-- Files outside the workspace are copied by default; files within the workspace are moved directly to the project's `sources/`
+- 此目录下内容被 `.gitignore` 排除
+- 完成的项目可移到 `examples/` 目录分享
+- 工作区外的文件默认复制进来；工作区内的文件直接移到项目的 `sources/` 下

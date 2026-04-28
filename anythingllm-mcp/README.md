@@ -1,5 +1,7 @@
 # anythingllm-mcp
 
+**中文** | [English](./README_EN.md)
+
 AnythingLLM MCP server — 提供知识库语义搜索能力，被 `presales-skills` 下的其他 plugin（`solution-master`、`tender-workflow` 等）共用。
 
 ## 暴露的 MCP 工具

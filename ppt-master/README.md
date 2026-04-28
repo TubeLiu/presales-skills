@@ -1,16 +1,10 @@
 # ppt-master
 
+**中文** | [English](./README_EN.md)
+
 PPT Master 是 [presales-skills](https://github.com/TubeLiu/presales-skills) marketplace 中的一个 plugin，将 PDF / DOCX / URL / Markdown 等多源文档转换为**原生可编辑的 PPTX**——真正的 PowerPoint 形状、文本框、图表，不是图片。
 
-[English](./README.md) | [中文](./README_CN.md)
-
-<p align="center">
-  <img src="https://github.com/TubeLiu/presales-skills/releases/download/ppt-master-assets-v1/hero-liziqi-colors.gif" alt="演示：端到端生成 12 页 PPT" width="860" />
-</p>
-
-<p align="center">
-  <sub>↑ 一份 12 页的原生可编辑 PPT，端到端由 <a href="https://mp.weixin.qq.com/s/6ZmBl0uE3sOtD8TJcHfNAw">一个微信公众号链接</a> 生成。每一个形状、文本框、图表都可以在 PowerPoint 里直接点击编辑。</sub>
-</p>
+> 🙏 **致谢上游**：本 plugin 基于 [hugohe3/ppt-master](https://github.com/hugohe3/ppt-master)（MIT License © 2025-2026 Hugo He）vendor + 适配 presales-skills marketplace 体例改写而来——核心流水线、SKILL.md 主体、22 个内置 layout 与脚本工具均沿用上游设计与实现。感谢 Hugo He 的开源工作。详细借用文件清单、相对 upstream 的改写说明以及原项目 LICENSE 全文见 [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md)。
 
 ---
 
@@ -59,25 +53,6 @@ AI：好的，先确认设计规范：
 输出：两个带时间戳的文件保存到 `exports/` —— 原生形状版 `.pptx`（可直接编辑）和 `_svg.pptx` 快照版（视觉参考备份）。需要 Office 2016+。
 
 如果 AI 中途丢失上下文，让它先读 `skills/make/SKILL.md`。
-
----
-
-## 效果展示
-
-<table>
-  <tr>
-    <td align="center"><img src="https://github.com/TubeLiu/presales-skills/releases/download/ppt-master-assets-v1/preview_magazine_garden.png" alt="杂志风" width="400"/><br/><sub><b>杂志风</b> — 暖色调，大图排版，生活方式感</sub></td>
-    <td align="center"><img src="https://github.com/TubeLiu/presales-skills/releases/download/ppt-master-assets-v1/preview_academic_medical.png" alt="学术风" width="400"/><br/><sub><b>学术风</b> — 严谨结构，数据图表，论文答辩场景</sub></td>
-  </tr>
-  <tr>
-    <td align="center"><img src="https://github.com/TubeLiu/presales-skills/releases/download/ppt-master-assets-v1/preview_dark_art_mv.png" alt="暗色艺术风" width="400"/><br/><sub><b>暗色艺术风</b> — 电影感深色背景，美术馆陈列感</sub></td>
-    <td align="center"><img src="https://github.com/TubeLiu/presales-skills/releases/download/ppt-master-assets-v1/preview_nature_wildlife.png" alt="自然风" width="400"/><br/><sub><b>自然纪录风</b> — 沉浸式摄影，简洁信息层级</sub></td>
-  </tr>
-  <tr>
-    <td align="center"><img src="https://github.com/TubeLiu/presales-skills/releases/download/ppt-master-assets-v1/preview_tech_claude_plans.png" alt="科技 / SaaS 风" width="400"/><br/><sub><b>科技 / SaaS 风</b> — 白底卡片，定价表格，产品说明书</sub></td>
-    <td align="center"><img src="https://github.com/TubeLiu/presales-skills/releases/download/ppt-master-assets-v1/preview_launch_xiaomi.png" alt="发布会风" width="400"/><br/><sub><b>发布会风</b> — 高对比度，参数突出，发布会感</sub></td>
-  </tr>
-</table>
 
 ---
 
@@ -131,7 +106,3 @@ PPT Master 用 SVG 作为中间格式，再转换为原生 DrawingML 供 PowerPo
 ## 致谢
 
 [SVG Repo](https://www.svgrepo.com/) · [Tabler Icons](https://github.com/tabler/tabler-icons) · [Robin Williams](https://en.wikipedia.org/wiki/Robin_Williams_(author))（CRAP 设计原则）· 麦肯锡、BCG、贝恩
-
-## 第三方组件
-
-本 plugin vendor 自 [hugohe3/ppt-master](https://github.com/hugohe3/ppt-master)（MIT License © 2025-2026 Hugo He）。详细借用文件清单、相对 upstream 的改写说明以及原项目 LICENSE 全文见 [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md)。

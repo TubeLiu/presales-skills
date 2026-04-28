@@ -1,5 +1,7 @@
 # skill-optimizer plugin — Skill 审查与优化
 
+**中文** | [English](./README_EN.md)
+
 审查和优化已有 Skill，重点看触发语义、工作流门槛、资源组织、安全边界、依赖可安装性，以及 README / SKILL 的职责分层。
 
 ## Slash 入口

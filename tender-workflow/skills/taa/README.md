@@ -1,5 +1,7 @@
 # Tender Assistant — 招标分析助手
 
+**中文** | [English](./README_EN.md)
+
 > 一条命令，从百页招标文件到可执行的投标策略。
 
 **Tender Assistant** 是一个 **Claude Code** AI Skill，专为售前投标团队打造。它能深度解读招标文件，自动生成结构化的 **招标分析报告（.md）** 和 **投标文件大纲（.docx）**，将原本需要数小时的人工通读、摘录、整理工作压缩到几分钟完成。

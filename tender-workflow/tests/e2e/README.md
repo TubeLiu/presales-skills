@@ -1,5 +1,7 @@
 # 端到端测试使用指南
 
+**中文** | [English](./README_EN.md)
+
 ## 概述
 
 本测试框架用于验证 tender-workflow 系统从 taa（招标分析）到 taw（章节撰写）的完整流程质量。

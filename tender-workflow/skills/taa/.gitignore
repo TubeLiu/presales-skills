@@ -13,6 +13,7 @@
 
 # 允许项目说明文件
 !README.md
+!README_EN.md
 !CHANGELOG.md
 
 # 允许 prompts 目录及其 yaml 文件

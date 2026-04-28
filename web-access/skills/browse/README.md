@@ -18,6 +18,8 @@
   </details>
 </div>
 
+**中文** | [English](./README_EN.md)
+
 <img width="879" height="376" alt="image" src="https://github.com/user-attachments/assets/a87fd816-a0b5-4264-b01c-9466eae90723" />
 
 <p align="center">

@@ -1,5 +1,7 @@
 # drawio plugin — Draw.io 图表生成
 
+**中文** | [English](./README_EN.md)
+
 通过自然语言生成 `.drawio` XML 文件，可选导出 PNG / SVG / PDF / JPG（依赖 draw.io desktop CLI）。
 
 ## Slash 入口

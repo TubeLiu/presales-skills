@@ -1,5 +1,7 @@
 # presales-skills — 售前工作 skill 集合
 
+**中文** | [English](./README_EN.md)
+
 面向售前 / 解决方案 / 咨询场景的 SKILL 集合，统一通过 marketplace 分发。
 
 **目标用户**：做售前 / 写方案 / 招投标 / 做 PPT 的人，希望帮助大家少掉头发，多产输出；少熬夜加班，多陪陪自己和家人。
