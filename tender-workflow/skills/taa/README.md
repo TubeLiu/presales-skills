@@ -26,14 +26,6 @@
 
 **需求全覆盖校验** — Part C 需求-章节对应表确保招标文件中所有【必须】条款都有对应大纲章节，防止关键需求遗漏。
 
-## 安装
-
-**Claude Code**：
-
-```bash
-git clone https://github.com/TubeLiu/tender-assistant-skills ~/.claude/skills/tender-assistant
-```
-
 ## 使用方法
 
 在 Claude Code 中执行：

@@ -26,14 +26,6 @@
 
 **Full requirement coverage check** — Part C requirement-to-chapter mapping ensures every【mandatory】clause in the tender doc has a corresponding outline chapter, preventing key requirements from being missed.
 
-## Installation
-
-**Claude Code**:
-
-```bash
-git clone https://github.com/TubeLiu/tender-assistant-skills ~/.claude/skills/tender-assistant
-```
-
 ## Usage
 
 Run in Claude Code:
