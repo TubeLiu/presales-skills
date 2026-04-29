@@ -1,0 +1,22 @@
+{
+  "name": "market",
+  "description": "B2B 科技营销文案编辑 skill——七轮逐维度编辑框架（清晰度 / 语气一致性 / 价值关联 / 证据支撑 / 具体化 / 情感共鸣 / 风险消除）+ 专家团评分。slash 调用 /market:polish 或自然语言触发（'审一下文案' / '编辑营销文案' / 'copy edit' / 'polish this'）。",
+  "version": "1.0.0",
+  "author": {
+    "name": "coreyhaines31",
+    "contributors": [
+      {
+        "name": "LiuZiJiao"
+      }
+    ]
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/coreyhaines31/marketingskills",
+  "repository": "https://github.com/coreyhaines31/marketingskills.git",
+  "category": "writing",
+  "tags": [
+    "market",
+    "marketing",
+    "中文"
+  ]
+}
