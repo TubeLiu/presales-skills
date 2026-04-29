@@ -3,11 +3,11 @@
   "owner": {
     "name": "LiuZiJiao",
     "email": "tubeliu1@gmail.com",
-    "homepage": "https://github.com/TubeLiu/presales-skills"
+    "homepage": "https://github.com/Alauda-io/presales-skills"
   },
   "metadata": {
     "description": "Presales skills monorepo — 8 个聚焦 plugin（solution-master 写方案 / ppt-master 做 PPT / tender-workflow 招投标 / drawio 画图 / ai-image 生图 / web-access 联网 / anythingllm-mcp 知识库 / skill-optimizer 审查 skill），同时支持 Claude Code（marketplace 安装）和 Cursor / Codex / OpenCode（vercel-labs/skills CLI 安装）。",
-    "version": "1.4.3"
+    "version": "1.5.1"
   },
   "plugins": [
     {
@@ -131,6 +131,21 @@
         "skill-review",
         "meta",
         "developer-tools"
+      ]
+    },
+    {
+      "name": "customer-research",
+      "source": "./customer-research",
+      "description": "多源客户调研——对客户问题、产品主题或账户相关查询进行系统性多源调研，带来源归属和置信度评分。slash 调用 /customer-research:research 或自然语言触发（'调研客户' / '查一下 XX 公司背景' / '做一个客户调研'）。独立 plugin，solution-master 可选依赖（方案撰写前的知识准备阶段）。",
+      "version": "1.0.1",
+      "author": {
+        "name": "LiuZiJiao"
+      },
+      "category": "research",
+      "tags": [
+        "research",
+        "customer",
+        "中文"
       ]
     }
   ]

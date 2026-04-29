@@ -149,8 +149,8 @@ def test_vercel_cli_discovery():
     m = re.search(r"Found (\d+) skills?", output)
     assert m, f"Could not parse skill count from vercel CLI output:\n{output[:500]}"
     found = int(m.group(1))
-    # 当前预期：drawio + ai-image + ppt-make + web-access + solution-master + 5 tender + skill-optimizer = 11
-    assert found == 11, f"Expected 11 skills, vercel CLI found {found}. Output:\n{output[:1000]}"
+    # 当前预期：drawio + ai-image + ppt-make + web-access + solution-master + 5 tender + skill-optimizer + customer-research = 12
+    assert found == 12, f"Expected 12 skills, vercel CLI found {found}. Output:\n{output[:1000]}"
 
 
 # ---------------------------------------------------------------------------
@@ -211,6 +211,7 @@ def test_cross_skill_refs_within_plugin():
 _ALLOWED_NAME_DIR_MISMATCH = {
     "ai-image/skills/gen/SKILL.md": "image-gen",
     "solution-master/skills/go/SKILL.md": "solution-master",
+    "customer-research/skills/research/SKILL.md": "research",
 }
 
 

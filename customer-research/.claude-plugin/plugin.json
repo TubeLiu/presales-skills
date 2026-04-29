@@ -1,0 +1,24 @@
+{
+  "name": "customer-research",
+  "description": "多源客户调研 skill——对客户问题、产品主题或账户相关查询进行系统性多源调研，带来源归属和置信度评分。slash 调用 /customer-research:research 或自然语言触发（'调研客户' / '查一下 XX 公司背景' / '做一个客户调研' / 'research customer'）。独立 plugin，solution-master 可选依赖（方案撰写前的知识准备阶段）。",
+  "version": "1.0.1",
+  "author": {
+    "name": "LiuZiJiao"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/Alauda-io/presales-skills",
+  "repository": "https://github.com/Alauda-io/presales-skills.git",
+  "category": "research",
+  "tags": [
+    "research",
+    "customer",
+    "中文"
+  ],
+  "keywords": [
+    "research",
+    "customer",
+    "due-diligence",
+    "presales",
+    "中文"
+  ]
+}

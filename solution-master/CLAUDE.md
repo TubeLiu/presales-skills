@@ -71,7 +71,7 @@ solution-master/
 **Claude Code**（主要用户）：
 
 ```
-/plugin marketplace add TubeLiu/presales-skills     # 或本地路径 /path/to/presales-skills
+/plugin marketplace add Alauda-io/presales-skills     # 或本地路径 /path/to/presales-skills
 /plugin install solution-master@presales-skills
 /reload-plugins
 ```
@@ -79,7 +79,7 @@ solution-master/
 **其它 agent**（Cursor / Codex / OpenCode 等）：
 
 ```bash
-npx skills add TubeLiu/presales-skills -a <agent>   # vercel-labs/skills CLI
+npx skills add Alauda-io/presales-skills -a <agent>   # vercel-labs/skills CLI
 ```
 
 完整安装说明见仓库外层 README.md。

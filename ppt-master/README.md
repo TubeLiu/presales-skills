@@ -2,7 +2,7 @@
 
 **中文** | [English](./README_EN.md)
 
-PPT Master 是 [presales-skills](https://github.com/TubeLiu/presales-skills) marketplace 中的一个 plugin，将 PDF / DOCX / URL / Markdown 等多源文档转换为**原生可编辑的 PPTX**——真正的 PowerPoint 形状、文本框、图表，不是图片。
+PPT Master 是 [presales-skills](https://github.com/Alauda-io/presales-skills) marketplace 中的一个 plugin，将 PDF / DOCX / URL / Markdown 等多源文档转换为**原生可编辑的 PPTX**——真正的 PowerPoint 形状、文本框、图表，不是图片。
 
 > 🙏 **致谢上游**：本 plugin 基于 [hugohe3/ppt-master](https://github.com/hugohe3/ppt-master)（MIT License © 2025-2026 Hugo He）vendor + 适配 presales-skills marketplace 体例改写而来——核心流水线、SKILL.md 主体、22 个内置 layout 与脚本工具均沿用上游设计与实现。感谢 Hugo He 的开源工作。详细借用文件清单、相对 upstream 的改写说明以及原项目 LICENSE 全文见 [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md)。
 
