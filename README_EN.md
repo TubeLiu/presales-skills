@@ -10,9 +10,9 @@ A SKILL collection focused on presales / solution / consulting scenarios, distri
 
 ---
 
-## Overview of 8 plugins
+## Overview of 10 plugins
 
-Split by role: 4 **shared plugins** provide foundational capabilities (called by main plugins, also usable standalone), 3 **main plugins** form end-to-end business flows, and 1 **developer-tools plugin** reviews / optimizes skills themselves.
+Split by role: 4 **shared plugins** provide foundational capabilities (called by main plugins, also usable standalone), 4 **main plugins** form end-to-end business flows, 1 **developer-tools plugin** reviews / optimizes skills themselves, and 1 **general-purpose plugin** provides independent utility.
 
 ### Shared plugins (foundational / 4)
 
@@ -23,19 +23,26 @@ Split by role: 4 **shared plugins** provide foundational capabilities (called by
 | **drawio** | `/drawio:draw` or `/draw` | Draw.io diagrams (`.drawio` XML + optional PNG / SVG / PDF export), covering architecture / flow / sequence / ER / topology / ML model diagrams. |
 | **anythingllm-mcp** | (MCP server, no slash) | AnythingLLM knowledge-base semantic search — auto-registers `anythingllm` MCP server on install; main plugins call it via `mcp__anythingllm__*` tools. |
 
-### Main plugins (end-to-end flows / 3)
+### Main plugins (end-to-end flows / 4)
 
 | Plugin | Entry | One-liner |
 |---|---|---|
 | **solution-master** | `/solution-master:go` or `/solution-master` | Generic solution writing: Socratic questioning → task decomposition → parallel subagent writing → two-stage review (spec + quality) → multi-source knowledge retrieval → image insertion → Markdown + DOCX output. |
 | **ppt-master** | `/ppt-master:make` or `/make` | Multi-source documents (PDF / DOCX / URL / Markdown) → natively editable PPTX (SVG pipeline + real PowerPoint shapes; default free-design, 22 built-in templates available). |
 | **tender-workflow** | `/tender-workflow:taa` / `:taw` / `:tpl` / `:trv` / `:twc` | Four-role bid + config: `tpl` tender planning (buyer) / `taa` tender analysis (bidder) / `taw` bid writing (bidder, parallel) / `trv` multi-axis review / `twc` config. |
+| **customer-research** | `/customer-research:research` or `/research` | Multi-source customer research — systematic research on customer issues, product topics, or account queries with source attribution and confidence scoring. For customer profiling, competitive analysis, and technical feasibility validation before solution writing. |
 
 ### Developer-tools plugin (meta / 1)
 
 | Plugin | Entry | One-liner |
 |---|---|---|
 | **skill-optimizer** | `/skill-optimizer:optimize` or `/optimize` | Skill review and optimizer — 5-step flow (Scope → Review → Plan → Implement → Verify) reviews target skill's trigger semantics, workflow gates, resource organization, safety boundaries, dependency installability, and README / SKILL division of responsibility. Defaults to "diagnosis + plan first" and only modifies files after the user explicitly says "execute the plan". Independent plugin, no other dependencies. |
+
+### General-purpose plugin (independent utility / 1)
+
+| Plugin | Entry | One-liner |
+|---|---|---|
+| **market** | `/market:polish` or `/polish` | B2B tech marketing copy editing — seven-sweep framework (Clarity / Voice & Tone / Value Association / Evidence / Specificity / Emotion / Risk Elimination) + expert panel scoring + Chinese redundancy replacement guide. Independent plugin, no external dependencies. |
 
 > **Two trigger methods**:
 > - **Slash commands**: `/<plugin>:<sub-skill>` (e.g., `/solution-master:go`); Claude Code auto-completes short aliases to canonical
@@ -69,11 +76,11 @@ After adding the marketplace, the rest is done in the `/plugins` UI (no need to 
 
 ![Step 4 — /reload-plugins loads](docs/images/install/install-4.png)
 
-Expected reload output: `8 plugins · 11 skills · 1 hook · 1 plugin MCP server`
+Expected reload output: `10 plugins · 13 skills · 1 hook · 1 plugin MCP server`
 - 1 hook: solution-master's SessionStart injects the main SKILL (only when cwd is in an SM project)
 - 1 MCP server: `anythingllm` (from anythingllm-mcp plugin; absent if not installed)
 
-Dependency order: install shared plugins first (ai-image / web-access / drawio / anythingllm-mcp), then main plugins (solution-master / ppt-master / tender-workflow). `anythingllm-mcp` is optional — when absent, main plugins gracefully degrade to local YAML index + web search; `skill-optimizer` is optional, install only if you plan to review / optimize skills.
+Dependency order: install shared plugins first (ai-image / web-access / drawio / anythingllm-mcp), then main plugins (solution-master / ppt-master / tender-workflow / customer-research). `anythingllm-mcp` is optional — when absent, main plugins gracefully degrade to local YAML index + web search; `skill-optimizer` and `market` are optional — for skill review and copy editing respectively.
 
 Local path also works: `/plugin marketplace add /path/to/presales-skills`
 
@@ -93,9 +100,9 @@ npx --yes skills add Alauda-io/presales-skills -a codex    # Codex
 npx --yes skills add Alauda-io/presales-skills -a opencode # OpenCode
 ```
 
-After the command runs, vercel-labs/skills CLI lists all 11 skills; press space to multi-select + Enter to confirm install:
+After the command runs, vercel-labs/skills CLI lists all 13 skills; press space to multi-select + Enter to confirm install:
 
-![vercel-labs/skills CLI install UI: lists 11 skills, space to multi-select](docs/images/install/install-codex.png)
+![vercel-labs/skills CLI install UI: lists 13 skills, space to multi-select](docs/images/install/install-codex.png)
 
 For detailed loading options and cross-agent capability differences, see [docs/cross-agent.md](docs/cross-agent.md).
 

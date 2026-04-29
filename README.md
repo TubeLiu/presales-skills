@@ -10,9 +10,9 @@
 
 ---
 
-## 8 个 plugin 一览
+## 10 个 plugin 一览
 
-按角色拆分：4 个**共享 plugin** 提供底层能力（被主 plugin 调用，也可独立使用），3 个**主 plugin** 串成端到端业务流程，1 个**开发者工具 plugin** 用于审查和优化 skill 自身。
+按角色拆分：4 个**共享 plugin** 提供底层能力（被主 plugin 调用，也可独立使用），4 个**主 plugin** 串成端到端业务流程，1 个**开发者工具 plugin** 用于审查和优化 skill 自身，1 个**通用工具 plugin** 提供独立辅助能力。
 
 ### 共享 plugin（底层能力 / 4 个）
 
@@ -23,19 +23,26 @@
 | **drawio** | `/drawio:draw` 或 `/draw` | Draw.io 图表（`.drawio` XML + 可选 PNG/SVG/PDF 导出），覆盖架构图 / 流程图 / 时序图 / ER 图 / 拓扑图 / ML 模型图等 |
 | **anythingllm-mcp** | （MCP server，无 slash） | AnythingLLM 知识库语义搜索——装上自动注册 `anythingllm` MCP server，主 plugin 通过 `mcp__anythingllm__*` 工具直接调用 |
 
-### 主 plugin（端到端业务流程 / 3 个）
+### 主 plugin（端到端业务流程 / 4 个）
 
 | plugin | 入口 | 一句话 |
 |---|---|---|
 | **solution-master** | `/solution-master:go` 或 `/solution-master` | 通用解决方案撰写：苏格拉底式提问 → 任务分解 → 子智能体并行撰写 → 双阶段审查（spec + quality）→ 多源知识检索 → 配图 → Markdown + DOCX 输出 |
 | **ppt-master** | `/ppt-master:make` 或 `/make` | 多源文档（PDF / DOCX / URL / Markdown）→ 原生可编辑 PPTX（SVG 流水线 + 真实 PowerPoint shape，默认 free-design，可切 22 个内置模板） |
 | **tender-workflow** | `/tender-workflow:taa` / `:taw` / `:tpl` / `:trv` / `:twc` | 四角色招投标 + 配置：`tpl` 招标策划（甲方）/ `taa` 招标分析（乙方）/ `taw` 标书撰稿（乙方，并行写）/ `trv` 多维度审核 / `twc` 配置 |
+| **customer-research** | `/customer-research:research` 或 `/research` | 多源客户调研——对客户问题、产品主题或账户相关查询进行系统性多源调研，带来源归属和置信度评分。方案撰写前的客户画像准备、竞品分析、技术可行性验证 |
 
 ### 开发者工具 plugin（meta / 1 个）
 
 | plugin | 入口 | 一句话 |
 |---|---|---|
 | **skill-optimizer** | `/skill-optimizer:optimize` 或 `/optimize` | Skill 审查与优化器——按 5 步流程（Scope → Review → Plan → Implement → Verify）审查目标 skill 的触发语义、工作流门槛、资源组织、安全边界、依赖可安装性与 README/SKILL 职责分层；默认先给诊断与计划，等用户明确说"按计划执行"才改文件。独立 plugin，不依赖其它 plugin |
+
+### 通用工具 plugin（独立辅助 / 1 个）
+
+| plugin | 入口 | 一句话 |
+|---|---|---|
+| **market** | `/market:polish` 或 `/polish` | B2B 科技营销文案编辑——七轮逐维度编辑框架（清晰度 / 语气一致性 / 价值关联 / 证据支撑 / 具体化 / 情感共鸣 / 风险消除）+ 专家团评分 + 中文冗余表达替代表。独立 plugin，无外部依赖 |
 
 > **触发方式两种皆可**：
 > - **slash 命令**：`/<plugin>:<sub-skill>`（如 `/solution-master:go`），Claude Code 自动补全短 alias 到 canonical
@@ -69,11 +76,11 @@
 
 ![Step 4 — /reload-plugins 加载](docs/images/install/install-4.png)
 
-预期 reload 输出：`8 plugins · 11 skills · 1 hook · 1 plugin MCP server`
+预期 reload 输出：`10 plugins · 13 skills · 1 hook · 1 plugin MCP server`
 - 1 hook：solution-master 的 SessionStart 注入主 SKILL（仅在 SM 项目内 cwd 时触发）
 - 1 MCP server：`anythingllm`（来自 anythingllm-mcp plugin；不装时无）
 
-依赖顺序：先装共享 plugin（ai-image / web-access / drawio / anythingllm-mcp），再装主 plugin（solution-master / ppt-master / tender-workflow）。`anythingllm-mcp` 可选，未装时主 plugin 自动降级为本地 YAML 索引 + 联网检索；`skill-optimizer` 可选，仅在你打算审查 / 优化 skill 时装。
+依赖顺序：先装共享 plugin（ai-image / web-access / drawio / anythingllm-mcp），再装主 plugin（solution-master / ppt-master / tender-workflow / customer-research）。`anythingllm-mcp` 可选，未装时主 plugin 自动降级为本地 YAML 索引 + 联网检索；`skill-optimizer` 和 `market` 可选，分别用于审查 skill 和编辑营销文案。
 
 也支持本地路径：`/plugin marketplace add /path/to/presales-skills`
 
@@ -93,9 +100,9 @@ npx --yes skills add Alauda-io/presales-skills -a codex    # Codex
 npx --yes skills add Alauda-io/presales-skills -a opencode # OpenCode
 ```
 
-跑起来后 vercel-labs/skills CLI 会列出全部 11 个 skill，按空格多选 + 回车确认即装：
+跑起来后 vercel-labs/skills CLI 会列出全部 13 个 skill，按空格多选 + 回车确认即装：
 
-![vercel-labs/skills CLI 安装界面：列出 11 个 skill，空格多选](docs/images/install/install-codex.png)
+![vercel-labs/skills CLI 安装界面：列出 13 个 skill，空格多选](docs/images/install/install-codex.png)
 
 详细装载选项与跨 agent 能力差异见 [docs/cross-agent.md](docs/cross-agent.md)。
 
@@ -304,6 +311,46 @@ Verify（多维校验 + 汇报）
 **关键约束**："我看看"/"有道理"/"先这样"不算确认；只有"按计划执行"/"开始修改"/"确认修改"等明确的开始执行类语句才会真正改文件。审查阶段发现疑似敏感信息（API Key / Token / Cookie / 账号）只描述类型与位置，不回显完整值。
 
 适用场景见 `skill-optimizer/README.md`。
+
+---
+
+### 第 6 步：（可选）使用 `customer-research` —— 客户调研
+
+**无专属配置**：customer-research 是纯调研工具，装上即用。
+
+**使用**：
+
+```
+> 调研一下 XX 公司的背景
+> 查一下这个客户的技术栈和痛点
+> 做一个客户调研：某银行数字化转型需求
+> /customer-research:research "XX公司容器云需求调研"
+```
+
+6 步工作流：解析调研请求 → 5 层分级搜索（内部文档 → 业务上下文 → 沟通记录 → 外网 → 推理类比）→ 综合产出结构化简报 → 数据源不足时兜底 → 客户面向注意事项 → 知识沉淀建议。
+
+详情见 `customer-research/README.md`。
+
+---
+
+### 第 7 步：（可选）使用 `market` —— 营销文案编辑
+
+**无专属配置**：market 是纯 prompt 驱动的编辑工具，装上即用。
+
+**使用**：
+
+```
+> 审一下这段产品介绍文案
+> 润色一下这个客户案例
+> 这段方案封面摘要太冗长了，帮我精简
+> /market:polish /path/to/copy.md
+```
+
+七轮编辑框架：清晰度 → 语气一致性 → 价值关联（"那又怎样"测试）→ 证据支撑 → 具体化 → 情感共鸣 → 风险消除。高风险文案可启用专家团评分（3-5 个角色打分 + 具体批评）。
+
+内置中文冗余表达替代表（"赋能"、"端到端"、"全方位"等八股 → 简洁替代），适合 B2B 科技售前和市场团队。
+
+详情见 `market/README.md`。
 
 ---
 

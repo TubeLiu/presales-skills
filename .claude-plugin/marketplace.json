@@ -6,7 +6,7 @@
     "homepage": "https://github.com/Alauda-io/presales-skills"
   },
   "metadata": {
-    "description": "Presales skills monorepo — 9 个聚焦 plugin（solution-master 写方案 / ppt-master 做 PPT / tender-workflow 招投标 / drawio 画图 / ai-image 生图 / web-access 联网 / anythingllm-mcp 知识库 / skill-optimizer 审查 skill / market 文案编辑），同时支持 Claude Code（marketplace 安装）和 Cursor / Codex / OpenCode（vercel-labs/skills CLI 安装）。",
+    "description": "Presales skills monorepo — 10 个聚焦 plugin（solution-master 写方案 / ppt-master 做 PPT / tender-workflow 招投标 / drawio 画图 / ai-image 生图 / web-access 联网 / anythingllm-mcp 知识库 / skill-optimizer 审查 skill / customer-research 客户调研 / market 文案编辑），同时支持 Claude Code（marketplace 安装）和 Cursor / Codex / OpenCode（vercel-labs/skills CLI 安装）。",
     "version": "1.6.0"
   },
   "plugins": [
