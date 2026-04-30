@@ -94,7 +94,7 @@ node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs"
 
 ## MCP 注册工具（presales-skills 集成）
 
-`scripts/mcp_installer.py` 用于把搜索类 MCP server（tavily / exa / minimax-token-plan）注册到 `~/.claude.json`。被 [tender-workflow](https://github.com/Alauda-io/presales-skills) 与 [solution-master](https://github.com/Alauda-io/presales-skills) 的 setup wizard 调用，也可单独 CLI 使用。
+`scripts/mcp_installer.py` 用于把搜索类 MCP server（tavily / exa / minimax-token-plan）注册到 `~/.claude.json`。被 [tender-workflow](https://github.com/TubeLiu/presales-skills) 与 [solution-master](https://github.com/TubeLiu/presales-skills) 的 setup wizard 调用，也可单独 CLI 使用。
 
 ```bash
 python3 "${CLAUDE_SKILL_DIR}/scripts/mcp_installer.py" check uv

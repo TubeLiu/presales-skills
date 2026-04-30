@@ -2,7 +2,7 @@
 
 **中文** | [English](./README_EN.md)
 
-PPT Master 是 [presales-skills](https://github.com/Alauda-io/presales-skills) marketplace 中的一个 plugin，将 PDF / DOCX / URL / Markdown 等多源文档转换为**原生可编辑的 PPTX**——真正的 PowerPoint 形状、文本框、图表，不是图片。
+PPT Master 是 [presales-skills](https://github.com/TubeLiu/presales-skills) marketplace 中的一个 plugin，将 PDF / DOCX / URL / Markdown 等多源文档转换为**原生可编辑的 PPTX**——真正的 PowerPoint 形状、文本框、图表，不是图片。
 
 > 🙏 **致谢上游**：本 plugin 基于 [hugohe3/ppt-master](https://github.com/hugohe3/ppt-master)（MIT License © 2025-2026 Hugo He）vendor + 适配 presales-skills marketplace 体例改写而来——核心流水线、SKILL.md 主体、22 个内置 layout 与脚本工具均沿用上游设计与实现。感谢 Hugo He 的开源工作。详细借用文件清单、相对 upstream 的改写说明以及原项目 LICENSE 全文见 [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md)。
 
@@ -15,8 +15,8 @@ PPT Master 是一个在 AI IDE（Claude Code / Cursor / VS Code + Copilot / Code
 > 📐 **结构化配图走模板**：当某页需要 Bento grid 信息图、政策风 slide、教育图解 slide、图形摘要等结构化样式时，会自动从 ai-image 的 79 个内置模板里挑匹配项填槽位生图，比自由 prompt 输出稳定得多。
 
 ```
-源文档 → 创建项目 → 选择模板 → 策略师 → [配图生成器]
-  → 执行者 → 后处理 → 导出 PPTX
+源文档 → 创建项目 → 选择模板 → 策略师 → [Step 4.5 用户复核 Gate]
+  → [配图生成器] → 执行者 → 后处理 → 导出 PPTX
 ```
 
 首次配置约 15 分钟；之后每做一份 PPT 约 10–20 分钟的 AI 对话。

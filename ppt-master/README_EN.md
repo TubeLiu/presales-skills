@@ -2,7 +2,7 @@
 
 [中文](./README.md) | **English**
 
-PPT Master is a plugin in the [presales-skills](https://github.com/Alauda-io/presales-skills) marketplace that converts multi-source documents (PDF / DOCX / URL / Markdown) into **natively editable PPTX** — real PowerPoint shapes, text boxes, and charts, not images.
+PPT Master is a plugin in the [presales-skills](https://github.com/TubeLiu/presales-skills) marketplace that converts multi-source documents (PDF / DOCX / URL / Markdown) into **natively editable PPTX** — real PowerPoint shapes, text boxes, and charts, not images.
 
 > 🙏 **Upstream attribution**: This plugin is vendored from [hugohe3/ppt-master](https://github.com/hugohe3/ppt-master) (MIT License © 2025-2026 Hugo He) and adapted to the presales-skills marketplace conventions — the core pipeline, SKILL.md body, 22 built-in layouts, and script tools all follow upstream design and implementation. Thanks to Hugo He for the open-source work. See [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md) for the full borrowed-files list, change notes relative to upstream, and the original LICENSE.
 
@@ -15,8 +15,8 @@ PPT Master is a Claude Code skill that runs inside an AI IDE (Claude Code / Curs
 > 📐 **Structured visuals route through templates**: when a slide calls for a Bento grid infographic, policy-style slide, educational explainer, graphical abstract, etc., the system automatically picks a matching one from the 79 built-in ai-image templates and fills its slots — far more reliable than freeform prompts.
 
 ```
-Source Document → Create Project → Choose Template → Strategist → [Image Generator]
-  → Executor → Post-process → Export PPTX
+Source Document → Create Project → Choose Template → Strategist → [Step 4.5 User Review Gate]
+  → [Image Generator] → Executor → Post-process → Export PPTX
 ```
 
 First-time setup ~15 minutes; each subsequent PPT takes ~10–20 minutes of AI conversation.

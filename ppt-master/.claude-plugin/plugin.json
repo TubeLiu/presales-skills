@@ -1,13 +1,13 @@
 {
   "name": "ppt-master",
   "description": "PPT 生成器（PDF/DOCX/URL/Markdown → SVG 中间层 → 原生可编辑 PPTX，含真实 PowerPoint shape / 文本框 / 图表）。默认 free-design，22 个内置模板按需切换（用户在 ~/.config/presales-skills/config.yaml 设 ppt_master.default_layout 可持久化指定）。slash 调用 /ppt-master:make 或自然语言触发（'做 PPT' / 'generate slides'）。依赖 ai-image plugin。",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "author": {
     "name": "LiuZiJiao"
   },
   "license": "MIT",
-  "homepage": "https://github.com/Alauda-io/presales-skills",
-  "repository": "https://github.com/Alauda-io/presales-skills.git",
+  "homepage": "https://github.com/TubeLiu/presales-skills",
+  "repository": "https://github.com/TubeLiu/presales-skills.git",
   "category": "productivity",
   "tags": [
     "ppt",

@@ -8,6 +8,21 @@ Usage:
     python3 scripts/svg_quality_checker.py <svg_file>
     python3 scripts/svg_quality_checker.py <directory>
     python3 scripts/svg_quality_checker.py --all examples
+    python3 scripts/svg_quality_checker.py --lint <svg_file_or_directory>
+
+Modes:
+    Default (no flag) — full 7-dimension check, called at SKILL.md Step 6 Quality Check Gate.
+    --lint            — Pre-flight subset (viewBox / forbidden elements / fonts only),
+                         called at SKILL.md Step 7.0 just before total_md_split / finalize_svg /
+                         svg_to_pptx; finalize_svg.py rewrites SVG and would mask violations,
+                         so this is the last cheap chance (<1s) to catch banned features.
+                         Skips: dimensions, text wrapping, image refs, spec_lock drift
+                                (those need project context that is not yet available).
+
+Other flags (combinable with default or --lint):
+    --format <name>   — Expected canvas format (e.g., ppt169 / ppt43 / red / moments / story)
+    --export          — Write text report to disk (default: svg_quality_report.txt)
+    --output <file>   — Override export filename
 """
 
 import sys as _sys; from pathlib import Path as _Path; _sys.path.insert(0, str(_Path(__file__).resolve().parent))
@@ -68,13 +83,18 @@ class SVGQualityChecker:
         }
         self._lock_seen = False  # True once we locate at least one spec_lock.md
 
-    def check_file(self, svg_file: str, expected_format: str = None) -> Dict:
+    def check_file(self, svg_file: str, expected_format: str = None, lint_only: bool = False) -> Dict:
         """
         Check a single SVG file
 
         Args:
             svg_file: SVG file path
             expected_format: Expected canvas format (e.g., 'ppt169')
+            lint_only: If True, run Step 7.0 pre-flight subset only —
+                       dimensions 1 (viewBox) / 2 (forbidden elements) / 3 (fonts).
+                       Skip dimensions 4 (width/height) / 5 (text wrapping) /
+                       6 (image refs) / 7 (spec_lock drift) which need project
+                       context not yet available before total_md_split.
 
         Returns:
             Check result dictionary
@@ -113,17 +133,18 @@ class SVGQualityChecker:
             # 3. Check fonts
             self._check_fonts(content, result)
 
-            # 4. Check width/height consistency with viewBox
-            self._check_dimensions(content, result)
+            if not lint_only:
+                # 4. Check width/height consistency with viewBox
+                self._check_dimensions(content, result)
 
-            # 5. Check text wrapping methods
-            self._check_text_elements(content, result)
+                # 5. Check text wrapping methods
+                self._check_text_elements(content, result)
 
-            # 6. Check image references (file existence and resolution)
-            self._check_image_references(content, svg_path, result)
+                # 6. Check image references (file existence and resolution)
+                self._check_image_references(content, svg_path, result)
 
-            # 7. Check spec_lock drift (colors / font-family / font-size)
-            self._check_spec_lock_drift(content, svg_path, result)
+                # 7. Check spec_lock drift (colors / font-family / font-size)
+                self._check_spec_lock_drift(content, svg_path, result)
 
             # Determine pass/fail
             result['passed'] = len(result['errors']) == 0
@@ -563,13 +584,14 @@ class SVGQualityChecker:
         else:
             return 'Other'
 
-    def check_directory(self, directory: str, expected_format: str = None) -> List[Dict]:
+    def check_directory(self, directory: str, expected_format: str = None, lint_only: bool = False) -> List[Dict]:
         """
         Check all SVG files in a directory
 
         Args:
             directory: Directory path
             expected_format: Expected canvas format
+            lint_only: If True, run Step 7.0 pre-flight subset (see check_file docstring)
 
         Returns:
             List of check results
@@ -593,10 +615,11 @@ class SVGQualityChecker:
             print(f"[WARN] No SVG files found")
             return []
 
-        print(f"\n[SCAN] Checking {len(svg_files)} SVG file(s)...\n")
+        mode_label = "lint (pre-flight 3-dim)" if lint_only else "full (7-dim)"
+        print(f"\n[SCAN] Checking {len(svg_files)} SVG file(s) in {mode_label} mode...\n")
 
         for svg_file in svg_files:
-            result = self.check_file(str(svg_file), expected_format)
+            result = self.check_file(str(svg_file), expected_format, lint_only=lint_only)
             self._print_result(result)
 
         return self.results
@@ -754,27 +777,54 @@ def main() -> None:
         print("  python3 scripts/svg_quality_checker.py <svg_file>")
         print("  python3 scripts/svg_quality_checker.py <directory>")
         print("  python3 scripts/svg_quality_checker.py --all examples")
+        print("  python3 scripts/svg_quality_checker.py --lint <svg_file_or_directory>")
+        print("\nModes:")
+        print("  default — Full 7-dimension check (Step 6 Quality Check Gate)")
+        print("  --lint  — Pre-flight 3-dim subset (Step 7.0 entry, <1s)")
+        print("            viewBox / forbidden elements / fonts only")
         print("\nExamples:")
         print("  python3 scripts/svg_quality_checker.py examples/project/svg_output/slide_01.svg")
         print("  python3 scripts/svg_quality_checker.py examples/project/svg_output")
         print("  python3 scripts/svg_quality_checker.py examples/project")
+        print("  python3 scripts/svg_quality_checker.py --lint examples/project")
         sys.exit(0)
 
     checker = SVGQualityChecker()
 
     # Parse arguments
-    target = sys.argv[1]
     expected_format = None
+    lint_only = '--lint' in sys.argv
 
     if '--format' in sys.argv:
         idx = sys.argv.index('--format')
         if idx + 1 < len(sys.argv):
             expected_format = sys.argv[idx + 1]
 
+    # Determine target (skip flag tokens)
+    flag_tokens = {'--lint', '--all', '--format', '--export', '--output'}
+    target = None
+    skip_next = False
+    for arg in sys.argv[1:]:
+        if skip_next:
+            skip_next = False
+            continue
+        if arg in flag_tokens:
+            if arg in ('--format', '--output'):
+                skip_next = True
+            continue
+        target = arg
+        break
+
+    if target is None and '--all' not in sys.argv:
+        print("[ERROR] No target file or directory provided")
+        sys.exit(2)
+
     # Execute check
-    if target == '--all':
-        # Check all example projects
-        base_dir = sys.argv[2] if len(sys.argv) > 2 else 'examples'
+    if '--all' in sys.argv:
+        # base_dir = the first non-flag positional arg (already resolved as `target`),
+        # falling back to 'examples'. This handles any ordering: `--all examples`,
+        # `--all --lint my_projects`, `--lint --all my_projects`, etc.
+        base_dir = target if target is not None else 'examples'
         from project_utils import find_all_projects
         projects = find_all_projects(base_dir)
 
@@ -782,9 +832,9 @@ def main() -> None:
             print(f"\n{'=' * 80}")
             print(f"Checking project: {project.name}")
             print('=' * 80)
-            checker.check_directory(str(project))
+            checker.check_directory(str(project), lint_only=lint_only)
     else:
-        checker.check_directory(target, expected_format)
+        checker.check_directory(target, expected_format, lint_only=lint_only)
 
     # Print summary
     checker.print_summary()

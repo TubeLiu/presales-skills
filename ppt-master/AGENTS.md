@@ -6,7 +6,7 @@ This file serves as the project entry point for general AI agents. Before execut
 
 PPT Master is an AI-driven presentation generation system. Through multi-role collaboration (Strategist → Image_Generator → Executor), it converts source documents (PDF/DOCX/URL/Markdown) into natively editable PPTX with real PowerPoint shapes (DrawingML).
 
-**Core Pipeline**: `Source Document → Create Project → Template Option → Strategist Eight Confirmations → [Image_Generator] → Executor → Post-processing → Export PPTX`
+**Core Pipeline**: `Source Document → Create Project → Template Option → Strategist Eight Confirmations → [Step 4.5 User Review Gate] → [Image_Generator] → Executor → Post-processing → Export PPTX`
 
 **Execution Requirements**:
 

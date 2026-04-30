@@ -3,11 +3,11 @@
   "owner": {
     "name": "LiuZiJiao",
     "email": "tubeliu1@gmail.com",
-    "homepage": "https://github.com/Alauda-io/presales-skills"
+    "homepage": "https://github.com/TubeLiu/presales-skills"
   },
   "metadata": {
     "description": "Presales skills monorepo — 10 个聚焦 plugin（solution-master 写方案 / ppt-master 做 PPT / tender-workflow 招投标 / drawio 画图 / ai-image 生图 / web-access 联网 / anythingllm-mcp 知识库 / skill-optimizer 审查 skill / customer-research 客户调研 / market 文案编辑），同时支持 Claude Code（marketplace 安装）和 Cursor / Codex / OpenCode（vercel-labs/skills CLI 安装）。",
-    "version": "1.6.0"
+    "version": "1.7.0"
   },
   "plugins": [
     {
@@ -92,7 +92,7 @@
       "name": "ppt-master",
       "source": "./ppt-master",
       "description": "PPT 生成器（PDF/DOCX/URL/Markdown → SVG 中间层 → 原生可编辑 PPTX，含真实 PowerPoint shape / 文本框 / 图表）。默认 free-design，22 个内置模板按需切换（用户在 ~/.config/presales-skills/config.yaml 设 ppt_master.default_layout 可持久化指定）。slash 调用 /ppt-master:make 或自然语言触发（'做 PPT' / 'generate slides'）。依赖 ai-image plugin（结构化配图自动走 ai-image templates/）。",
-      "version": "1.1.1",
+      "version": "1.2.0",
       "author": {
         "name": "LiuZiJiao"
       },

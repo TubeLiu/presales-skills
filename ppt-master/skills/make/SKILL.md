@@ -23,6 +23,25 @@ allowed-tools: Read, Write, Bash, Glob, Grep
 此技能是给协调者读的。**判定你是否子智能体**：如果你的当前角色定义来自 Task prompt 而非 SKILL.md 自然加载（即调用方在 Task 工具的 prompt 字段里塞了 agents/<role>.md 的内容），你就是子智能体；跳过本 SKILL.md 的工作流编排部分，只执行 Task prompt 给你的具体任务。
 </SUBAGENT-STOP>
 
+## 不可妥协的硬约束（首屏）
+
+写第一行 SVG 之前必须先吃透这两条：
+
+1. **SVG 输出禁用** `mask` / `<style>` / `class` / `<foreignObject>` / `textPath` / `@font-face` / `<animate*>` / `<script>` / `<iframe>` / `<symbol>+<use>`
+   完整列表 + 替代方案见 `references/shared-standards.md` §1.1
+   **执行拦截**：Step 6 Quality Check（全 7 维：`svg_quality_checker.py <project_path>`）+ Step 7.0 入口（3 维子集：`--lint`）双闸
+
+2. **文字溢出 → 走 speaker notes**，**严禁缩字号 / 缩行高 / 写画布外**
+   详细规则见 §Step 6.5 + `references/overflow-fallback.md`
+   **执行拦截**：`svg_quality_checker.py` 第 5 维「文本换行」warning（proxy 信号；false negative 时 AI 必须按 Step 6.5 5 条禁令自查）
+
+其它 3 条流程纪律（已写在文档其他位置，不重复）：
+- `spec_lock.md` 颜色 / 字体 / 图标 re-read：见 §Global Execution Discipline
+- 后处理三步 sequential、严禁 `cp` 替代 `finalize_svg.py`：见 §Step 7 + §Gotchas
+- AI **不许直接 Read 图片**，必须走 `analyze_images.py`：见 §Step 5 + §Gotchas
+
+---
+
 ## 路径自定位
 
 **首次调用本 skill 的脚本前，先跑一次以下 bootstrap 解析 SKILL_DIR**（后续命令用 `$SKILL_DIR/scripts/...`、`$SKILL_DIR/templates/...`）：
@@ -63,7 +82,7 @@ fi
 
 > AI-driven multi-format SVG content generation system. Converts source documents into high-quality SVG pages through multi-role collaboration and exports to PPTX.
 
-**Core Pipeline**: `Source Document → Create Project → Template Option → Strategist → [Image_Generator] → Executor → Post-processing → Export`
+**Core Pipeline**: `Source Document → Create Project → Template Option → Strategist → [Step 4.5 User Review Gate] → [Image_Generator] → Executor → Post-processing → Export`
 
 > [!CAUTION]
 > ## 🚨 Global Execution Discipline (MANDATORY)
@@ -279,14 +298,30 @@ python3 $SKILL_DIR/scripts/analyze_images.py <project_path>/images
 - [x] Eight Confirmations completed (user confirmed)
 - [x] Design Specification & Content Outline generated
 - [x] Execution lock (spec_lock.md) generated
-- [ ] **Next**: Auto-proceed to [Image_Generator / Executor] phase
+- [ ] **Next**: Step 4.5 design review gate, then [Image_Generator / Executor] phase
 ```
+
+---
+
+### Step 4.5: 设计方案用户复核 Gate (MANDATORY — 不可跳过)
+
+🚧 **GATE**: Step 4 完成；八项确认通过；Design Specification & Content Outline 已生成。
+
+⛔ **BLOCKING**: 用户未明确确认 `design_review.md` 之前禁止进入 Step 5 / Step 6 / 单跑 ai-image。AI MUST wait for explicit user confirmation。
+
+Strategist 必须输出 `<project_path>/design_review.md` 并暂停等待用户确认。
+
+`design_review.md` 必含 3 项：① 选定模板 + 简短理由（cross-link `templates/layouts/layouts_index.json` 中本模板 entry 的 `summary` 字段）② 页数 + 一级大纲 ③ Image_Generator 触发列表。其它细节（主题色 / 字体 / 节奏）从 `spec_lock.md` 链接，不复述。
+
+用户回复判定：**复用 Step 4 user reply contract**（同上文八项确认表）。未确认前禁止进入 Step 5 / Step 6 / 单跑 ai-image。**AI 在等待用户确认时永不主动推进**——下次 AI 输出时优先追问而非继续执行（AI 无真实计时能力，不依赖"超时"概念）。
+
+详细产物模板与边界 case（用户改主意 / 模糊正面词不算确认）见 `references/design-review-gate.md`。
 
 ---
 
 ### Step 5: Image_Generator Phase (Conditional)
 
-🚧 **GATE**: Step 4 complete; Design Specification & Content Outline generated and user confirmed.
+🚧 **GATE**: Step 4.5 complete; user has explicitly confirmed `design_review.md`.
 
 > **Trigger condition**: Image approach includes "AI generation". If not triggered, skip directly to Step 6 (Step 6 GATE must still be satisfied).
 
@@ -319,7 +354,7 @@ Read `references/image-generator.md`
 
 ### Step 6: Executor Phase
 
-🚧 **GATE**: Step 4 (and Step 5 if triggered) complete; all prerequisite deliverables are ready.
+🚧 **GATE**: Step 4.5 complete (user has explicitly confirmed `design_review.md`); Step 5 complete if triggered; all prerequisite deliverables are ready.
 
 Read the role definition based on the selected style:
 ```
@@ -352,7 +387,7 @@ python3 $SKILL_DIR/scripts/svg_quality_checker.py <project_path>
 **Logic Construction Phase**:
 - Generate speaker notes → `<project_path>/notes/total.md`
 
-**✅ Checkpoint — Confirm all SVGs and notes are fully generated and quality-checked. Proceed directly to Step 7 post-processing**:
+**✅ Checkpoint — Confirm all SVGs and notes are fully generated and quality-checked. Proceed to Step 6.5 overflow check, then Step 7**:
 ```markdown
 ## ✅ Executor Phase Complete
 - [x] All SVGs generated to svg_output/
@@ -362,12 +397,31 @@ python3 $SKILL_DIR/scripts/svg_quality_checker.py <project_path>
 
 ---
 
+### Step 6.5 (HARD RULE)：溢出 fallback 子规则
+
+> 这是 Step 6 的硬性子规则，**不是**独立步骤；判定信号在 Step 6 Quality Check 已经覆盖（第 5 维「文本换行」warning）。Executor 在每页 SVG 完成后必须自查本节 5 条禁令。
+
+文字溢出时**禁止**缩字号 / 缩行高 / 压 padding / 写画布外 / 拆页不更新 page_count。
+溢出段必须移入 `notes/total.md` 对应 H1 段（speaker notes 由 PPTX 原生承载）。
+
+判定信号：`svg_quality_checker.py` 第 5 维「文本换行」warning（proxy 信号——检测的是「用了哪些换行机制」而非「实际溢出」；false negative 时 AI 必须按本节 5 条禁令逐页自查文本是否超出 viewBox 容量）。
+
+详细 fallback 规则、5 个版式（16:9 / 4:3 / 小红书 / 朋友圈 / Story）下溢出表现差异、与 `total_md_split.py` H1 映射对齐说明，见 `references/overflow-fallback.md`。
+
+---
+
 ### Step 7: Post-processing & Export
 
-🚧 **GATE**: Step 6 complete; all SVGs generated to `svg_output/`; speaker notes `notes/total.md` generated.
+🚧 **GATE**: Step 6 complete (含 Step 6.5 overflow self-check); all SVGs generated to `svg_output/`; speaker notes `notes/total.md` generated.
 
 > ⚠️ The following three sub-steps MUST be **executed individually one at a time**. Each command must complete and be confirmed successful before running the next.
 > ❌ **NEVER** put all three commands in a single code block or single shell invocation.
+
+**Step 7.0** — Pre-flight lint（3 维子集：禁用元素 / 字体 / viewBox，<1 秒；finalize_svg.py 会重写 SVG 并 mask 部分违规，必须在它之前最后一次拦截）：
+```bash
+python3 $SKILL_DIR/scripts/svg_quality_checker.py --lint <project_path>
+```
+errors > 0 → 修到 0 才能进 Step 7.1。详见 §Gotchas「跳过 Step 7 入口 `--lint`」。
 
 **Step 7.1** — Split speaker notes:
 ```bash
@@ -413,6 +467,8 @@ Before switching roles, you **MUST first read** the corresponding reference file
 | Canvas format specification | `references/canvas-formats.md` |
 | Image layout specification | `references/image-layout-spec.md` |
 | SVG image embedding | `references/svg-image-embedding.md` |
+| Step 4.5 design review gate | `references/design-review-gate.md` |
+| Step 6.5 overflow fallback | `references/overflow-fallback.md` |
 
 ---
 
@@ -434,3 +490,4 @@ Before switching roles, you **MUST first read** the corresponding reference file
 | **用 `cp` 替代 `finalize_svg.py`** | 跳过最终化处理 → 导出 PPTX 缺样式 | 永远用 `finalize_svg.py`；导出永远从 `svg_final/` 而非 `svg_output/`，加 `-s final` 标志 |
 | **Executor 写新 page 前不重读 spec_lock.md** | Executor 上下文越往后越容易 drift，违反 strategist 既定决策 | 每写一个新 page 前必须重新 `Read templates/spec_lock_reference.md` 对应路径 + 项目的 spec_lock.md |
 | **SVG 用了 banned features**（mask / class / `<style>` / external CSS / `<animate*>` 等） | 导出 PPTX 时静默失败或样式丢失 | 严格遵守 `references/shared-standards.md` §1.1 banned 列表；rgba() 改 fill-opacity；`<g opacity>` 改逐元素 opacity |
+| **跳过 Step 7 入口 `--lint`，直接进 `total_md_split` / `finalize_svg`** | `finalize_svg.py` 重写 SVG 后 mask 部分违规 → 后处理用脏 SVG → PPTX 静默失败或样式丢失 | Step 7 入口必须先跑 `svg_quality_checker.py --lint <project_path>`（3 维子集，<1 秒）；errors > 0 修到 0 才进三步 |

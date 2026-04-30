@@ -89,7 +89,7 @@ customer-research handles the **research preparation phase**, solution-master ha
 **Claude Code:**
 
 ```
-/plugin marketplace add Alauda-io/presales-skills
+/plugin marketplace add TubeLiu/presales-skills
 /plugin install customer-research@presales-skills
 /reload-plugins
 ```
@@ -97,5 +97,5 @@ customer-research handles the **research preparation phase**, solution-master ha
 **Other agents (Cursor / Codex / OpenCode, etc.):**
 
 ```bash
-npx skills add Alauda-io/presales-skills -a <agent>
+npx skills add TubeLiu/presales-skills -a <agent>
 ```
