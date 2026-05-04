@@ -12,9 +12,15 @@
 
 ## 10 个 plugin 一览
 
-按角色拆分：4 个**共享 plugin** 提供底层能力（被主 plugin 调用，也可独立使用），4 个**主 plugin** 串成端到端业务流程，1 个**开发者工具 plugin** 用于审查和优化 skill 自身，1 个**通用工具 plugin** 提供独立辅助能力。
+marketplace 里仍然保持 **10 个独立 plugin** 分发，方便用户按需安装、独立升级；但使用心智按垂直场景分成三组：
 
-### 共享 plugin（底层能力 / 4 个）
+- **Base Tools**：底层能力，被主流程调用，也可单独使用
+- **Presales Workflows**：售前 / 方案 / 招投标 / PPT 的端到端工作流
+- **Writing & Meta**：文案编辑与 skill 开发者工具
+
+这样做保留了独立 plugin 的依赖边界，同时让第一次浏览 marketplace 的用户能先按用途选一组，而不是在平铺列表里猜关系。
+
+### Base Tools（底层能力 / 4 个）
 
 | plugin | 入口 | 一句话 |
 |---|---|---|
@@ -23,7 +29,7 @@
 | **drawio** | `/drawio:draw` 或 `/draw` | Draw.io 图表（`.drawio` XML + 可选 PNG/SVG/PDF 导出），覆盖架构图 / 流程图 / 时序图 / ER 图 / 拓扑图 / ML 模型图等 |
 | **anythingllm-mcp** | （MCP server，无 slash） | AnythingLLM 知识库语义搜索——装上自动注册 `anythingllm` MCP server，主 plugin 通过 `mcp__anythingllm__*` 工具直接调用 |
 
-### 主 plugin（端到端业务流程 / 4 个）
+### Presales Workflows（端到端业务流程 / 4 个）
 
 | plugin | 入口 | 一句话 |
 |---|---|---|
@@ -32,16 +38,11 @@
 | **tender-workflow** | `/tender-workflow:taa` / `:taw` / `:tpl` / `:trv` / `:twc` | 四角色招投标 + 配置：`tpl` 招标策划（甲方）/ `taa` 招标分析（乙方）/ `taw` 标书撰稿（乙方，并行写）/ `trv` 多维度审核 / `twc` 配置 |
 | **customer-research** | `/customer-research:research` 或 `/research` | 多源客户调研——对客户问题、产品主题或账户相关查询进行系统性多源调研，带来源归属和置信度评分。方案撰写前的客户画像准备、竞品分析、技术可行性验证 |
 
-### 开发者工具 plugin（meta / 1 个）
+### Writing & Meta（文案与开发者工具 / 2 个）
 
 | plugin | 入口 | 一句话 |
 |---|---|---|
 | **skill-optimizer** | `/skill-optimizer:optimize` 或 `/optimize` | Skill 审查与优化器——按 5 步流程（Scope → Review → Plan → Implement → Verify）审查目标 skill 的触发语义、工作流门槛、资源组织、安全边界、依赖可安装性与 README/SKILL 职责分层；默认先给诊断与计划，等用户明确说"按计划执行"才改文件。独立 plugin，不依赖其它 plugin |
-
-### 通用工具 plugin（独立辅助 / 1 个）
-
-| plugin | 入口 | 一句话 |
-|---|---|---|
 | **market** | `/market:polish` 或 `/polish` | B2B 科技营销文案编辑——七轮逐维度编辑框架（清晰度 / 语气一致性 / 价值关联 / 证据支撑 / 具体化 / 情感共鸣 / 风险消除）+ 专家团评分 + 中文冗余表达替代表。独立 plugin，无外部依赖 |
 
 > **触发方式两种皆可**：
@@ -80,7 +81,7 @@
 - 1 hook：solution-master 的 SessionStart 注入主 SKILL（仅在 SM 项目内 cwd 时触发）
 - 1 MCP server：`anythingllm`（来自 anythingllm-mcp plugin；不装时无）
 
-依赖顺序：先装共享 plugin（ai-image / web-access / drawio / anythingllm-mcp），再装主 plugin（solution-master / ppt-master / tender-workflow / customer-research）。`anythingllm-mcp` 可选，未装时主 plugin 自动降级为本地 YAML 索引 + 联网检索；`skill-optimizer` 和 `market` 可选，分别用于审查 skill 和编辑营销文案。
+推荐安装顺序：先装 **Base Tools**（ai-image / web-access / drawio / anythingllm-mcp），再装 **Presales Workflows**（solution-master / ppt-master / tender-workflow / customer-research）。`anythingllm-mcp` 可选，未装时主流程自动降级为本地 YAML 索引 + 联网检索；**Writing & Meta**（skill-optimizer / market）按需安装。
 
 也支持本地路径：`/plugin marketplace add /path/to/presales-skills`
 
@@ -123,7 +124,7 @@ Windows 用户见 [docs/cross-agent.md §3](docs/cross-agent.md#3-windows-适配
 
 > **使用心法**：所有 plugin 的"配置"和"使用"都直接对 AI 说自然语言即可——不用记 CLI 参数，AI 会按对应的 setup wizard 一步步引导你完成。
 
-### 第 1 步：先配置共享 plugin
+### 第 1 步：先配置 Base Tools
 
 #### `ai-image` —— 统一 AI 生图引擎
 

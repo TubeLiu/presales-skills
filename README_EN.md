@@ -12,9 +12,15 @@ A SKILL collection focused on presales / solution / consulting scenarios, distri
 
 ## Overview of 10 plugins
 
-Split by role: 4 **shared plugins** provide foundational capabilities (called by main plugins, also usable standalone), 4 **main plugins** form end-to-end business flows, 1 **developer-tools plugin** reviews / optimizes skills themselves, and 1 **general-purpose plugin** provides independent utility.
+The marketplace still distributes **10 independent plugins**, so users can install only what they need and each plugin can upgrade on its own cadence. For browsing and installation, think of them as three vertical groups:
 
-### Shared plugins (foundational / 4)
+- **Base Tools**: foundational capabilities used by the main workflows and also useful standalone
+- **Presales Workflows**: end-to-end flows for solutions, bids, PPTs, and customer research
+- **Writing & Meta**: copy editing and skill-development tooling
+
+This keeps plugin boundaries clean while making the marketplace easier to scan for first-time users.
+
+### Base Tools (foundational / 4)
 
 | Plugin | Entry | One-liner |
 |---|---|---|
@@ -23,7 +29,7 @@ Split by role: 4 **shared plugins** provide foundational capabilities (called by
 | **drawio** | `/drawio:draw` or `/draw` | Draw.io diagrams (`.drawio` XML + optional PNG / SVG / PDF export), covering architecture / flow / sequence / ER / topology / ML model diagrams. |
 | **anythingllm-mcp** | (MCP server, no slash) | AnythingLLM knowledge-base semantic search — auto-registers `anythingllm` MCP server on install; main plugins call it via `mcp__anythingllm__*` tools. |
 
-### Main plugins (end-to-end flows / 4)
+### Presales Workflows (end-to-end flows / 4)
 
 | Plugin | Entry | One-liner |
 |---|---|---|
@@ -32,16 +38,11 @@ Split by role: 4 **shared plugins** provide foundational capabilities (called by
 | **tender-workflow** | `/tender-workflow:taa` / `:taw` / `:tpl` / `:trv` / `:twc` | Four-role bid + config: `tpl` tender planning (buyer) / `taa` tender analysis (bidder) / `taw` bid writing (bidder, parallel) / `trv` multi-axis review / `twc` config. |
 | **customer-research** | `/customer-research:research` or `/research` | Multi-source customer research — systematic research on customer issues, product topics, or account queries with source attribution and confidence scoring. For customer profiling, competitive analysis, and technical feasibility validation before solution writing. |
 
-### Developer-tools plugin (meta / 1)
+### Writing & Meta (copy and developer tools / 2)
 
 | Plugin | Entry | One-liner |
 |---|---|---|
 | **skill-optimizer** | `/skill-optimizer:optimize` or `/optimize` | Skill review and optimizer — 5-step flow (Scope → Review → Plan → Implement → Verify) reviews target skill's trigger semantics, workflow gates, resource organization, safety boundaries, dependency installability, and README / SKILL division of responsibility. Defaults to "diagnosis + plan first" and only modifies files after the user explicitly says "execute the plan". Independent plugin, no other dependencies. |
-
-### General-purpose plugin (independent utility / 1)
-
-| Plugin | Entry | One-liner |
-|---|---|---|
 | **market** | `/market:polish` or `/polish` | B2B tech marketing copy editing — seven-sweep framework (Clarity / Voice & Tone / Value Association / Evidence / Specificity / Emotion / Risk Elimination) + expert panel scoring + Chinese redundancy replacement guide. Independent plugin, no external dependencies. |
 
 > **Two trigger methods**:
@@ -80,7 +81,7 @@ Expected reload output: `10 plugins · 13 skills · 1 hook · 1 plugin MCP serve
 - 1 hook: solution-master's SessionStart injects the main SKILL (only when cwd is in an SM project)
 - 1 MCP server: `anythingllm` (from anythingllm-mcp plugin; absent if not installed)
 
-Dependency order: install shared plugins first (ai-image / web-access / drawio / anythingllm-mcp), then main plugins (solution-master / ppt-master / tender-workflow / customer-research). `anythingllm-mcp` is optional — when absent, main plugins gracefully degrade to local YAML index + web search; `skill-optimizer` and `market` are optional — for skill review and copy editing respectively.
+Recommended order: install **Base Tools** first (ai-image / web-access / drawio / anythingllm-mcp), then **Presales Workflows** (solution-master / ppt-master / tender-workflow / customer-research). `anythingllm-mcp` is optional — when absent, main workflows gracefully degrade to local YAML index + web search; **Writing & Meta** (skill-optimizer / market) can be installed when needed.
 
 Local path also works: `/plugin marketplace add /path/to/presales-skills`
 
@@ -123,7 +124,7 @@ For Windows, see [docs/cross-agent.md §3](docs/cross-agent.md#3-windows-适配)
 
 > **Mindset**: every plugin's "configure" and "use" can be done by talking to AI in natural language — no need to memorize CLI flags; the AI walks you through the corresponding setup wizard step by step.
 
-### Step 1: configure shared plugins first
+### Step 1: configure Base Tools first
 
 #### `ai-image` — unified AI image engine
 

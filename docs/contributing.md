@@ -55,7 +55,7 @@ python3 -m pytest tests/test_skill_format.py -v
 - 含 §跨平台兼容性 checklist + `<SUBAGENT-STOP>` 段
 - 不引用已删的 `commands/` 路径 / `${CLAUDE_PLUGIN_ROOT}` 占位符（仅 anythingllm-mcp 豁免）
 - 不用 `command -v <bin>`（统一走 5 段式 installed_plugins.json fallback）
-- vercel CLI 实测识别 11 skills（draw / image-gen / browse / solution-master / make / taa / taw / tpl / trv / twc / optimize）
+- vercel CLI 实测识别 13 skills（draw / image-gen / browse / solution-master / make / taa / taw / tpl / trv / twc / optimize / research / polish）
 - 跨 sub-skill `$SKILL_DIR/../<sibling>/` 引用必须是同 plugin 真实 sibling
 - subagent prompt body 含工具限制段
 - taw writer 标题去编号 / reviewer STATUS 协议 / image_plan 字段结构 / SKILL.md ≤ 500 行
@@ -118,13 +118,13 @@ git log --oneline -20
 
 ## 3. 新增 plugin 的 checklist
 
-如果新加一个 plugin（第 9 个），需要：
+如果新加一个 plugin（第 11 个或后续），需要：
 
 1. `<plugin>/.claude-plugin/plugin.json`（含 `version`）
 2. `<plugin>/skills/<name>/SKILL.md`（参照现有 SKILL.md 头部模板：frontmatter + §路径自定位 + §跨平台兼容性 checklist + `<SUBAGENT-STOP>`）
 3. `.claude-plugin/marketplace.json` 加一条 entry（顶层 `metadata.version` 也要 bump）
 4. `<plugin>/CLAUDE.md`（plugin 内部细节，参照 `solution-master/CLAUDE.md` / `tender-workflow/CLAUDE.md`）
-5. 在 [README.md](../README.md) 的 8 plugin 表里加一行 → 改成 9 plugin 表
+5. 在 [README.md](../README.md) / [README_EN.md](../README_EN.md) 的 10 plugin 分组表里加一行，并确认它属于 Base Tools / Presales Workflows / Writing & Meta 哪一组
 6. 跑 `python3 -m pytest tests/ -v`，通常 `test_skill_format.py` 会发现新 plugin 自动断言（如果用了豁免清单则手动加）
 7. 视情况更新 `.claude/commands/plugin-review.md` 的"项目知识底座"
 
