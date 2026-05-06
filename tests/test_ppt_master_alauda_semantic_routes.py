@@ -184,11 +184,17 @@ def test_visual_system_contract_is_copied_and_documented():
 
     assert "visual_system.json <project_path>/templates/" in skill
     assert "human_quality_rubric.json <project_path>/templates/" in skill
+    assert "design_quality_checker.py" in skill
+    assert "ppt_master_eval.py --target <project_path> --design" in skill
     assert "density_profile" in design_spec
     assert "component_primitives" in design_spec
     assert "connector_policy" in design_spec
+    assert "design_semantics" in design_spec
+    assert "visual_archetype" in design_spec
     assert "route_quality_rules" in design_spec
     assert "## visual_system" in spec_lock
+    assert "## design_diversity" in spec_lock
+    assert "## design_semantics" in spec_lock
     assert "connector_policy" in spec_lock
     assert "customer_canvas" in spec_lock
     assert "## quality_samples" in spec_lock
@@ -204,6 +210,8 @@ def test_visual_system_contract_is_copied_and_documented():
     assert "shapeTextPolicy" in executor
     assert "data-text-align=\"left\"" in executor
     assert "routeQualityRules" in executor
+    assert "component → slot → text" in executor
+    assert "design_diversity" in executor
     assert "样张 P05" in executor
     assert "connector arrows sharing a text lane" in executor
     assert "Human-quality sample discipline" in executor
@@ -899,3 +907,261 @@ def test_ppt_master_eval_runs_fixture_suite(tmp_path):
     assert any(case["name"] == "multi_label_strip_centering" and case["passed"] for case in report["fixtures"])
     assert any(case["name"] == "pale_colored_block_centering" and case["passed"] for case in report["fixtures"])
     assert (output_dir / "report.md").exists()
+
+
+def test_design_quality_checker_rewards_semantic_human_like_page(tmp_path):
+    scripts_dir = ROOT / "ppt-master/skills/make/scripts"
+    sys.path.insert(0, str(scripts_dir))
+    try:
+        from design_quality_checker import DesignQualityChecker
+    finally:
+        sys.path.pop(0)
+
+    svg = tmp_path / "semantic_page.svg"
+    svg.write_text(
+        """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <rect width="1280" height="720" fill="#FFFFFF"/>
+  <text x="72" y="78" font-family="Arial, sans-serif" font-size="40" font-weight="700" fill="#334155">白天灰度发布能力建设路径</text>
+  <text x="72" y="118" font-family="Arial, sans-serif" font-size="20" fill="#475569">从凌晨窗口切换到可观测、可回滚的分钟级发布</text>
+  <rect x="90" y="174" width="1100" height="360" fill="#EEF6FF" stroke="#BFDBFE" rx="10" data-role="content-card" data-text-align="left"/>
+  <rect x="126" y="218" width="226" height="84" fill="#3BAEE3" rx="6" data-role="label"/>
+  <text x="239" y="260" font-family="Arial, sans-serif" font-size="22" fill="#FFFFFF" font-weight="700" text-anchor="middle" dominant-baseline="middle">入口接管</text>
+  <rect x="392" y="218" width="226" height="84" fill="#3BAEE3" rx="6" data-role="label"/>
+  <text x="505" y="260" font-family="Arial, sans-serif" font-size="22" fill="#FFFFFF" font-weight="700" text-anchor="middle" dominant-baseline="middle">灰度路由</text>
+  <rect x="658" y="218" width="226" height="84" fill="#25B273" rx="6" data-role="label"/>
+  <text x="771" y="260" font-family="Arial, sans-serif" font-size="22" fill="#FFFFFF" font-weight="700" text-anchor="middle" dominant-baseline="middle">指标门禁</text>
+  <rect x="924" y="218" width="226" height="84" fill="#25B273" rx="6" data-role="label"/>
+  <text x="1037" y="260" font-family="Arial, sans-serif" font-size="22" fill="#FFFFFF" font-weight="700" text-anchor="middle" dominant-baseline="middle">快速回滚</text>
+  <rect x="142" y="386" width="980" height="74" fill="#FFFFFF" stroke="#DCE6F2" rx="8" data-role="callout-content"/>
+  <text x="172" y="430" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#125B7D" data-text-align="left">交付判断</text>
+  <text x="320" y="430" font-family="Arial, sans-serif" font-size="20" fill="#334155" data-text-align="left">只有流量、链路、指标和回滚闭环同时成立，才进入生产迁移。</text>
+</svg>
+""",
+        encoding="utf-8",
+    )
+
+    result = DesignQualityChecker().check_file(svg)
+
+    assert result["score"] >= 80
+    assert result["metrics"]["visualHierarchy"] >= 80
+    assert result["metrics"]["alignmentDiscipline"] >= 80
+    assert not any(issue["code"] == "flat_peer_grid" for issue in result["issues"])
+
+
+def test_design_quality_checker_flags_flat_unsemantic_grid(tmp_path):
+    scripts_dir = ROOT / "ppt-master/skills/make/scripts"
+    sys.path.insert(0, str(scripts_dir))
+    try:
+        from design_quality_checker import DesignQualityChecker
+    finally:
+        sys.path.pop(0)
+
+    cards = []
+    for row, y in enumerate((150, 290)):
+        for col, x in enumerate((80, 330, 580, 830)):
+            idx = row * 4 + col + 1
+            cards.append(f'<rect x="{x}" y="{y}" width="200" height="92" fill="#EEF6FF" stroke="#DCE6F2" rx="6"/>')
+            cards.append(f'<text x="{x + 18}" y="{y + 52}" font-family="Arial, sans-serif" font-size="18" fill="#334155">模块 {idx}</text>')
+    svg = tmp_path / "flat_grid.svg"
+    svg.write_text(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">'
+        '<rect width="1280" height="720" fill="#FFFFFF"/>'
+        + "".join(cards)
+        + "</svg>",
+        encoding="utf-8",
+    )
+
+    result = DesignQualityChecker().check_file(svg)
+
+    assert result["score"] < 78
+    assert any(issue["code"] in {"flat_peer_grid", "missing_main_message", "low_visual_hierarchy"} for issue in result["issues"])
+
+
+def test_ppt_master_eval_can_include_design_quality_summary(tmp_path):
+    project = tmp_path / "project"
+    svg_dir = project / "svg_output"
+    svg_dir.mkdir(parents=True)
+    (svg_dir / "01_page.svg").write_text(
+        """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <rect width="1280" height="720" fill="#FFFFFF"/>
+  <text x="72" y="80" font-family="Arial, sans-serif" font-size="38" fill="#334155" font-weight="700">灰度发布闭环</text>
+  <rect x="120" y="200" width="320" height="70" fill="#3BAEE3" rx="6" data-role="label"/>
+  <text x="280" y="235" font-family="Arial, sans-serif" font-size="20" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle">流量治理</text>
+</svg>
+""",
+        encoding="utf-8",
+    )
+    output_dir = tmp_path / "eval"
+    script = ROOT / "ppt-master/skills/make/scripts/ppt_master_eval.py"
+
+    completed = subprocess.run(
+        [sys.executable, str(script), "--output-dir", str(output_dir), "--target", str(project), "--svg-dir", "svg_output", "--design"],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    report = json.loads((output_dir / "report.json").read_text(encoding="utf-8"))
+    assert "design" in report
+    assert report["design"]["totalFiles"] == 1
+    assert "design average:" in completed.stdout
+    assert "diversity score:" in completed.stdout
+    assert "## Design Quality" in (output_dir / "report.md").read_text(encoding="utf-8")
+
+
+def _write_archetype_svg(path: Path, body: str) -> None:
+    path.write_text(
+        f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <rect width="1280" height="720" fill="#FFFFFF"/>
+  <text x="72" y="80" font-family="Arial, sans-serif" font-size="38" fill="#334155" font-weight="700">多样性测试页面</text>
+  <text x="72" y="118" font-family="Arial, sans-serif" font-size="18" fill="#64748B">不同内容应触发不同视觉语法</text>
+  {body}
+</svg>
+""",
+        encoding="utf-8",
+    )
+
+
+def test_design_quality_checker_scores_deck_level_archetype_diversity(tmp_path):
+    scripts_dir = ROOT / "ppt-master/skills/make/scripts"
+    sys.path.insert(0, str(scripts_dir))
+    try:
+        from design_quality_checker import DesignQualityChecker
+    finally:
+        sys.path.pop(0)
+
+    project = tmp_path / "project"
+    svg_dir = project / "svg_output"
+    svg_dir.mkdir(parents=True)
+    _write_archetype_svg(svg_dir / "01_compare.svg", '<rect x="120" y="220" width="260" height="160" fill="#EEF6FF" data-intent="current" data-role="content-card"/><rect x="840" y="220" width="260" height="160" fill="#EAF8F0" data-intent="target" data-role="content-card"/>')
+    _write_archetype_svg(svg_dir / "02_kpi.svg", ''.join(f'<rect x="{120+i*210}" y="220" width="160" height="90" fill="#FFFFFF" data-role="metric-card" data-intent="kpi"/>' for i in range(4)))
+    _write_archetype_svg(svg_dir / "03_arch.svg", '<rect x="160" y="210" width="860" height="54" fill="#EEF6FF" data-role="layer-stack"/><rect x="160" y="290" width="860" height="54" fill="#EEF6FF" data-role="architecture-layer"/>')
+    _write_archetype_svg(svg_dir / "04_process.svg", ''.join(f'<rect x="{120+i*220}" y="230" width="160" height="90" fill="#FFFFFF" data-role="process-step" data-intent="process"/>' for i in range(4)))
+    _write_archetype_svg(svg_dir / "05_matrix.svg", '<rect x="120" y="210" width="900" height="48" fill="#3BAEE3" data-role="table-header"/><rect x="120" y="270" width="900" height="54" fill="#FFFFFF" data-role="table-row"/>')
+    _write_archetype_svg(svg_dir / "06_code.svg", '<rect x="140" y="210" width="760" height="260" fill="#0F172A" data-role="code"/><text x="172" y="260" font-family="Consolas, monospace" font-size="18" fill="#E2E8F0">kind: VirtualService</text>')
+
+    report = DesignQualityChecker().check_target(project, svg_dir_name="svg_output")
+
+    assert report["deckDiversity"]["score"] >= 85
+    assert len(report["deckDiversity"]["archetypeCounts"]) >= 5
+    assert not report["deckDiversity"]["issues"]
+
+
+def test_design_quality_checker_flags_repeated_card_grid_deck(tmp_path):
+    scripts_dir = ROOT / "ppt-master/skills/make/scripts"
+    sys.path.insert(0, str(scripts_dir))
+    try:
+        from design_quality_checker import DesignQualityChecker
+    finally:
+        sys.path.pop(0)
+
+    project = tmp_path / "project"
+    svg_dir = project / "svg_output"
+    svg_dir.mkdir(parents=True)
+    card_body = ''.join(
+        f'<rect x="{110 + (i % 3) * 260}" y="{210 + (i // 3) * 120}" width="210" height="82" fill="#FFFFFF" data-role="content-card"/>'
+        for i in range(6)
+    )
+    for index in range(6):
+        _write_archetype_svg(svg_dir / f"{index + 1:02d}_cards.svg", card_body)
+
+    report = DesignQualityChecker().check_target(project, svg_dir_name="svg_output")
+
+    assert report["deckDiversity"]["score"] < 70
+    issue_codes = {issue["code"] for issue in report["deckDiversity"]["issues"]}
+    assert {"low_archetype_variety", "repeated_visual_archetype", "card_grid_overuse"} <= issue_codes
+
+
+def test_design_archetype_planner_maps_mixed_source_to_distinct_archetypes():
+    scripts_dir = ROOT / "ppt-master/skills/make/scripts"
+    sys.path.insert(0, str(scripts_dir))
+    try:
+        from design_archetype_planner import plan_archetypes
+    finally:
+        sys.path.pop(0)
+
+    source = """# 技术方案
+
+## 现状与目标
+当前只能凌晨发布，目标是白天安全灰度发布。
+
+## 建设指标
+灰度精度 ≤0.1%，染色覆盖 ≥95%，回滚时间 ≤2 分钟。
+
+## 总体架构
+方案包含 Ingress Gateway、控制面 istiod、Envoy Sidecar、观测平台层。
+
+## 实施流程
+第一阶段试点接入，第二阶段策略固化，第三阶段推广。
+
+## 对象映射
+| OCP 对象 | ACP 对象 | 风险 |
+|---|---|---|
+| Route | Ingress | 中 |
+
+## YAML 示例
+```yaml
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+```
+
+## 为什么选择 ASM
+Kubernetes 滚动更新无法满足请求级灰度验证。
+"""
+
+    report = plan_archetypes(source, page_count=7)
+    archetypes = {page["visualArchetype"] for page in report["pages"]}
+
+    assert {"comparison_bridge", "kpi_dashboard", "architecture_stack", "process_flow", "matrix_table", "code_annotation", "argument_thesis"} <= archetypes
+    assert "## design_diversity" in report["specLockSnippet"]
+
+
+def test_ppt_master_eval_can_plan_source_archetypes(tmp_path):
+    project = tmp_path / "project"
+    sources = project / "sources"
+    svg_dir = project / "svg_output"
+    sources.mkdir(parents=True)
+    svg_dir.mkdir()
+    (sources / "source.md").write_text(
+        """# 方案
+
+## 架构
+Ingress Gateway、Sidecar、控制面和观测平台分层。
+
+## YAML
+```yaml
+kind: VirtualService
+```
+""",
+        encoding="utf-8",
+    )
+    (svg_dir / "01.svg").write_text(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720"><rect width="1280" height="720" fill="#FFFFFF"/><text x="72" y="80" font-size="38" font-family="Arial" fill="#334155">测试</text></svg>',
+        encoding="utf-8",
+    )
+    output_dir = tmp_path / "eval"
+    script = ROOT / "ppt-master/skills/make/scripts/ppt_master_eval.py"
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(script),
+            "--output-dir",
+            str(output_dir),
+            "--target",
+            str(project),
+            "--svg-dir",
+            "svg_output",
+            "--plan-archetypes",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    report = json.loads((output_dir / "report.json").read_text(encoding="utf-8"))
+    assert "archetypePlan" in report
+    assert report["archetypePlan"]["pageCount"] >= 1
+    assert "planned archetypes:" in completed.stdout

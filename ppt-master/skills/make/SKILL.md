@@ -124,8 +124,10 @@ fi
 | `$SKILL_DIR/scripts/project_manager.py` | Project init / validate / manage |
 | `$SKILL_DIR/scripts/analyze_images.py` | Image analysis |
 | ai-image plugin | AI image generation (multi-provider) — call via `Skill(skill="ai-image:gen")` (Claude Code) or `python3 "$AI_IMAGE_SKILL_DIR/scripts/image_gen.py"` (cross-agent fallback) |
+| `$SKILL_DIR/scripts/design_archetype_planner.py` | Source Markdown → visual archetype plan for `spec_lock.md ## design_diversity` |
 | `$SKILL_DIR/scripts/svg_quality_checker.py` | SVG quality check |
-| `$SKILL_DIR/scripts/ppt_master_eval.py` | Repeatable visual quality eval fixtures + target project summary |
+| `$SKILL_DIR/scripts/design_quality_checker.py` | Page-level design quality check (hierarchy / grouping / density / semantic roles) |
+| `$SKILL_DIR/scripts/ppt_master_eval.py` | Repeatable visual + design quality eval fixtures and target project summary |
 | `$SKILL_DIR/scripts/total_md_split.py` | Speaker notes splitting |
 | `$SKILL_DIR/scripts/finalize_svg.py` | SVG post-processing (unified entry) |
 | `$SKILL_DIR/scripts/svg_to_pptx.py` | Export to PPTX |
@@ -380,6 +382,7 @@ Read references/executor-consultant-top.md # Top consulting style (MBB level)
 
 **Visual Construction Phase**:
 - Generate SVG pages sequentially, one page at a time, in one continuous pass → `<project_path>/svg_output/`
+- For complex mixed-source decks, run `python3 $SKILL_DIR/scripts/design_archetype_planner.py <project_path>` before writing SVG and use its planned archetypes when filling `spec_lock.md ## design_diversity`. This prevents unrelated sections from collapsing into the same card-grid mold.
 
 **Quality Check Gate (Mandatory)** — after all SVGs are generated and BEFORE speaker notes:
 ```bash
@@ -388,8 +391,9 @@ python3 $SKILL_DIR/scripts/svg_quality_checker.py <project_path>
 - Any `error` (banned SVG features, viewBox mismatch, spec_lock drift, etc.) MUST be fixed on the offending page before proceeding — go back to Visual Construction, re-generate that page, re-run the check.
 - `warning` entries (e.g., low-resolution image, non-PPT-safe font tail, possible text overlap, off-contract icon drift) should be reviewed and fixed when straightforward; for branded templates, text overlap / clipping / icon drift warnings are release blockers unless proven false positive.
 - Running the checker against `svg_output/` is required — running it only after `finalize_svg.py` is too late (finalize rewrites SVG and some violations get masked).
+- For human-quality review on generated decks, also run `python3 $SKILL_DIR/scripts/ppt_master_eval.py --target <project_path> --design`; the design section scores hierarchy, semantic grouping, density balance, whitespace, alignment discipline, explicit component→slot→text coverage, and deck-level visual-archetype diversity.
 - If `spec_lock.md ## quality_samples` exists, inspect those rotating sample pages first for human-made quality: narrative specificity, composition hierarchy, density control, brand-native execution, technical legibility, and client readiness. Do not repeatedly polish the same page across iterations; rotate sample page numbers and route intents according to the template rubric.
-- When improving `ppt-master` itself or investigating repeated visual defects, run `python3 $SKILL_DIR/scripts/ppt_master_eval.py --target <project_path>` and use its fixture + target report as evidence. Do not judge capability changes only by one manually patched sample SVG.
+- When improving `ppt-master` itself or investigating repeated visual defects, run `python3 $SKILL_DIR/scripts/ppt_master_eval.py --target <project_path> --design` and use its fixture + target report as evidence. Do not judge capability changes only by one manually patched sample SVG.
 
 **Logic Construction Phase**:
 - Generate speaker notes → `<project_path>/notes/total.md`

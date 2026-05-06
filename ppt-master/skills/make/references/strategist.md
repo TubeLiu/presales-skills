@@ -345,6 +345,37 @@ generic SVG composition.
 6. Use the selected density profile to set visible-label budgets, group spacing, and page-rhythm choices. Dense pages may carry many elements, but only within the profile's gap and nesting limits.
 7. Mirror the decisions into `spec_lock.md ## visual_system` so Executor can re-read them page by page.
 
+### Design Semantics Plan (Mandatory)
+
+After choosing semantic routes and visual-system primitives, Strategist MUST
+write a compact design semantics plan. The goal is to give Executor a semantic
+component tree before SVG drawing begins.
+
+For complex mixed-source decks, first run:
+
+```bash
+python3 scripts/design_archetype_planner.py <project_path>
+```
+
+Use the generated report as a starting point for `design_spec.md` per-page
+`visual_archetype` and `spec_lock.md ## design_diversity`. You may override an
+entry when narrative judgment demands it, but do not ignore the signal and
+default every section to cards.
+
+For every non-structural content page, identify:
+
+- `components`: the visible groups that carry meaning, e.g. migration bridge,
+  object mapping table, process step, architecture layer, risk quadrant,
+  decision callout.
+- `slots`: the named areas inside those components, e.g. title label, body
+  area, metric chip, header cell, row label, connector lane.
+- `text_policy`: default centered labels versus explicit left-aligned content
+  exceptions.
+
+Mirror these choices into `spec_lock.md ## design_semantics`. If the page is
+dense, this section is more important, not less: it helps the checker
+distinguish deliberate content cards from accidental uncentered labels.
+
 **Rules**:
 - `visual_system.json` does not replace narrative judgment; it constrains how
   a chosen route is drawn.
@@ -530,8 +561,10 @@ The Strategist should make professional judgments on the template basis generate
 4. **Generate execution lock**: read `templates/spec_lock_reference.md` and produce `projects/<project_name>.../spec_lock.md` — a distilled, machine-readable short form of the color / typography / icon / image / **page_rhythm** / semantic route / visual system decisions above. This file is what the Executor re-reads before every page (see [executor-base.md](executor-base.md) §2.1). The values in `spec_lock.md` MUST exactly match the decisions recorded in `design_spec.md`; if they ever diverge, `spec_lock.md` wins and `design_spec.md` should be treated as historical narrative.
    - **page_rhythm is mandatory**: Based on the page list in §IX Content Outline, assign each page one of `anchor` / `dense` / `breathing` (see `spec_lock_reference.md` for the full vocabulary). This is what breaks the uniform "every page is a card grid" feel — without it the Executor defaults all pages to `dense`.
    - **Rhythm follows narrative, not quota**: `breathing` pages should appear at natural narrative pauses — chapter transitions, a single argument worth standalone emphasis (hero quote / big number / feature image), an SCQA "Question" bridge, or a deliberate stop after a chain of dense argumentation. If the content is genuinely a high-density data briefing or rigorous consulting analysis, the deck may legitimately be nearly all `dense` — **do NOT invent filler pages** ("Thank you", "Chapter divider with no content") to pad the rhythm, because filler is itself a hallmark AI-generated pattern. Validation test: every `breathing` page must answer "what independent thing is this page saying?" — if it can't, it shouldn't exist.
+   - **design_diversity is mandatory**: Add `## design_diversity` with per-page visual archetypes. For mixed technical/business source material, use content semantics to vary archetypes across architecture stacks, process flows, matrices, code annotations, KPI dashboards, comparison bridges, and argument pages. Do not assign the same card-grid archetype to most pages just because it is visually safe.
    - **semantic_routes is mandatory when available**: If `templates/semantic_routes.json` exists, add `## semantic_routes` entries for all non-structural content pages. These entries must match each page's Semantic Route block in `design_spec.md §IX` and must name a concrete template variant or the catalog default route.
    - **visual_system is mandatory when available**: If `templates/visual_system.json` exists, add `## visual_system` with the source, component library, icon library/inventory, default density settings, connector policy, and per-page route density/component/icon decisions. These entries must match each page's Semantic Route block in `design_spec.md §IX`.
+   - **design_semantics is mandatory**: Add `## design_semantics` with global component→slot→text rules plus per-page component roles. This is how the Executor and `design_quality_checker.py` evaluate design quality without route-specific hardcoding.
    - **quality_samples is mandatory when available**: If `templates/human_quality_rubric.json` exists, add `## quality_samples` with rotating sample pages selected from different non-structural page intents. These are the first pages to inspect for human-made quality after generation.
 
 ---

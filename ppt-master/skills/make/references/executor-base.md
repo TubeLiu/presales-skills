@@ -25,11 +25,15 @@ Before generating each page, you must explicitly output which template (or "free
 📝 **Template mapping**: `templates/01_cover.svg` (or "None (free design)")
 🧭 **Semantic route**: `page_intent | template_variant | visual_grammar | payload_budget` (or "None")
 🧩 **Visual system**: `density | components | icons` (or "None")
+🎛️ **Deck diversity**: `visual_archetype | current deck archetype mix`
+🧱 **Design semantics**: `component roles | slot roles | text alignment policy`
 🎯 **Adherence rules / layout strategy**: [specific description]
 ```
 
 - **Content pages with `semantic_routes`**: Use the declared `template_variant` as the first-choice page template and preserve its visual grammar unless the content would violate SVG constraints. Keep visible text inside the declared `payload_budget`; move overflow to speaker notes.
 - **Content pages with `visual_system`**: Use the declared density profile, component primitives, and icon inventory as the execution contract. Read `templates/component_library.md` before composing the first such page.
+- **Content pages with `design_diversity`**: Preserve the page's declared visual archetype. If recent pages already use the same archetype heavily, prefer the declared route's alternate grammar or reduce card-grid structure before repeating it.
+- **Design semantics are mandatory on generated primitives**: before writing SVG, name the intended component tree in page terms (for example `hero-message`, `process-step`, `mapping-row`, `decision-callout`). In SVG, mark generated shapes/text with `data-role`, `data-slot`, `data-group`, `data-intent`, or `data-text-align` when the default center rule does not apply. This is not decoration; downstream checkers use it to verify component→slot→text relationships instead of guessing from colors.
 - **Content pages without `semantic_routes`**: Templates only define header and footer; the content area is freely laid out by the Executor
 - **No template**: Generate entirely per the Design Specification & Content Outline
 
@@ -61,6 +65,18 @@ Must output confirmation including: canvas dimensions, body font size, color sch
 
 If a page genuinely needs a value not in `spec_lock.md`, stop and surface it — do not silently invent one. Either request the user to extend the lock, or revise the page to stay within it.
 
+**Design semantics contract — component → slot → text**:
+
+Every non-background visual group must be expressible as a component with one
+or more slots. This is the semantic layer that prevents fragile color/size
+rules from becoming the design system.
+
+- Component shapes: use `data-role` for the role (`content-card`, `process-step`, `metric-card`, `table`, `mapping-row`, `callout-content`, `label`, `header`, etc.) and `data-group` for siblings that belong together.
+- Slot shapes: use `data-slot` or a slot role such as `label-slot`, `header-cell`, `table-cell`, `body-slot`.
+- Text: use `data-slot` when attached to a slot, `data-intent` for route-specific meaning, and `data-text-align="left"` only for true paragraph/card content with padding.
+- Default rule: text inside colored blocks, chips, step circles, table headers, buttons, and small labels is horizontally and vertically centered. Left alignment is an explicit exception, not the default.
+- Large content cards may contain left-aligned text only when the owning shape is marked as content (`data-role="content-card"` or `data-role="callout-content"`) and the text has visible padding from the card edge.
+
 **Per-page layout rhythm — `page_rhythm` section**:
 
 Before drawing each page, look up its entry in `page_rhythm` (key format `P<NN>` matching the page index in §IX of `design_spec.md`) and apply the corresponding layout discipline:
@@ -76,6 +92,29 @@ Before drawing each page, look up its entry in `page_rhythm` (key format `P<NN>`
 **Missing `page_rhythm` section** → fall back to `dense` for every page (pre-rhythm behavior). Emit the literal line `warning: spec_lock.md missing page_rhythm — defaulting all pages to dense` once, then proceed.
 
 **Tag not found for current page** → fall back to `dense` silently. Do not invent a tag.
+
+**Deck-level design diversity — `design_diversity` section**:
+
+If `spec_lock.md` includes `design_diversity`, read the current page's intended
+visual archetype before drawing. The archetype is a design grammar promise, not
+a cosmetic label. Examples:
+
+| Archetype | Use when content is... |
+|-----------|------------------------|
+| `architecture_stack` | platform layers, control/data plane, topology, dependencies |
+| `process_flow` | phases, gates, responsibility flow, delivery rhythm |
+| `matrix_table` | object mapping, risk/owner/rollback decisions, compact comparison |
+| `code_annotation` | YAML / CLI / API samples that need annotated code panels |
+| `kpi_dashboard` | measurable targets, thresholds, acceptance metrics |
+| `comparison_bridge` | current vs. target, before/after, migration bridge |
+| `argument_thesis` | "why this approach" pages, decision rationale, evidence chain |
+
+For decks with mixed source semantics, do not let one archetype dominate most
+pages. In practice: if a deck has 6+ content pages, avoid using card-grid
+structure on more than about half of them unless the deck is intentionally a
+table appendix. After generation, run `ppt_master_eval.py --target <project_path>
+--design`; fix upstream route/archetype choices when it reports
+`repeated_visual_archetype` or `card_grid_overuse`.
 
 **Per-page semantic route — `semantic_routes` section**:
 
