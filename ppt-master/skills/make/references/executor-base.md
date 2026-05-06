@@ -33,6 +33,7 @@ Before generating each page, you must explicitly output which template (or "free
 - **Content pages with `semantic_routes`**: Use the declared `template_variant` as the first-choice page template and preserve its visual grammar unless the content would violate SVG constraints. Keep visible text inside the declared `payload_budget`; move overflow to speaker notes.
 - **Content pages with `visual_system`**: Use the declared density profile, component primitives, and icon inventory as the execution contract. Read `templates/component_library.md` before composing the first such page.
 - **Content pages with `design_diversity`**: Preserve the page's declared visual archetype. If recent pages already use the same archetype heavily, prefer the declared route's alternate grammar or reduce card-grid structure before repeating it.
+- **Content pages with `density_contract`**: Satisfy the declared visible claims / objects / labels / evidence / relationships minimums. Use compact human slide forms (tables, mapped rows, annotations, KPI chips, layer labels, callout strips) instead of hiding concrete source detail in speaker notes.
 - **Design semantics are mandatory on generated primitives**: before writing SVG, name the intended component tree in page terms (for example `hero-message`, `process-step`, `mapping-row`, `decision-callout`). In SVG, mark generated shapes/text with `data-role`, `data-slot`, `data-group`, `data-intent`, or `data-text-align` when the default center rule does not apply. This is not decoration; downstream checkers use it to verify component→slot→text relationships instead of guessing from colors.
 - **Content pages without `semantic_routes`**: Templates only define header and footer; the content area is freely laid out by the Executor
 - **No template**: Generate entirely per the Design Specification & Content Outline
@@ -115,6 +116,31 @@ structure on more than about half of them unless the deck is intentionally a
 table appendix. After generation, run `ppt_master_eval.py --target <project_path>
 --design`; fix upstream route/archetype choices when it reports
 `repeated_visual_archetype` or `card_grid_overuse`.
+Use the report's `generationGuidance` fields as the regeneration brief. Those
+actions describe how to change route, component, slot, density, and hierarchy;
+they are not permission to patch a single SVG's coordinates until it passes.
+
+**Information density — `density_contract` section**:
+
+If `spec_lock.md` includes `density_contract`, read the current page's contract
+before drawing. The contract is a lower bound for visible information, not a
+decoration target:
+
+- `visible_claims`: explicit statements the audience can read on the slide.
+- `visible_objects`: source-specific business / technical objects, not generic
+  nouns.
+- `visible_labels`: row labels, chips, annotations, step names, layer labels,
+  KPI labels, or table headers.
+- `evidence_items`: numbers, thresholds, named standards, status values, or
+  validation gates.
+- `relationships`: mappings, dependencies, migration steps, validation links,
+  ownership, or before/after transitions.
+
+Do not satisfy density by shrinking text below the typography ramp. Increase
+structure instead: matrix rows, compact badges, annotation columns, dense
+architecture labels, grouped callout strips, or table-like layouts. Speaker
+notes are for overflow and narration; if most source detail is only in notes,
+the page fails the density contract.
 
 **Per-page semantic route — `semantic_routes` section**:
 
@@ -198,7 +224,9 @@ specific than generic layout instincts. Examples:
 - `mapping_table`: rows need business-decision cues such as automation, risk,
   owner, rollback, or priority; do not stop at object-name mapping.
 - `migration_bridge`: the bridge is the visual and narrative center; avoid three
-  equal cards unless the content truly has equal weight.
+  equal cards unless the content truly has equal weight. The bridge must show
+  transformation mechanics such as gates, control points, validation signals, or
+  rollback logic; a large percentage ramp alone is not enough.
 - `risk_matrix`: axis labels must be explicit and high-contrast before quadrant
   details.
 
@@ -207,10 +235,18 @@ specific than generic layout instincts. Examples:
 - Preserve at least the profile's `relatedGapPx` between text and its owning visual, and at least `groupGapPx` between unrelated visual groups.
 - Respect `maxNestedLevels`; do not create unreadable architecture pages by stacking labels inside labels inside containers.
 - Respect `maxVisibleMicroLabels`; when content exceeds the budget, merge labels, shorten them, or move details to notes.
+- Do not create information density by repeating identical micro-label stacks in
+  multiple peer cards. If three or more cards would contain the same vertical
+  pill pattern, switch to bands, a matrix, a causal map, or a scoped decision
+  block.
+- Every text item and child shape must remain inside its direct semantic parent
+  component (`content-card`, `bridge`, `process-step`, `metric-card`,
+  `risk-quadrant`, etc.). A child that fits the outer panel but escapes its own
+  card is still a layout failure.
 - Do not put CJK text in narrow vertical strips or rotate Chinese labels. Use horizontal side labels, badges, or section headers instead.
 - Do not shrink text below the typography ramp to make dense pages fit. Reducing visible content is the preferred solution.
 - Do not render eval/internal metadata such as `mapping_table`, `dense_technical`, or `样张 P05` on a customer-facing slide canvas.
-- After rendering dense technical pages, inspect for text overlap, clipping, icon/text collisions, arrows covering labels, connector arrows sharing a text lane, connector arrows intruding into card/container borders, and shape-label text not centered in its primitive before proceeding to export.
+- After rendering dense technical pages, inspect for text overlap, clipping, icon/text collisions, arrows covering labels, connector arrows sharing a text lane, connector arrows intruding into card/container borders, semantic parent overflow, and shape-label text not centered in its primitive before proceeding to export.
 
 **Human-quality sample discipline — `quality_samples` section**:
 
@@ -229,6 +265,18 @@ generation subset: every page in `design_spec.md §IX` still must be generated.
   fix the upstream contract. Do not keep hand-polishing the same SVG.
 - During skill improvement or repeated quality iterations, rotate sample page
   numbers and page intents instead of repeatedly inspecting the same page.
+- If `ppt_master_eval.py --design` reports `low_visual_focus`, redesign the
+  page grammar before touching coordinates: introduce a dominant component,
+  merge equal peer cards into a table / layer / bridge / swimlane, or use
+  asymmetric scale so the audience can see what matters first.
+- If it reports `repetitive_micro_label_stacks`, do not add spacing to the
+  same cards. Change the component type: convert repeated vertical pill lists
+  into matrix rows, bands, grouped chips, causal maps, or scoped decision
+  blocks.
+- If it reports `low_semantic_grouping`, add explicit component and slot roles
+  (`data-role`, `data-slot`, `data-group`, `data-intent`) and redraw around
+  those groups; this is a semantic-generation failure, not a local alignment
+  failure.
 
 **Rationale**: Tool-result re-reads bypass model memory (which compression can corrupt). Every page gets a fresh ground truth pinned to the most recent turn in context.
 

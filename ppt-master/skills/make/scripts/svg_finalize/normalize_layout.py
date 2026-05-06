@@ -26,6 +26,19 @@ from svg_finalize.layout_semantics import (
 )
 
 
+SLOT_TEXT_X_INSET = 3.0
+SLOT_PARENT_INSET = 6.0
+MIN_SLOT_FONT_SIZE = 8.5
+SLOT_FIT_BUFFER = 0.75
+COMPONENT_CONTENT_PADDING = 8.0
+COMPONENT_SPILL_TOLERANCE = 48.0
+SEMANTIC_SIBLING_MIN_GAP = 12.0
+SEMANTIC_SIBLING_MIN_AXIS_OVERLAP = 0.22
+COMPONENT_EMPHASIS_MIN_FONT_SIZE = 24.0
+COMPONENT_EMPHASIS_TOP_BAND_RATIO = 0.42
+COMPONENT_EMPHASIS_MIN_WIDTH_RATIO = 0.32
+
+
 def normalize_colored_block_text_in_file(svg_file: Path, verbose: bool = False) -> int:
     content = svg_file.read_text(encoding="utf-8")
     processed, count = normalize_colored_block_text(content)
@@ -43,18 +56,30 @@ def normalize_colored_block_text(content: str) -> tuple[str, int]:
 
     for slot in semantics.slots:
         if slot.policy == "center":
-            _normalize_center_slot(slot, replacements, insertions)
+            _normalize_center_slot(slot, semantics.shapes, replacements, insertions)
         elif slot.policy == "center-stack":
             _normalize_stack_slot(slot, semantics.shapes, replacements)
 
-    if not replacements and not insertions:
-        return content, 0
+    _normalize_component_content_bounds(semantics, replacements)
+    _normalize_direct_component_emphasis_alignment(semantics, replacements)
+    _normalize_direct_component_text_fit(semantics, replacements)
 
-    return _apply_replacements_and_insertions(content, replacements, insertions), len(replacements)
+    change_count = len(replacements)
+    if replacements or insertions:
+        content = _apply_replacements_and_insertions(content, replacements, insertions)
+
+    spacing_replacements: Dict[int, str] = {}
+    _normalize_semantic_sibling_spacing(build_layout_semantics(content), spacing_replacements)
+    if spacing_replacements:
+        content = _apply_replacements_and_insertions(content, spacing_replacements, {})
+        change_count += len(spacing_replacements)
+
+    return content, change_count
 
 
 def _normalize_center_slot(
     slot: SlotNode,
+    shapes: List[ShapeNode],
     replacements: Dict[int, str],
     insertions: Dict[int, List[str]],
 ) -> None:
@@ -63,7 +88,9 @@ def _normalize_center_slot(
 
     if len(slot.texts) == 1:
         text = slot.texts[0]
-        replacements[text.start] = _centered_text_tag(text, slot.box.cx, slot.box.cy)
+        target_box = _fit_slot_box_to_text(slot, text, shapes, replacements)
+        font_size = _font_size_for_slot(text, target_box)
+        replacements[text.start] = _centered_text_tag(text, target_box.cx, target_box.cy, font_size)
         return
 
     if slot.box.height > 80:
@@ -136,10 +163,389 @@ def _normalize_stack_slot(
             badge_y = badge.box.y1 + dy
             replacements[badge.start] = _shape_tag_with_xy(badge, badge_x, badge_y)
             for text in item["texts"]:
-                replacements[text.start] = _centered_text_tag(text, slot.box.cx, badge_y + badge.box.height / 2)
+                target_box = Box(badge_x, badge_y, badge_x + badge.box.width, badge_y + badge.box.height)
+                font_size = _font_size_for_slot(text, target_box)
+                replacements[text.start] = _centered_text_tag(text, slot.box.cx, badge_y + badge.box.height / 2, font_size)
         else:
             text = item["text"]
             replacements[text.start] = _centered_text_tag(text, slot.box.cx, text.y + dy)
+
+
+def _fit_slot_box_to_text(
+    slot: SlotNode,
+    text: TextNode,
+    shapes: List[ShapeNode],
+    replacements: Dict[int, str],
+) -> Box:
+    """Expand a direct semantic slot when its single-line label needs room.
+
+    This keeps the repair at the component -> slot -> text level.  It never
+    keys off strings, colors, page numbers, or template-specific coordinates:
+    if a label-like slot carries one text item and has room inside its semantic
+    parent, the slot may grow up to the parent's inner width before the text is
+    reduced.
+    """
+    box = slot.box
+    text_width = estimate_text_width(text.text, text.font_size, text.font_weight)
+    required_width = text_width + SLOT_TEXT_X_INSET * 2 + SLOT_FIT_BUFFER
+    if required_width <= box.width or slot.shape.kind != "rect":
+        return box
+
+    parent = _nearest_component_parent(slot.shape, shapes)
+    if not parent:
+        return box
+
+    max_x1 = parent.box.x1 + SLOT_PARENT_INSET
+    max_x2 = parent.box.x2 - SLOT_PARENT_INSET
+    max_width = max(max_x2 - max_x1, box.width)
+    target_width = min(required_width, max_width)
+    if target_width <= box.width:
+        return box
+
+    x1 = box.cx - target_width / 2
+    x1 = max(max_x1, min(x1, max_x2 - target_width))
+    target_box = Box(x1, box.y1, x1 + target_width, box.y2)
+    replacements[slot.shape.start] = _shape_tag_with_box(slot.shape, target_box)
+    return target_box
+
+
+def _font_size_for_slot(text: TextNode, box: Box) -> float:
+    available_width = max(box.width - SLOT_TEXT_X_INSET * 2 - SLOT_FIT_BUFFER, 1.0)
+    text_width = estimate_text_width(text.text, text.font_size, text.font_weight)
+    if text_width <= available_width:
+        return text.font_size
+    return max(MIN_SLOT_FONT_SIZE, text.font_size * available_width / text_width)
+
+
+def _nearest_component_parent(shape: ShapeNode, shapes: List[ShapeNode]) -> ShapeNode | None:
+    candidates = [
+        candidate
+        for candidate in shapes
+        if candidate is not shape
+        and candidate.box.area > shape.box.area * 1.18
+        and candidate.box.contains_box(shape.box, pad=1)
+        and _is_component_parent(candidate)
+    ]
+    if not candidates:
+        return None
+    return min(candidates, key=lambda item: item.box.area)
+
+
+def _is_component_parent(shape: ShapeNode) -> bool:
+    if shape.role in {
+        "content-card",
+        "bridge",
+        "process-step",
+        "metric-card",
+        "risk-quadrant",
+        "risk-matrix",
+        "table",
+        "mapping-row",
+        "architecture-layer",
+        "layer-stack",
+        "callout-content",
+        "section",
+        "panel",
+    }:
+        return True
+    return shape.slot in {"panel", "layer", "body-slot"}
+
+
+def _is_semantic_layout_box(shape: ShapeNode) -> bool:
+    if _is_component_parent(shape):
+        return True
+    if shape.role in {"label", "header", "table-header", "header-cell", "table-cell", "badge", "tag", "label-slot"}:
+        return True
+    if shape.slot in {"label", "header", "cell", "badge", "tag"}:
+        return True
+    return False
+
+
+def _is_page_or_decorative(shape: ShapeNode) -> bool:
+    return shape.role in {
+        "page-background",
+        "background",
+        "geometric-accent",
+        "decorative-accent",
+        "decoration",
+        "accent-background",
+        "accent-bar",
+    }
+
+
+def _normalize_component_content_bounds(semantics, replacements: Dict[int, str]) -> None:
+    for shape in semantics.shapes:
+        if shape.kind != "rect" or not _is_component_parent(shape):
+            continue
+        needed_y2 = shape.box.y2
+        for child in semantics.shapes:
+            if child is shape or child.box.area >= shape.box.area * 0.92:
+                continue
+            if _is_component_parent(child) or _is_page_or_decorative(child):
+                continue
+            child_parent = _nearest_spill_shape_component_parent(child, semantics.shapes)
+            if child_parent is not shape:
+                continue
+            if _box_belongs_to_component(child.box, shape.box):
+                needed_y2 = max(needed_y2, child.box.y2 + COMPONENT_CONTENT_PADDING)
+        for text in semantics.texts:
+            text_parent = _nearest_spill_text_component_parent(text, semantics.shapes)
+            if text_parent is not shape:
+                continue
+            text_box = _text_box(text)
+            if _box_belongs_to_component(text_box, shape.box):
+                needed_y2 = max(needed_y2, text_box.y2 + COMPONENT_CONTENT_PADDING)
+
+        if needed_y2 <= shape.box.y2 + 0.5:
+            continue
+        parent = _nearest_component_parent(shape, semantics.shapes)
+        max_y2 = parent.box.y2 - SLOT_PARENT_INSET if parent else needed_y2
+        target_y2 = min(needed_y2, max_y2)
+        if target_y2 > shape.box.y2 + 0.5:
+            replacements[shape.start] = _shape_tag_with_box(
+                shape,
+                Box(shape.box.x1, shape.box.y1, shape.box.x2, target_y2),
+            )
+
+
+def _normalize_direct_component_text_fit(semantics, replacements: Dict[int, str]) -> None:
+    slots = {slot.shape.shape_id: slot for slot in semantics.slots}
+    for text in semantics.texts:
+        if text.start in replacements:
+            continue
+        parent = _nearest_text_component_parent(text, semantics.shapes)
+        if not parent:
+            continue
+        # Text inside an explicit slot is handled by _normalize_center_slot.
+        slot_shape = _smallest_shape_containing_text(text, semantics.shapes)
+        if slot_shape and slot_shape.shape_id in slots and slot_shape.shape_id != parent.shape_id:
+            continue
+        text_box = _text_box(text)
+        if (
+            text_box.x1 >= parent.box.x1 + COMPONENT_CONTENT_PADDING
+            and text_box.x2 <= parent.box.x2 - COMPONENT_CONTENT_PADDING
+        ):
+            continue
+        available_width = _available_width_for_text(text, parent.box)
+        if available_width <= 1:
+            continue
+        text_width = estimate_text_width(text.text, text.font_size, text.font_weight)
+        if text_width <= available_width:
+            continue
+        font_size = max(MIN_SLOT_FONT_SIZE, text.font_size * available_width / text_width)
+        replacements[text.start] = _text_tag_with_font_size(text, font_size)
+
+
+def _normalize_direct_component_emphasis_alignment(semantics, replacements: Dict[int, str]) -> None:
+    slots = {slot.shape.shape_id: slot for slot in semantics.slots}
+    for text in semantics.texts:
+        if text.start in replacements:
+            continue
+        parent = _nearest_text_component_parent(text, semantics.shapes)
+        if not parent:
+            continue
+        slot_shape = _smallest_shape_containing_text(text, semantics.shapes)
+        if slot_shape and slot_shape.shape_id in slots and slot_shape.shape_id != parent.shape_id:
+            continue
+        if not _is_direct_component_emphasis(text, parent, semantics.shapes):
+            continue
+        text_box = _text_box(text)
+        font_size = _font_size_for_component_text(text, parent.box)
+        replacements[text.start] = _centered_text_tag(text, parent.box.cx, text_box.cy, font_size)
+
+
+def _normalize_semantic_sibling_spacing(semantics, replacements: Dict[int, str]) -> None:
+    """Move sibling semantic boxes down when a repair creates overlap.
+
+    The normalizer may grow a component to contain its child labels.  That is
+    safer than letting text escape, but it can consume the gutter before the
+    next semantic box.  Resolve this at the same component -> slot -> text
+    layer by comparing siblings that share the nearest containing semantic
+    parent; no page names, colors, or text literals are involved.
+    """
+    shapes = [
+        shape
+        for shape in semantics.shapes
+        if shape.kind == "rect"
+        and _is_semantic_layout_box(shape)
+        and not _is_page_or_decorative(shape)
+    ]
+    if len(shapes) < 2:
+        return
+
+    parents: dict[str, ShapeNode | None] = {}
+    groups: dict[str, list[dict]] = {}
+    for shape in shapes:
+        parent = _nearest_containing_semantic_parent(shape, shapes)
+        parents[shape.shape_id] = parent
+        parent_id = parent.shape_id if parent else "__root__"
+        groups.setdefault(parent_id, []).append({"shape": shape, "box": shape.box})
+
+    for parent_id, siblings in groups.items():
+        if len(siblings) < 2:
+            continue
+        parent = None
+        if parent_id != "__root__":
+            parent = next((shape for shape in shapes if shape.shape_id == parent_id), None)
+        siblings.sort(key=lambda item: (item["box"].y1, item["box"].x1, item["box"].area))
+        for index, item in enumerate(siblings):
+            shift = 0.0
+            for previous in siblings[:index]:
+                if _horizontal_overlap_ratio(previous["box"], item["box"]) < SEMANTIC_SIBLING_MIN_AXIS_OVERLAP:
+                    continue
+                gap = _semantic_sibling_required_gap(previous["shape"], item["shape"])
+                needed = previous["box"].y2 + gap - item["box"].y1
+                if needed > shift:
+                    shift = needed
+            if shift <= 0:
+                continue
+            shape = item["shape"]
+            if parent and shape.box.y2 + shift > parent.box.y2 - SLOT_PARENT_INSET:
+                continue
+            _shift_semantic_shape_tree(shape, shift, semantics, replacements)
+            item["box"] = Box(
+                item["box"].x1,
+                item["box"].y1 + shift,
+                item["box"].x2,
+                item["box"].y2 + shift,
+            )
+
+
+def _shift_semantic_shape_tree(
+    shape: ShapeNode,
+    dy: float,
+    semantics,
+    replacements: Dict[int, str],
+) -> None:
+    replacements[shape.start] = _shape_tag_with_xy(shape, shape.box.x1, shape.box.y1 + dy)
+    for child in semantics.shapes:
+        if child is shape or child.kind != "rect":
+            continue
+        if shape.box.contains_box(child.box, pad=1):
+            replacements[child.start] = _shape_tag_with_xy(child, child.box.x1, child.box.y1 + dy)
+    for text in semantics.texts:
+        if shape.box.contains_point(text.x, text.y, pad=1):
+            replacements[text.start] = _text_tag_with_y(text, text.y + dy)
+
+
+def _box_belongs_to_component(box: Box, component_box: Box) -> bool:
+    if box.width > component_box.width * 1.18:
+        return False
+    x_overlap = min(box.x2, component_box.x2) - max(box.x1, component_box.x1)
+    if x_overlap <= 0 or x_overlap < min(box.width, component_box.width) * 0.45:
+        return False
+    return (
+        box.y1 >= component_box.y1 - COMPONENT_SPILL_TOLERANCE
+        and box.y1 <= component_box.y2 + COMPONENT_SPILL_TOLERANCE
+    )
+
+
+def _nearest_text_component_parent(text: TextNode, shapes: List[ShapeNode]) -> ShapeNode | None:
+    text_box = _text_box(text)
+    candidates = [
+        shape
+        for shape in shapes
+        if _is_component_parent(shape)
+        and shape.box.area > text_box.area * 1.18
+        and shape.box.contains_point(text.x, text.y, pad=1)
+    ]
+    if not candidates:
+        return None
+    return min(candidates, key=lambda shape: shape.box.area)
+
+
+def _nearest_spill_text_component_parent(text: TextNode, shapes: List[ShapeNode]) -> ShapeNode | None:
+    text_box = _text_box(text)
+    candidates = [
+        shape
+        for shape in shapes
+        if _is_component_parent(shape)
+        and shape.box.area > text_box.area * 1.18
+        and _box_belongs_to_component(text_box, shape.box)
+    ]
+    if not candidates:
+        return None
+    return min(
+        candidates,
+        key=lambda shape: (
+            shape.box.area,
+            0 if shape.box.contains_point(text.x, text.y, pad=1) else 1,
+        ),
+    )
+
+
+def _nearest_spill_shape_component_parent(child: ShapeNode, shapes: List[ShapeNode]) -> ShapeNode | None:
+    candidates = [
+        shape
+        for shape in shapes
+        if shape is not child
+        and _is_component_parent(shape)
+        and shape.box.area > child.box.area * 1.18
+        and _box_belongs_to_component(child.box, shape.box)
+    ]
+    if not candidates:
+        return None
+    cx = child.box.cx
+    cy = child.box.cy
+    return min(
+        candidates,
+        key=lambda shape: (
+            shape.box.area,
+            0 if shape.box.contains_point(cx, cy, pad=1) else 1,
+        ),
+    )
+
+
+def _nearest_containing_semantic_parent(shape: ShapeNode, shapes: List[ShapeNode]) -> ShapeNode | None:
+    candidates = [
+        candidate
+        for candidate in shapes
+        if candidate is not shape
+        and candidate.box.area > shape.box.area * 1.18
+        and candidate.box.contains_box(shape.box, pad=1)
+    ]
+    if not candidates:
+        return None
+    return min(candidates, key=lambda item: item.box.area)
+
+
+def _smallest_shape_containing_text(text: TextNode, shapes: List[ShapeNode]) -> ShapeNode | None:
+    candidates = [shape for shape in shapes if shape.box.contains_point(text.x, text.y, pad=1)]
+    if not candidates:
+        return None
+    return min(candidates, key=lambda shape: shape.box.area)
+
+
+def _available_width_for_text(text: TextNode, box: Box) -> float:
+    if text.anchor == "middle":
+        return max((min(text.x - box.x1, box.x2 - text.x) - COMPONENT_CONTENT_PADDING) * 2, 1.0)
+    if text.anchor == "end":
+        return max(text.x - box.x1 - COMPONENT_CONTENT_PADDING, 1.0)
+    return max(box.x2 - text.x - COMPONENT_CONTENT_PADDING, 1.0)
+
+
+def _font_size_for_component_text(text: TextNode, box: Box) -> float:
+    available_width = max(box.width - COMPONENT_CONTENT_PADDING * 2, 1.0)
+    text_width = estimate_text_width(text.text, text.font_size, text.font_weight)
+    if text_width <= available_width:
+        return text.font_size
+    return max(MIN_SLOT_FONT_SIZE, text.font_size * available_width / text_width)
+
+
+def _text_box(text: TextNode) -> Box:
+    width = estimate_text_width(text.text, text.font_size, text.font_weight)
+    height = max(text.font_size * 1.25, text.font_size)
+    if text.anchor == "middle":
+        x1 = text.x - width / 2
+    elif text.anchor == "end":
+        x1 = text.x - width
+    else:
+        x1 = text.x
+    if text.dominant in {"middle", "central"}:
+        y1 = text.y - height / 2
+    else:
+        y1 = text.y - text.font_size
+    return Box(x1, y1, x1 + width, y1 + height)
 
 
 def _virtual_slot_bounds(box: Box, texts: List[TextNode]) -> List[tuple[float, float]]:
@@ -150,6 +556,92 @@ def _virtual_slot_bounds(box: Box, texts: List[TextNode]) -> List[tuple[float, f
         bounds.append(min(max(midpoint, box.x1), box.x2))
     bounds.append(box.x2)
     return [(bounds[index], bounds[index + 1]) for index in range(len(texts))]
+
+
+def _horizontal_overlap_ratio(a: Box, b: Box) -> float:
+    inter_w = min(a.x2, b.x2) - max(a.x1, b.x1)
+    if inter_w <= 0:
+        return 0.0
+    return inter_w / max(min(a.width, b.width), 1.0)
+
+
+def _is_direct_component_emphasis(text: TextNode, parent: ShapeNode, shapes: List[ShapeNode]) -> bool:
+    if parent.slot in {"layer", "body-slot"}:
+        return False
+    if (
+        parent.text_align in {"left", "left-aligned", "content", "callout-content"}
+        and not _is_headered_display_component(parent, shapes)
+    ):
+        return False
+    if text.text_align in {"left", "left-aligned", "content", "callout-content"}:
+        return False
+    if text.role in {"content", "callout-content", "body"}:
+        return False
+    if text.font_size < COMPONENT_EMPHASIS_MIN_FONT_SIZE:
+        return False
+    if parent.box.height <= 0:
+        return False
+    relative_y = (text.y - parent.box.y1) / parent.box.height
+    if relative_y > COMPONENT_EMPHASIS_TOP_BAND_RATIO:
+        return False
+    text_box = _text_box(text)
+    if text_box.width < parent.box.width * COMPONENT_EMPHASIS_MIN_WIDTH_RATIO and text.font_size < 28:
+        return False
+    if _has_same_band_companion_shape(text_box, parent, shapes):
+        return False
+    return True
+
+
+def _is_headered_display_component(parent: ShapeNode, shapes: List[ShapeNode]) -> bool:
+    for shape in shapes:
+        if shape is parent:
+            continue
+        if not parent.box.contains_box(shape.box, pad=1):
+            continue
+        if shape.role not in {"label", "header", "table-header"} and shape.slot not in {"label", "header"}:
+            continue
+        if shape.box.height > 72:
+            continue
+        if shape.box.width < parent.box.width * 0.65:
+            continue
+        if abs(shape.box.y1 - parent.box.y1) > 4:
+            continue
+        return True
+    return False
+
+
+def _has_same_band_companion_shape(text_box: Box, parent: ShapeNode, shapes: List[ShapeNode]) -> bool:
+    for shape in shapes:
+        if shape is parent:
+            continue
+        if not parent.box.contains_box(shape.box, pad=1):
+            continue
+        if _is_page_or_decorative(shape):
+            continue
+        if shape.role in {"label", "header", "table-header", "header-cell", "table-cell", "label-slot"}:
+            continue
+        if shape.slot in {"label", "header", "cell", "badge", "tag"}:
+            continue
+        inter_h = min(text_box.y2, shape.box.y2) - max(text_box.y1, shape.box.y1)
+        if inter_h <= 0:
+            continue
+        if inter_h / max(min(text_box.height, shape.box.height), 1.0) < 0.25:
+            continue
+        return True
+    return False
+
+
+def _semantic_sibling_required_gap(a: ShapeNode, b: ShapeNode) -> float:
+    if _is_compact_label(a) and _is_compact_label(b):
+        return 6.0
+    return SEMANTIC_SIBLING_MIN_GAP
+
+
+def _is_compact_label(shape: ShapeNode) -> bool:
+    return (
+        shape.box.height <= 40
+        and (shape.role in {"label", "badge", "tag", "label-slot"} or shape.slot in {"label", "badge", "tag"})
+    )
 
 
 def _is_neutral_badge_shape(shape: ShapeNode) -> bool:
@@ -170,11 +662,25 @@ def _stack_item_bounds(item: dict) -> tuple[float, float]:
     return text.y - text.font_size * 0.7, text.y + text.font_size * 0.35
 
 
-def _centered_text_tag(text: TextNode, x: float, y: float) -> str:
+def _centered_text_tag(text: TextNode, x: float, y: float, font_size: float | None = None) -> str:
     attrs = _set_attr(text.attrs, "x", f"{x:g}")
     attrs = _set_attr(attrs, "y", f"{y:g}")
     attrs = _set_attr(attrs, "text-anchor", "middle")
     attrs = _set_attr(attrs, "dominant-baseline", "middle")
+    if font_size is not None and abs(font_size - text.font_size) > 0.05:
+        attrs = _set_attr(attrs, "font-size", _format_number(font_size))
+    return f"<text{attrs}>{text.inner}</text>"
+
+
+def _text_tag_with_font_size(text: TextNode, font_size: float) -> str:
+    if abs(font_size - text.font_size) <= 0.05:
+        return f"<text{text.attrs}>{text.inner}</text>"
+    attrs = _set_attr(text.attrs, "font-size", _format_number(font_size))
+    return f"<text{attrs}>{text.inner}</text>"
+
+
+def _text_tag_with_y(text: TextNode, y: float) -> str:
+    attrs = _set_attr(text.attrs, "y", _format_number(y))
     return f"<text{attrs}>{text.inner}</text>"
 
 
@@ -186,6 +692,19 @@ def _shape_tag_with_xy(shape: ShapeNode, x: float, y: float) -> str:
         attrs = attrs[:-1].rstrip()
     attrs = _set_attr(attrs, "x", f"{x:g}")
     attrs = _set_attr(attrs, "y", f"{y:g}")
+    return f"<rect{attrs}/>"
+
+
+def _shape_tag_with_box(shape: ShapeNode, box: Box) -> str:
+    if shape.kind != "rect":
+        return _original_tag_placeholder(shape)
+    attrs = shape.attrs.rstrip()
+    if attrs.endswith("/"):
+        attrs = attrs[:-1].rstrip()
+    attrs = _set_attr(attrs, "x", _format_number(box.x1))
+    attrs = _set_attr(attrs, "y", _format_number(box.y1))
+    attrs = _set_attr(attrs, "width", _format_number(box.width))
+    attrs = _set_attr(attrs, "height", _format_number(box.height))
     return f"<rect{attrs}/>"
 
 
@@ -251,3 +770,7 @@ def _set_attr(attrs: str, name: str, value: str) -> str:
     if pattern.search(attrs):
         return pattern.sub(replacement, attrs, count=1)
     return attrs.rstrip() + f" {replacement}"
+
+
+def _format_number(value: float) -> str:
+    return f"{value:.2f}".rstrip("0").rstrip(".")

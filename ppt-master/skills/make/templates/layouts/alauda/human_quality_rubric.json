@@ -82,6 +82,11 @@
       "Any off-contract icon library or handmade pseudo-icon when an approved icon exists.",
       "Any dense page that uses generic symmetric cards instead of the routed visual grammar.",
       "Any CJK label rotated vertically or placed in a narrow unreadable strip."
+    ],
+    "softStops": [
+      "Repeated micro-label stacks across peer cards: three or more similar cards each containing identical small pill lists. This looks dense but reads like a generated template.",
+      "Before/bridge/after slides where the bridge is only a large number or slogan; the bridge must show control logic, gates, or transformation mechanics.",
+      "Bottom infrastructure bands that only state status without showing why the scope decision matters."
     ]
   }
 }

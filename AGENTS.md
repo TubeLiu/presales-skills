@@ -1,13 +1,13 @@
-# CLAUDE.md — presales-skills monorepo
+# AGENTS.md — presales-skills monorepo
 
-本文件为 Claude Code 在本仓库内启动会话时**自动加载**的工程纪律与硬约束。修改本仓库代码前必读。
+本文件为 Codex 在本仓库内启动会话时**自动加载**的工程纪律与硬约束。修改本仓库代码前必读。
 
-> **每个 plugin 自带的 CLAUDE.md** 提供 plugin 内部细节（结构 / 工作流 / sub-skill 关系）：
-> - [solution-master/CLAUDE.md](solution-master/CLAUDE.md)
-> - [tender-workflow/CLAUDE.md](tender-workflow/CLAUDE.md)
-> - [ppt-master/CLAUDE.md](ppt-master/CLAUDE.md)
+> **每个 plugin 自带的 AGENTS.md** 提供 plugin 内部细节（结构 / 工作流 / sub-skill 关系）：
+> - [solution-master/AGENTS.md](solution-master/AGENTS.md)
+> - [tender-workflow/AGENTS.md](tender-workflow/AGENTS.md)
+> - [ppt-master/AGENTS.md](ppt-master/AGENTS.md)
 >
-> 本文件覆盖跨 plugin 的 monorepo 级规则，不与 plugin 级 CLAUDE.md 重复。
+> 本文件覆盖跨 plugin 的 monorepo 级规则，不与 plugin 级 AGENTS.md 重复。
 
 ---
 
@@ -44,7 +44,7 @@
 
 ### 不需要 bump 的改动
 
-- **仓库根级文档**：`README.md` / `CLAUDE.md` / `docs/` / `tests/` / `.gitignore`（不进任何 plugin 分发物）
+- **仓库根级文档**：`README.md` / `AGENTS.md` / `docs/` / `tests/` / `.gitignore`（不进任何 plugin 分发物）
 - **开发者 / agent 工程规范**：根目录或 plugin 内的 `AGENTS.md` / `CLAUDE.md` / 贡献指南 / harness 规范 / 测试，只影响维护者或 AI 编程纪律，不改变用户运行 skill 的结果 → **不 bump**
 - **plugin 内的纯文字 nit**：plugin README/SKILL.md/workflow 内的 typo、冗余删除、措辞调整——只要不改语义、不改命令、不改流程
 - **dev 工具**：`.claude/commands/`、`tests/` 内新增 / 修改
@@ -85,15 +85,15 @@ python3 -m pytest tests/test_skill_format.py -v
 
 ## 3. 跨 plugin 路径解析约定
 
-跨 plugin 调用脚本时，**绝不假设兄弟相对路径**——Claude Code 的 cache 布局是 `<plugin>/<version>/skills/<sub-skill>/`，跨 plugin 不是兄弟。
+跨 plugin 调用脚本时，**绝不假设兄弟相对路径**——Codex 的 cache 布局是 `<plugin>/<version>/skills/<sub-skill>/`，跨 plugin 不是兄弟。
 
 每个 SKILL.md 顶部都有 §路径自定位 段，五段式 fallback：
 
-1. `~/.claude/plugins/installed_plugins.json`(Claude Code 权威，精确指向当前激活版本)
+1. `~/.Codex/plugins/installed_plugins.json`(Codex 权威，精确指向当前激活版本)
 2. `~/.cursor/skills` / `~/.agents/skills` / `.cursor/skills` / `.agents/skills`(vercel CLI 标准目录)
 3. 用户预设环境变量 `<PLUGIN>_PLUGIN_PATH`(如 `DRAWIO_PLUGIN_PATH`)
 4. cwd 相对 `./` 和 `../`(dev 态)
-5. 全失败 → 输出诊断 + `exit 1`(让 Claude 转述给用户，要求 export 环境变量或安装缺失 plugin)
+5. 全失败 → 输出诊断 + `exit 1`(让 Codex 转述给用户，要求 export 环境变量或安装缺失 plugin)
 
 **新增跨 plugin 调用时**：复制现有 SKILL.md 的 §路径自定位 段作为模板，不要手写。
 
@@ -107,7 +107,7 @@ python3 -m pytest tests/test_skill_format.py -v
 
 ### 4.1 `${VAR}` 必须带花括号
 
-Claude Code plugin 运行时**只对 `${VAR}` 做文本替换**，`$VAR`(无花括号)会**静默不替换**。错误示例：
+Codex plugin 运行时**只对 `${VAR}` 做文本替换**，`$VAR`(无花括号)会**静默不替换**。错误示例：
 
 ```bash
 # ❌ 错：plugin 加载时不会替换，bash 阶段 VAR 已是 literal "$VAR"
@@ -121,17 +121,17 @@ python3 ${SKILL_DIR}/scripts/foo.py
 
 ### 4.2 不用 `commands/` 或 `agents/` 目录
 
-仅用 `<plugin>/skills/<sub>/SKILL.md` 注册功能。`commands/` 仅 Claude Code 识别 → 加了它 = Cursor / Codex / OpenCode 用户体验降级。`agents/` 同理（且 vercel CLI 不识别）。
+仅用 `<plugin>/skills/<sub>/SKILL.md` 注册功能。`commands/` 仅 Codex 识别 → 加了它 = Cursor / Codex / OpenCode 用户体验降级。`agents/` 同理（且 vercel CLI 不识别）。
 
 历史决定，不要复发。
 
 ### 4.3 `${CLAUDE_PLUGIN_ROOT}` 占位符**仅** anythingllm-mcp 的 plugin.json 用得着
 
-普通 SKILL.md / 脚本里不要再用——已被 5 段式路径自定位取代。`tests/test_skill_format.py` 有豁免清单只放过 `anythingllm-mcp/.claude-plugin/plugin.json`，其他文件出现就报错。
+普通 SKILL.md / 脚本里不要再用——已被 5 段式路径自定位取代。`tests/test_skill_format.py` 有豁免清单只放过 `anythingllm-mcp/.Codex-plugin/plugin.json`，其他文件出现就报错。
 
 ### 4.4 `command -v <bin>` 不能信
 
-跨 plugin 找脚本不要用 `command -v`——Claude Code 的 plugin bin/ 是按版本路径 PATH 注入，`command -v` 在不同 cache state 下结果飘移。一律走 5 段式 fallback。
+跨 plugin 找脚本不要用 `command -v`——Codex 的 plugin bin/ 是按版本路径 PATH 注入，`command -v` 在不同 cache state 下结果飘移。一律走 5 段式 fallback。
 
 ### 4.5 SKILL.md description 必须 block scalar
 

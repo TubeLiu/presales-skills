@@ -134,6 +134,18 @@ FIXTURES = [
 </svg>
 """,
     },
+    {
+        "name": "component_emphasis_centering",
+        "expect": ["shape text centering issue"],
+        "svg": """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <rect width="1280" height="720" fill="#FFFFFF"/>
+  <rect x="92" y="166" width="286" height="370" fill="#FFF1F0" stroke="#F4C9C5" data-role="content-card" data-text-align="left"/>
+  <rect x="92" y="166" width="286" height="44" fill="#F0524A" data-role="label" data-slot="label"/>
+  <text x="235" y="188" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle" dominant-baseline="middle">当前发布模式</text>
+  <text x="122" y="244" fill="#F0524A" font-family="Arial, sans-serif" font-size="30" font-weight="700" text-anchor="start">23:00-06:00</text>
+</svg>
+""",
+    },
 ]
 
 
@@ -303,19 +315,24 @@ def write_reports(output_dir: Path, report: Dict) -> None:
             lines.extend(["", "### Diversity Issues", ""])
             for issue in design["deckDiversity"]["issues"]:
                 lines.append(f"- `{issue['code']}`: {issue['message']}")
+        if design.get("deckGenerationGuidance"):
+            lines.extend(["", "### Deck Generation Guidance", ""])
+            for item in design["deckGenerationGuidance"]:
+                lines.append(f"- `{item['code']}` ({item['priority']}): {item['action']}")
         lines.extend(
             [
                 "",
                 "### Page Scores",
                 "",
-                "| File | Archetype | Score | Readiness | Low Metrics | Key Issues |",
-                "|---|---|---:|---|---|---|",
+                "| File | Archetype | Score | Readiness | Low Metrics | Key Issues | Regeneration Guidance |",
+                "|---|---|---:|---|---|---|---|",
             ]
         )
         for page in design["pages"]:
             low_metrics = ", ".join(f"{k}:{v}" for k, v in page["metrics"].items() if v < 70) or "-"
             issues = ", ".join(issue["code"] for issue in page["issues"][:5]) or "-"
-            lines.append(f"| {page['file']} | {page['archetype']} | {page['score']} | {page['readiness']} | {low_metrics} | {issues} |")
+            guidance = ", ".join(item["code"] for item in page.get("generationGuidance", [])[:4]) or "-"
+            lines.append(f"| {page['file']} | {page['archetype']} | {page['score']} | {page['readiness']} | {low_metrics} | {issues} | {guidance} |")
 
     if report.get("archetypePlan"):
         plan = report["archetypePlan"]
@@ -327,12 +344,29 @@ def write_reports(output_dir: Path, report: Dict) -> None:
                 f"- source: `{plan['source']}`",
                 f"- pages: {plan['pageCount']}",
                 "",
-                "| Page | Planned Archetype | Source Heading |",
-                "|---|---|---|",
+                "| Page | Planned Archetype | Density | Source Heading |",
+                "|---|---|---|---|",
             ]
         )
         for page in plan["pages"]:
-            lines.append(f"| {page['page']} | {page['visualArchetype']} | {page['sourceHeading']} |")
+            density = page.get("densityContract", {}).get("densityLevel", "-")
+            lines.append(f"| {page['page']} | {page['visualArchetype']} | {density} | {page['sourceHeading']} |")
+        lines.extend(
+            [
+                "",
+                "### Planned Density Contracts",
+                "",
+                "| Page | Claims | Objects | Labels | Evidence | Relationships | Fill |",
+                "|---|---:|---:|---:|---:|---:|---|",
+            ]
+        )
+        for page in plan["pages"]:
+            contract = page.get("densityContract", {})
+            lines.append(
+                f"| {page['page']} | {contract.get('visibleClaimsMin', '-')} | {contract.get('visibleObjectsMin', '-')} | "
+                f"{contract.get('visibleLabelsMin', '-')} | {contract.get('evidenceItemsMin', '-')} | "
+                f"{contract.get('relationshipsMin', '-')} | {contract.get('contentAreaFillTarget', '-')} |"
+            )
 
     (output_dir / "report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
@@ -379,6 +413,8 @@ def main() -> int:
         print(f"[ppt-master-eval] diversity score: {report['design']['deckDiversity']['score']}")
     if report.get("archetypePlan"):
         print(f"[ppt-master-eval] planned archetypes: {', '.join(report['archetypePlan']['archetypeCounts'])}")
+        dense_pages = sum(1 for page in report["archetypePlan"]["pages"] if page.get("densityContract", {}).get("densityLevel") == "dense")
+        print(f"[ppt-master-eval] density contracts: {len(report['archetypePlan']['pages'])} pages ({dense_pages} dense)")
     print(f"[ppt-master-eval] report: {output_dir / 'report.md'}")
     print(f"[ppt-master-eval] json:   {output_dir / 'report.json'}")
     return 0 if report["fixtureSummary"]["failed"] == 0 else 1

@@ -94,11 +94,14 @@ python3 scripts/design_quality_checker.py <project_path>
 python3 scripts/ppt_master_eval.py --target <project_path> --design --plan-archetypes
 ```
 
-`design_archetype_planner.py` 从源 Markdown 生成页面视觉 archetype 规划，用于
-`spec_lock.md ## design_diversity`；
+`design_archetype_planner.py` 从源 Markdown 生成页面视觉 archetype 与
+`density_contract` 规划，用于 `spec_lock.md ## design_diversity` 和
+`## density_contract`；
 `svg_quality_checker.py` 负责硬错误和渲染风险；`design_quality_checker.py`
-负责页面级质量：主次层级、组件分组、图元密度、留白、对齐纪律、
+负责页面级质量：主次层级、组件分组、图元密度、信息密度、视觉焦点 / 组件尺度层级、留白、对齐纪律、
 `component -> slot -> text` 语义覆盖，以及整套 deck 的视觉 archetype 多样性。
+报告中的 `generationGuidance` / `deckGenerationGuidance` 是再生成提示：
+改 route、组件、槽位、密度和主次关系，而不是手工挪单页 SVG 坐标。
 改进 `ppt-master` 生成质量时，应优先看
 `ppt_master_eval.py --design` 的目标项目报告，而不是只修一张样张 SVG。
 

@@ -2,7 +2,7 @@
 
 本文件描述 presales-skills monorepo 的设计选择与运行时约定。读者：维护者、贡献者、想理解为什么这么组织的用户。
 
-跨 plugin 工程纪律（版本号 bump / 路径解析 / 运行时陷阱）见仓库根 [CLAUDE.md](../CLAUDE.md)。
+跨 plugin 工程纪律（版本号 bump / 路径解析 / 运行时陷阱 / harness 防硬编码）见仓库根 [CLAUDE.md](../CLAUDE.md) / [AGENTS.md](../AGENTS.md)。
 
 ---
 

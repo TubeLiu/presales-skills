@@ -34,7 +34,11 @@ import html
 from pathlib import Path
 from typing import List, Dict, Tuple
 from collections import defaultdict
-from svg_finalize.layout_semantics import alignment_issues as _semantic_alignment_issues
+from svg_finalize.layout_semantics import (
+    alignment_issues as _semantic_alignment_issues,
+    component_emphasis_alignment_issues as _semantic_component_emphasis_alignment_issues,
+    estimate_text_width as _semantic_estimate_text_width,
+)
 
 try:
     from project_utils import CANVAS_FORMATS
@@ -69,6 +73,10 @@ TEXT_COLLISION_MAX_ELEMENTS = 180
 TEXT_COLLISION_MIN_OVERLAP_RATIO = 0.35
 TEXT_COLLISION_MIN_AREA = 32.0
 TEXT_CONTAINER_PADDING = 3.0
+SEMANTIC_PARENT_PADDING = 6.0
+SEMANTIC_CHILD_PADDING = 3.0
+INTERMEDIATE_SLOT_TEXT_X_INSET = 3.0
+INTERMEDIATE_SLOT_TEXT_Y_INSET = 1.0
 TEXT_CONTAINER_MAX_AREA_RATIO = 0.75
 TEXT_OCCLUSION_MIN_AREA = 36.0
 TEXT_OCCLUSION_MIN_RATIO = 0.03
@@ -85,6 +93,9 @@ SHAPE_TEXT_LABEL_MAX_HEIGHT = 180.0
 SHAPE_TEXT_LABEL_MAX_WIDTH = 1150.0
 SHAPE_TEXT_STRIP_MAX_HEIGHT = 80.0
 SHAPE_TEXT_STACK_TOLERANCE = 8.0
+SEMANTIC_COMPONENT_MIN_GAP = 6.0
+SEMANTIC_COMPONENT_MIN_AXIS_OVERLAP = 0.22
+SEMANTIC_COMPONENT_OVERLAP_MIN_AREA = 32.0
 
 VISIBLE_METADATA_RE = re.compile(
     r'(?:样张\s*P\d+|'
@@ -438,6 +449,16 @@ class SVGQualityChecker:
                 f"Detected {len(shape_text_issues)} possible shape text centering issue(s): {examples}"
             )
 
+        component_spacing_issues = self._find_semantic_component_spacing_issues(content)
+        if component_spacing_issues:
+            examples = ", ".join(
+                f"{self._semantic_shape_label(a)} ↔ {self._semantic_shape_label(b)}"
+                for a, b in component_spacing_issues[:3]
+            )
+            result['warnings'].append(
+                f"Detected {len(component_spacing_issues)} semantic component overlap/spacing issue(s): {examples}"
+            )
+
         boxes = self._extract_text_boxes(content, result)
         if not boxes:
             return
@@ -492,6 +513,13 @@ class SVGQualityChecker:
                 f"Detected {len(container_overflows)} possible text container overflow(s): {examples}"
             )
 
+        semantic_overflows = self._find_semantic_parent_overflows(content, boxes)
+        if semantic_overflows:
+            examples = ", ".join(self._short_text(item['text']) for item in semantic_overflows[:4])
+            result['warnings'].append(
+                f"Detected {len(semantic_overflows)} semantic parent overflow(s): {examples}"
+            )
+
         occlusions = self._find_text_shape_occlusions(content, boxes, result)
         if occlusions:
             examples = ", ".join(self._short_text(b['text']) for b in occlusions[:4])
@@ -522,15 +550,17 @@ class SVGQualityChecker:
             lines = self._text_lines(inner)
             if not lines:
                 continue
-            width = max(self._estimate_text_width(line, font_size) for line in lines)
+            font_weight = (self._attr_value(attrs, 'font-weight') or '').strip().lower()
+            width = max(self._estimate_text_width(line, font_size, font_weight) for line in lines)
             height = max(font_size * 1.25 * len(lines), font_size)
             anchor = (self._attr_value(attrs, 'text-anchor') or 'start').strip()
+            dominant_baseline = (self._attr_value(attrs, 'dominant-baseline') or '').strip().lower()
             x1 = x
             if anchor == 'middle':
                 x1 = x - width / 2
             elif anchor == 'end':
                 x1 = x - width
-            y1 = y - font_size
+            y1 = y - height / 2 if dominant_baseline in {'middle', 'central'} else y - font_size
             boxes.append({
                 'x1': x1,
                 'y1': y1,
@@ -540,8 +570,60 @@ class SVGQualityChecker:
                 'text': " ".join(lines),
                 'anchor_x': x,
                 'anchor_y': y,
+                'font_size': font_size,
+                'font_weight': font_weight,
             })
         return boxes
+
+    def _find_semantic_component_spacing_issues(self, content: str) -> List[Tuple[Dict, Dict]]:
+        """Find sibling semantic boxes that overlap or leave no readable gap.
+
+        This operates on inferred component semantics, not on color/coordinate
+        special cases.  A label inside a card is compared with its sibling
+        labels; a card, bridge, or wide status strip inside the same parent
+        panel is compared with peer components in that panel.
+        """
+        shapes = [
+            shape
+            for shape in self._extract_container_boxes(content)
+            if self._is_semantic_layout_box(shape)
+            and not self._is_page_or_decorative_shape(shape)
+        ]
+        if len(shapes) < 2:
+            return []
+
+        groups: Dict[str, List[Dict]] = defaultdict(list)
+        for shape in shapes:
+            parent = self._nearest_containing_semantic_parent(shape, shapes)
+            parent_id = parent.get('shape_id') if parent else '__root__'
+            groups[parent_id].append(shape)
+
+        issues: List[Tuple[Dict, Dict]] = []
+        seen = set()
+        for siblings in groups.values():
+            if len(siblings) < 2:
+                continue
+            ordered = sorted(siblings, key=lambda item: (item['y1'], item['x1'], item['area']))
+            for i, upper in enumerate(ordered):
+                for lower in ordered[i + 1:]:
+                    if self._horizontal_overlap_ratio(upper, lower) < SEMANTIC_COMPONENT_MIN_AXIS_OVERLAP:
+                        continue
+                    vertical_gap = lower['y1'] - upper['y2']
+                    if vertical_gap >= SEMANTIC_COMPONENT_MIN_GAP:
+                        continue
+                    if vertical_gap < 0:
+                        inter_w = min(upper['x2'], lower['x2']) - max(upper['x1'], lower['x1'])
+                        inter_h = min(upper['y2'], lower['y2']) - max(upper['y1'], lower['y1'])
+                        if inter_w <= 0 or inter_h <= 0:
+                            continue
+                        if inter_w * inter_h < SEMANTIC_COMPONENT_OVERLAP_MIN_AREA:
+                            continue
+                    key = tuple(sorted((upper.get('shape_id'), lower.get('shape_id'))))
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    issues.append((upper, lower))
+        return issues
 
     def _find_text_container_overflows(self, content: str, boxes: List[Dict], result: Dict) -> List[Dict]:
         """Find text that appears to spill outside its nearest rect container.
@@ -580,13 +662,210 @@ class SVGQualityChecker:
             overflows.append(box)
         return overflows
 
+    def _find_semantic_parent_overflows(self, content: str, boxes: List[Dict]) -> List[Dict]:
+        """Find child shapes/text that escape explicit component containers.
+
+        The basic text-container pass checks the smallest enclosing rect, which
+        is good for labels but misses a common PPT defect: a pill may fit its
+        own shape while that pill hangs outside the parent card.  This pass
+        treats explicit semantic components as parent boxes and verifies that
+        contained child shapes and text stay inside their parent with a small
+        safety margin.
+        """
+        shapes = self._extract_container_boxes(content)
+        parents = [shape for shape in shapes if self._is_semantic_parent_container(shape)]
+        if not parents:
+            return []
+
+        overflows: List[Dict] = []
+        for box in boxes:
+            parent = self._nearest_semantic_parent(box, parents)
+            if not parent:
+                continue
+            slot = self._intermediate_text_slot_for(box, shapes, parent)
+            if slot:
+                if (
+                    not self._box_fits_in_rect(slot, parent, SEMANTIC_CHILD_PADDING)
+                    or not self._box_inside_rect_xy(
+                        box,
+                        slot,
+                        INTERMEDIATE_SLOT_TEXT_X_INSET,
+                        INTERMEDIATE_SLOT_TEXT_Y_INSET,
+                    )
+                ):
+                    overflows.append({**box, 'parent': slot, 'text': box.get('text', 'text')})
+                continue
+            if not self._semantic_parent_text_requires_tight_fit(box, parent):
+                continue
+            if not self._box_inside_rect(box, parent, SEMANTIC_PARENT_PADDING):
+                overflows.append({**box, 'parent': parent, 'text': box.get('text', 'text')})
+
+        for child in shapes:
+            if self._is_page_or_decorative_shape(child):
+                continue
+            parent = self._nearest_semantic_parent(child, parents, exclude=child, strict_child_size=True)
+            if not parent:
+                continue
+            if not self._box_fits_in_rect(child, parent, SEMANTIC_CHILD_PADDING):
+                overflows.append({
+                    **child,
+                    'parent': parent,
+                    'text': self._semantic_shape_label(child),
+                })
+        return overflows
+
+    def _intermediate_text_slot_for(self, box: Dict, shapes: List[Dict], parent: Dict) -> Dict | None:
+        cx = (box['x1'] + box['x2']) / 2
+        cy = (box['y1'] + box['y2']) / 2
+        slots = []
+        for shape in shapes:
+            if shape.get('shape_id') == parent.get('shape_id') or shape['area'] >= parent['area']:
+                continue
+            if not (shape['x1'] <= cx <= shape['x2'] and shape['y1'] <= cy <= shape['y2']):
+                continue
+            if not self._is_intermediate_text_slot(shape):
+                continue
+            slots.append(shape)
+        if not slots:
+            return None
+        return min(slots, key=lambda item: item['area'])
+
+    @classmethod
+    def _is_intermediate_text_slot(cls, shape: Dict) -> bool:
+        role = (shape.get('role') or '').strip().lower()
+        slot = (shape.get('slot') or '').strip().lower()
+        if role in {'label', 'header', 'table-header', 'header-cell', 'table-cell', 'badge', 'tag', 'label-slot'}:
+            return True
+        if slot in {'label', 'header', 'cell', 'badge', 'tag'}:
+            return True
+        height = shape['y2'] - shape['y1']
+        width = shape['x2'] - shape['x1']
+        return height <= 54 and width >= 40 and cls._is_colored_label_fill(shape.get('fill') or '')
+
+    @classmethod
+    def _semantic_parent_text_requires_tight_fit(cls, box: Dict, parent: Dict) -> bool:
+        role = (parent.get('role') or '').strip().lower()
+        height = parent['y2'] - parent['y1']
+        fill = (parent.get('fill') or '').strip()
+        font_size = float(box.get('font_size') or 16.0)
+        if role in {'bridge', 'label', 'header', 'table-header', 'header-cell', 'table-cell'}:
+            return True
+        if height <= 92 and cls._is_colored_label_fill(fill):
+            return True
+        if height <= 70:
+            return True
+        if font_size >= 24:
+            return True
+        return False
+
+    @classmethod
+    def _nearest_semantic_parent(
+        cls,
+        box: Dict,
+        parents: List[Dict],
+        exclude: Dict | None = None,
+        strict_child_size: bool = False,
+    ) -> Dict | None:
+        cx = (box['x1'] + box['x2']) / 2
+        cy = (box['y1'] + box['y2']) / 2
+        candidates = []
+        for parent in parents:
+            if exclude is parent or parent.get('shape_id') == (exclude or {}).get('shape_id'):
+                continue
+            if parent['area'] <= box['area'] * 1.18:
+                continue
+            if strict_child_size:
+                box_width = box['x2'] - box['x1']
+                box_height = box['y2'] - box['y1']
+                parent_width = parent['x2'] - parent['x1']
+                parent_height = parent['y2'] - parent['y1']
+                if box_width > parent_width * 1.18 or box_height > parent_height * 1.18:
+                    continue
+                if box_width > parent_width * 0.9 and box['y2'] > parent['y2'] + SEMANTIC_CHILD_PADDING:
+                    continue
+            if parent['x1'] <= cx <= parent['x2'] and parent['y1'] <= cy <= parent['y2']:
+                candidates.append(parent)
+        if not candidates:
+            return None
+        return min(candidates, key=lambda item: item['area'])
+
+    @classmethod
+    def _nearest_containing_semantic_parent(cls, box: Dict, shapes: List[Dict]) -> Dict | None:
+        candidates = []
+        for parent in shapes:
+            if parent.get('shape_id') == box.get('shape_id'):
+                continue
+            if parent['area'] <= box['area'] * 1.18:
+                continue
+            if cls._box_fits_in_rect(box, parent, padding=1.0):
+                candidates.append(parent)
+        if not candidates:
+            return None
+        return min(candidates, key=lambda item: item['area'])
+
     @staticmethod
-    def _box_fits_in_rect(box: Dict, rect: Dict) -> bool:
+    def _is_semantic_parent_container(shape: Dict) -> bool:
+        role = (shape.get('role') or '').strip().lower()
+        slot = (shape.get('slot') or '').strip().lower()
+        if role in {
+            'content-card', 'bridge', 'process-step', 'metric-card', 'risk-quadrant',
+            'risk-matrix', 'table', 'mapping-row', 'architecture-layer', 'layer-stack',
+            'callout-content', 'section', 'panel',
+        }:
+            return True
+        if slot in {'panel', 'layer', 'body-slot'}:
+            return True
+        return False
+
+    @classmethod
+    def _is_semantic_layout_box(cls, shape: Dict) -> bool:
+        role = (shape.get('role') or '').strip().lower()
+        slot = (shape.get('slot') or '').strip().lower()
+        if cls._is_semantic_parent_container(shape):
+            return True
+        if role in {'label', 'header', 'table-header', 'header-cell', 'table-cell', 'badge', 'tag', 'label-slot'}:
+            return True
+        if slot in {'label', 'header', 'cell', 'badge', 'tag'}:
+            return True
+        return False
+
+    @staticmethod
+    def _is_page_or_decorative_shape(shape: Dict) -> bool:
+        role = (shape.get('role') or '').strip().lower()
+        return role in {'page-background', 'background', 'geometric-accent', 'decorative-accent', 'accent-bar'}
+
+    @staticmethod
+    def _semantic_shape_label(shape: Dict) -> str:
+        role = (shape.get('role') or '').strip().lower()
+        slot = (shape.get('slot') or '').strip().lower()
+        kind = shape.get('kind') or 'shape'
+        return f"{role or slot or kind} child"
+
+    @staticmethod
+    def _box_fits_in_rect(box: Dict, rect: Dict, padding: float = TEXT_CONTAINER_PADDING) -> bool:
         return (
-            box['x1'] >= rect['x1'] - TEXT_CONTAINER_PADDING
-            and box['y1'] >= rect['y1'] - TEXT_CONTAINER_PADDING
-            and box['x2'] <= rect['x2'] + TEXT_CONTAINER_PADDING
-            and box['y2'] <= rect['y2'] + TEXT_CONTAINER_PADDING
+            box['x1'] >= rect['x1'] - padding
+            and box['y1'] >= rect['y1'] - padding
+            and box['x2'] <= rect['x2'] + padding
+            and box['y2'] <= rect['y2'] + padding
+        )
+
+    @staticmethod
+    def _box_inside_rect(box: Dict, rect: Dict, padding: float = TEXT_CONTAINER_PADDING) -> bool:
+        return (
+            box['x1'] >= rect['x1'] + padding
+            and box['y1'] >= rect['y1'] + padding
+            and box['x2'] <= rect['x2'] - padding
+            and box['y2'] <= rect['y2'] - padding
+        )
+
+    @staticmethod
+    def _box_inside_rect_xy(box: Dict, rect: Dict, x_padding: float, y_padding: float) -> bool:
+        return (
+            box['x1'] >= rect['x1'] + x_padding
+            and box['y1'] >= rect['y1'] + y_padding
+            and box['x2'] <= rect['x2'] - x_padding
+            and box['y2'] <= rect['y2'] - y_padding
         )
 
     def _extract_rect_boxes(self, content: str) -> List[Dict]:
@@ -610,6 +889,7 @@ class SVGQualityChecker:
                 'fill': self._attr_value(attrs, 'fill') or '',
                 'text_align': self._attr_value(attrs, 'data-text-align') or '',
                 'role': self._attr_value(attrs, 'data-role') or '',
+                'slot': self._attr_value(attrs, 'data-slot') or '',
             })
         return rects
 
@@ -628,6 +908,14 @@ class SVGQualityChecker:
             if width > SHAPE_TEXT_LABEL_MAX_WIDTH or height > SHAPE_TEXT_LABEL_MAX_HEIGHT:
                 continue
             box.update({'kind': tag, 'shape_id': f"{tag}:{len(boxes)}", 'fill': self._attr_value(attrs, 'fill') or ''})
+            box.update({
+                'kind': 'path',
+                'shape_id': f"path:{len(boxes)}",
+                'fill': self._attr_value(attrs, 'fill') or '',
+                'text_align': self._attr_value(attrs, 'data-text-align') or '',
+                'role': self._attr_value(attrs, 'data-role') or '',
+                'slot': self._attr_value(attrs, 'data-slot') or '',
+            })
             boxes.append(box)
         return boxes
 
@@ -650,12 +938,20 @@ class SVGQualityChecker:
             box = self._path_bbox(d)
             if not box or box['area'] < TEXT_CONTAINER_MIN_AREA:
                 continue
+            box.update({
+                'kind': 'path',
+                'shape_id': f"path:{len(boxes)}",
+                'fill': self._attr_value(attrs, 'fill') or '',
+                'text_align': self._attr_value(attrs, 'data-text-align') or '',
+                'role': self._attr_value(attrs, 'data-role') or '',
+                'slot': self._attr_value(attrs, 'data-slot') or '',
+            })
             boxes.append(box)
         return boxes
 
     def _find_shape_text_centering_issues(self, content: str) -> List[Dict]:
         """Warn when semantic label/header/cell slots are not centered."""
-        return _semantic_alignment_issues(content)
+        return _semantic_alignment_issues(content) + _semantic_component_emphasis_alignment_issues(content)
 
     def _smallest_label_shape_containing(self, shapes: List[Dict], x: float, y: float) -> Dict | None:
         candidates = []
@@ -922,6 +1218,13 @@ class SVGQualityChecker:
             'y2': box['y2'] + padding,
         }
 
+    @staticmethod
+    def _horizontal_overlap_ratio(a: Dict, b: Dict) -> float:
+        inter_w = min(a['x2'], b['x2']) - max(a['x1'], b['x1'])
+        if inter_w <= 0:
+            return 0.0
+        return inter_w / max(min(a['x2'] - a['x1'], b['x2'] - b['x1']), 1.0)
+
     def _extract_paint_order_elements(self, content: str) -> List[Dict]:
         raw_elements = []
         text_pattern = re.compile(r'<text\b(?P<attrs>[^>]*)>(?P<inner>.*?)</text>', re.IGNORECASE | re.DOTALL)
@@ -961,15 +1264,17 @@ class SVGQualityChecker:
         lines = self._text_lines(inner)
         if not lines:
             return None
-        width = max(self._estimate_text_width(line, font_size) for line in lines)
+        font_weight = (self._attr_value(attrs, 'font-weight') or '').strip().lower()
+        width = max(self._estimate_text_width(line, font_size, font_weight) for line in lines)
         height = max(font_size * 1.25 * len(lines), font_size)
         anchor = (self._attr_value(attrs, 'text-anchor') or 'start').strip()
+        dominant_baseline = (self._attr_value(attrs, 'dominant-baseline') or '').strip().lower()
         x1 = x
         if anchor == 'middle':
             x1 = x - width / 2
         elif anchor == 'end':
             x1 = x - width
-        y1 = y - font_size
+        y1 = y - height / 2 if dominant_baseline in {'middle', 'central'} else y - font_size
         return {
             'x1': x1,
             'y1': y1,
@@ -1057,18 +1362,8 @@ class SVGQualityChecker:
         return lines
 
     @staticmethod
-    def _estimate_text_width(text: str, font_size: float) -> float:
-        width = 0.0
-        for ch in text:
-            if '\u4e00' <= ch <= '\u9fff':
-                width += font_size
-            elif ch.isspace():
-                width += font_size * 0.3
-            elif ord(ch) < 128:
-                width += font_size * 0.55
-            else:
-                width += font_size * 0.8
-        return width
+    def _estimate_text_width(text: str, font_size: float, font_weight: str | float | int | None = None) -> float:
+        return _semantic_estimate_text_width(text, font_size, font_weight)
 
     @staticmethod
     def _parse_viewbox(value: str) -> Tuple[float, float, float, float] | None:

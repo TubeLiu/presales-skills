@@ -2,7 +2,7 @@
 
 本文件覆盖：开发者工具、自动化检查、提 PR 的流程。
 
-> 修改代码前**必读**仓库根 [CLAUDE.md](../CLAUDE.md)——版本号 bump、跨 plugin 路径、运行时陷阱等硬约束。Claude Code 会自动加载 CLAUDE.md，但人类维护者也要主动看一遍。
+> 修改代码前**必读**仓库根 [CLAUDE.md](../CLAUDE.md) / [AGENTS.md](../AGENTS.md)——版本号 bump、跨 plugin 路径、运行时陷阱、harness 防硬编码等硬约束。Claude Code 会自动加载 CLAUDE.md，Codex 会自动加载 AGENTS.md，但人类维护者也要主动看一遍。
 
 ---
 
@@ -76,32 +76,41 @@ CI / 提 PR 前必跑，失败修到全绿再提交。**不允许** `--no-verify
 
 ## 2. 提 PR 流程
 
-### 提交前 checklist
+### 本地提交 checklist
 
 ```bash
 # 1. lint 全绿（4 文件 76+ 项）
 python3 -m pytest tests/ -v
-
-# 2. 三处版本号已 bump（仅当改动影响 plugin 分发物时；详见 CLAUDE.md §1）
-grep '"version"' .claude-plugin/marketplace.json */.claude-plugin/plugin.json
-
-# 3. 涉及多 plugin / 大改动时跑深度体检
-/plugin-review
-
-# 4. /reload-plugins 实测安装路径正确
 ```
 
-> 仅改仓库根级文档（`README.md` / `CLAUDE.md` / `docs/`）或 `tests/` 时，跳过 #2-#4，只跑 #1。
+> 本地 commit 只要求测试和代码质量过关，**不要求为了 commit 本身 bump 版本号**。
+> 版本号是远端升级信号；本地 commit 不要求 bump；推送远端 / 发版前才 bump；一个用户可见发布只 bump 一次。
+
+### 推送远端 / 发布前 checklist
+
+```bash
+# 1. 三处版本号已 bump（仅当改动影响用户运行 skill 的结果或 plugin 元数据；详见 CLAUDE.md / AGENTS.md §1）
+grep '"version"' .claude-plugin/marketplace.json */.claude-plugin/plugin.json
+
+# 2. 涉及多 plugin / 大改动时跑深度体检
+/plugin-review
+
+# 3. /reload-plugins 实测安装路径正确
+```
+
+> 仅改仓库根级文档（`README.md` / `CLAUDE.md` / `AGENTS.md` / `docs/`）或 `tests/` 时，不做版本号 bump，也不需要制造一次用户升级。
 
 ### 版本号 bump 规则
 
-完整规则见 [CLAUDE.md §1](../CLAUDE.md#1-版本号-bump-三处规则每次提交必查)。要点：
+完整规则见 [CLAUDE.md §1](../CLAUDE.md#1-版本号-bump-三处规则推送远端--发布前必查) / [AGENTS.md §1](../AGENTS.md#1-版本号-bump-三处规则推送远端--发布前必查)。要点：
 
-- **判别准则**：这次改动会让用户 `/plugin update` 后看到不同运行时行为吗？是 → bump；否 → 不动版本号
-- **不需要 bump 的改动**：仓库根 `README.md` / `CLAUDE.md` / `docs/` / `tests/` / `.gitignore`（不进任何 plugin 分发物）
+- **判别准则**：这次改动推送远端后，会让用户 `/plugin update` 看到不同运行时行为或元数据吗？是 → 发布前 bump；否 → 不动版本号
+- **本地 commit 不 bump**：版本号是远端升级信号，不是本地开发计数器；多个本地 commit 合成一次用户可见发布时，只在发布前统一 bump 一次
+- **不需要 bump 的改动**：仓库根 `README.md` / `CLAUDE.md` / `AGENTS.md` / `docs/` / `tests/` / `.gitignore`（不进任何 plugin 分发物）
+- **开发者 / agent 工程规范不 bump**：根目录或 plugin 内的 `AGENTS.md` / `CLAUDE.md` / harness 规范 / 测试，只影响维护者和 AI 编程纪律，不改变用户运行 skill 的结果
 - **三处都改**（影响分发时）：plugin 自己的 `plugin.json` + marketplace.json 中该 plugin entry + marketplace.json 顶层 metadata
 - **只改你动了的 plugin**：不要顺手把别的 plugin entry 一起 +1
-- **bump level**：plugin 内 bug fix / plugin 内文档 = patch；公开入口破坏 = minor；marketplace 整体重构 = major
+- **bump level**：plugin 内 bug fix / 会被 skill 运行流程读取并改变行为的 plugin 文档 = patch；公开入口破坏 = minor；marketplace 整体重构 = major
 - **顶层至少跟随子 plugin 最高级别**：任一 plugin minor bump 时顶层也至少 minor
 
 ### commit message 风格
@@ -123,7 +132,7 @@ git log --oneline -20
 1. `<plugin>/.claude-plugin/plugin.json`（含 `version`）
 2. `<plugin>/skills/<name>/SKILL.md`（参照现有 SKILL.md 头部模板：frontmatter + §路径自定位 + §跨平台兼容性 checklist + `<SUBAGENT-STOP>`）
 3. `.claude-plugin/marketplace.json` 加一条 entry（顶层 `metadata.version` 也要 bump）
-4. `<plugin>/CLAUDE.md`（plugin 内部细节，参照 `solution-master/CLAUDE.md` / `tender-workflow/CLAUDE.md`）
+4. `<plugin>/CLAUDE.md` + `<plugin>/AGENTS.md`（plugin 内部细节，分别给 Claude Code / Codex 使用；参照 `solution-master/CLAUDE.md` / `tender-workflow/CLAUDE.md`）
 5. 在 [README.md](../README.md) / [README_EN.md](../README_EN.md) 的 10 plugin 分组表里加一行，并确认它属于 Base Tools / Presales Workflows / Writing & Meta 哪一组
 6. 跑 `python3 -m pytest tests/ -v`，通常 `test_skill_format.py` 会发现新 plugin 自动断言（如果用了豁免清单则手动加）
 7. 视情况更新 `.claude/commands/plugin-review.md` 的"项目知识底座"
@@ -132,7 +141,7 @@ git log --oneline -20
 
 ## 4. 进一步阅读
 
-- 工程纪律权威源：[CLAUDE.md](../CLAUDE.md)
+- 工程纪律权威源：[CLAUDE.md](../CLAUDE.md) / [AGENTS.md](../AGENTS.md)
 - 设计原理：[docs/architecture.md](architecture.md)
 - 跨 agent 兼容：[docs/cross-agent.md](cross-agent.md)
 - 配置详解：[docs/configuration.md](configuration.md)

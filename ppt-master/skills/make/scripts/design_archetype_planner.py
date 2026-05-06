@@ -45,6 +45,63 @@ ARCHETYPES = (
     "card_grid",
 )
 
+RELATIONSHIP_TERMS = (
+    "映射",
+    "迁移",
+    "依赖",
+    "替代",
+    "转换",
+    "回退",
+    "验证",
+    "治理",
+    "承载",
+    "接入",
+    "发布",
+    "观测",
+    "from",
+    "to",
+    "depends",
+    "maps",
+)
+
+GENERIC_TERMS = {
+    "方案",
+    "技术",
+    "项目",
+    "系统",
+    "平台",
+    "能力",
+    "支持",
+    "实现",
+    "进行",
+    "通过",
+    "提供",
+    "需要",
+    "包括",
+    "当前",
+    "目标",
+    "建设",
+    "分析",
+    "设计",
+    "要求",
+    "业务",
+    "应用",
+    "管理",
+}
+
+DENSITY_BASELINES = {
+    "comparison_bridge": {"claims": 3, "objects": 8, "labels": 12, "evidence": 2, "relationships": 3, "fill": "0.50-0.72", "notes": 0.38},
+    "kpi_dashboard": {"claims": 2, "objects": 6, "labels": 12, "evidence": 4, "relationships": 1, "fill": "0.48-0.68", "notes": 0.35},
+    "architecture_stack": {"claims": 3, "objects": 10, "labels": 14, "evidence": 1, "relationships": 3, "fill": "0.52-0.74", "notes": 0.40},
+    "process_flow": {"claims": 3, "objects": 8, "labels": 12, "evidence": 2, "relationships": 4, "fill": "0.50-0.72", "notes": 0.38},
+    "matrix_table": {"claims": 3, "objects": 10, "labels": 16, "evidence": 2, "relationships": 3, "fill": "0.54-0.76", "notes": 0.32},
+    "argument_thesis": {"claims": 4, "objects": 7, "labels": 9, "evidence": 2, "relationships": 2, "fill": "0.42-0.62", "notes": 0.45},
+    "code_annotation": {"claims": 2, "objects": 8, "labels": 12, "evidence": 1, "relationships": 3, "fill": "0.50-0.72", "notes": 0.35},
+    "risk_matrix": {"claims": 4, "objects": 8, "labels": 14, "evidence": 2, "relationships": 3, "fill": "0.52-0.74", "notes": 0.35},
+    "hero_argument": {"claims": 2, "objects": 4, "labels": 5, "evidence": 1, "relationships": 1, "fill": "0.34-0.56", "notes": 0.55},
+    "card_grid": {"claims": 3, "objects": 6, "labels": 9, "evidence": 1, "relationships": 1, "fill": "0.42-0.64", "notes": 0.45},
+}
+
 SIGNAL_RULES = {
     "code_annotation": [
         r"```",
@@ -166,6 +223,8 @@ def plan_archetypes(markdown: str, page_count: int = 10) -> dict:
     counts = Counter(candidate.archetype for candidate in chosen)
     pages = []
     for index, candidate in enumerate(chosen, start=1):
+        ledger = build_content_ledger(candidate.section)
+        density_contract = build_density_contract(candidate, ledger)
         pages.append(
             {
                 "page": f"P{index:02d}",
@@ -174,6 +233,8 @@ def plan_archetypes(markdown: str, page_count: int = 10) -> dict:
                 "score": candidate.score,
                 "signals": candidate.signals[:4],
                 "rationale": rationale_for(candidate),
+                "contentLedger": ledger,
+                "densityContract": density_contract,
             }
         )
     return {
@@ -248,7 +309,152 @@ def build_spec_lock_snippet(pages: list[dict]) -> str:
     ]
     for page in pages:
         lines.append(f"- {page['page']}: {page['visualArchetype']} | {page['sourceHeading']}")
+    lines.extend(
+        [
+            "",
+            "## density_contract",
+            "- source: design_archetype_planner.py",
+            "- policy: visible page content must expose source objects, relationships, and evidence; speaker notes are overflow, not the default hiding place",
+            "- target: avoid AI-sparse slides by giving each page visible information minimums before SVG generation",
+        ]
+    )
+    for page in pages:
+        contract = page["densityContract"]
+        expose = ",".join(page["contentLedger"]["visibleObjects"][:6]) or "source-specific terms"
+        lines.append(
+            "- {page}: visible_claims>={claims}; visible_objects>={objects}; "
+            "visible_labels>={labels}; evidence_items>={evidence}; "
+            "relationships>={relationships}; notes_only_ratio<={notes:.2f}; "
+            "fill={fill} | expose={expose}".format(
+                page=page["page"],
+                claims=contract["visibleClaimsMin"],
+                objects=contract["visibleObjectsMin"],
+                labels=contract["visibleLabelsMin"],
+                evidence=contract["evidenceItemsMin"],
+                relationships=contract["relationshipsMin"],
+                notes=contract["notesOnlyRatioMax"],
+                fill=contract["contentAreaFillTarget"],
+                expose=expose,
+            )
+        )
     return "\n".join(lines)
+
+
+def build_content_ledger(section: Section) -> dict:
+    text = f"{section.title}\n{section.body}"
+    return {
+        "headlineClaim": section.title,
+        "visibleObjects": extract_visible_objects(text)[:18],
+        "visibleRelationships": extract_relationships(text)[:10],
+        "visibleEvidence": extract_evidence_items(text)[:10],
+        "visibleLabels": extract_visible_labels(section)[:24],
+        "claims": extract_claims(section.body)[:8],
+    }
+
+
+def build_density_contract(candidate: Candidate, ledger: dict) -> dict:
+    base = DENSITY_BASELINES.get(candidate.archetype, DENSITY_BASELINES["card_grid"])
+    object_count = len(ledger["visibleObjects"])
+    label_count = len(ledger["visibleLabels"])
+    evidence_count = len(ledger["visibleEvidence"])
+    relationship_count = len(ledger["visibleRelationships"])
+    claim_count = len(ledger["claims"])
+    richness = object_count + label_count + evidence_count + relationship_count + claim_count
+    density = "dense" if richness >= 34 else "balanced" if richness >= 18 else "breathing"
+    return {
+        "densityLevel": density,
+        "visibleClaimsMin": max(base["claims"], min(6, claim_count)),
+        "visibleObjectsMin": max(base["objects"], min(14, max(4, round(object_count * 0.55)))),
+        "visibleLabelsMin": max(base["labels"], min(22, max(5, round((label_count + object_count) * 0.45)))),
+        "evidenceItemsMin": max(base["evidence"], min(7, evidence_count)),
+        "relationshipsMin": max(base["relationships"], min(6, relationship_count)),
+        "notesOnlyRatioMax": base["notes"],
+        "contentAreaFillTarget": base["fill"],
+        "antiSparseRule": "do not reduce the page to summary cards when the ledger contains concrete objects or evidence",
+    }
+
+
+def extract_visible_objects(text: str) -> list[str]:
+    raw_terms = re.findall(r"[A-Za-z][A-Za-z0-9_.:/+-]{2,}|[\u4e00-\u9fff]{2,}", text)
+    terms: list[str] = []
+    seen: set[str] = set()
+    for term in raw_terms:
+        clean = term.strip(" ，。、；：:()（）[]【】")
+        if not clean or clean in GENERIC_TERMS:
+            continue
+        if re.fullmatch(r"[\u4e00-\u9fff]+", clean) and len(clean) > 14:
+            continue
+        if re.fullmatch(r"\d+", clean):
+            continue
+        key = clean.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        terms.append(clean)
+    return terms
+
+
+def extract_relationships(text: str) -> list[str]:
+    relationships: list[str] = []
+    for line in text.splitlines():
+        compact = line.strip(" -\t")
+        if not compact:
+            continue
+        if "->" in compact or "→" in compact or "=>" in compact:
+            relationships.append(compact)
+            continue
+        if any(term.lower() in compact.lower() for term in RELATIONSHIP_TERMS):
+            relationships.append(compact)
+    return _dedupe(relationships)
+
+
+def extract_evidence_items(text: str) -> list[str]:
+    evidence: list[str] = []
+    for match in re.finditer(r"(?:≤|≥|=|<|>)?\s*\d+(?:\.\d+)?\s*(?:%|ms|s|秒|分钟|小时|天|个|台|次|GB|MB|CPU|GPU)?", text):
+        token = re.sub(r"\s+", "", match.group(0))
+        if token and token not in evidence:
+            evidence.append(token)
+    for keyword in ("P95", "P99", "SLA", "RTO", "RPO", "Go/No-Go", "零事故"):
+        if re.search(re.escape(keyword), text, flags=re.IGNORECASE):
+            evidence.append(keyword)
+    return _dedupe(evidence)
+
+
+def extract_visible_labels(section: Section) -> list[str]:
+    labels = [section.title]
+    for line in section.body.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        if stripped.startswith("|"):
+            labels.extend(part.strip() for part in stripped.strip("|").split("|") if part.strip() and set(part.strip()) != {"-"})
+        elif stripped.startswith(("-", "*", "+")):
+            labels.append(stripped.lstrip("-*+ ").strip())
+        elif re.match(r"^\d+[.)、]\s+", stripped):
+            labels.append(re.sub(r"^\d+[.)、]\s+", "", stripped))
+    return _dedupe([label for label in labels if len(label) <= 48])
+
+
+def extract_claims(body: str) -> list[str]:
+    candidates = re.split(r"[。；;\n]+", body)
+    claims = []
+    for item in candidates:
+        clean = re.sub(r"\s+", " ", item.strip(" -\t"))
+        if 8 <= len(clean) <= 90:
+            claims.append(clean)
+    return _dedupe(claims)
+
+
+def _dedupe(values: Iterable[str]) -> list[str]:
+    result: list[str] = []
+    seen: set[str] = set()
+    for value in values:
+        key = value.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        result.append(value)
+    return result
 
 
 def resolve_markdown_target(target: Path) -> Path:
@@ -278,9 +484,18 @@ def write_reports(report: dict, output: Path) -> None:
     ]
     for archetype, count in report["archetypeCounts"].items():
         lines.append(f"| {archetype} | {count} |")
-    lines.extend(["", "## Pages", "", "| Page | Archetype | Source Heading | Rationale |", "|---|---|---|---|"])
+    lines.extend(["", "## Pages", "", "| Page | Archetype | Density | Source Heading | Rationale |", "|---|---|---|---|---|"])
     for page in report["pages"]:
-        lines.append(f"| {page['page']} | {page['visualArchetype']} | {page['sourceHeading']} | {page['rationale']} |")
+        density = page["densityContract"]["densityLevel"]
+        lines.append(f"| {page['page']} | {page['visualArchetype']} | {density} | {page['sourceHeading']} | {page['rationale']} |")
+    lines.extend(["", "## Density Contracts", "", "| Page | Claims | Objects | Labels | Evidence | Relationships | Fill |", "|---|---:|---:|---:|---:|---:|---|"])
+    for page in report["pages"]:
+        contract = page["densityContract"]
+        lines.append(
+            f"| {page['page']} | {contract['visibleClaimsMin']} | {contract['visibleObjectsMin']} | "
+            f"{contract['visibleLabelsMin']} | {contract['evidenceItemsMin']} | {contract['relationshipsMin']} | "
+            f"{contract['contentAreaFillTarget']} |"
+        )
     lines.extend(["", "## spec_lock.md Snippet", "", "```markdown", report["specLockSnippet"], "```"])
     md_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 

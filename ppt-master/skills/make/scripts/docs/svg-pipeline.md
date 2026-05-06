@@ -127,6 +127,8 @@ This checker builds a general `component -> slot -> text` model from explicit
 - visual hierarchy
 - semantic grouping
 - density balance
+- information density against `spec_lock.md ## density_contract`
+- visual focus / component scale hierarchy
 - negative space
 - alignment discipline
 - design semantic coverage
@@ -136,6 +138,9 @@ This checker builds a general `component -> slot -> text` model from explicit
 Use this for capability work and human-quality iteration. It is deliberately
 not a route-specific rule list: if a generated page fails here, improve the
 upstream component/slot/text contract before hand-polishing a single SVG.
+The report includes page-level `generationGuidance` and deck-level
+`deckGenerationGuidance`; feed those actions back into the next generation pass
+as route/component/density decisions, not as coordinate patches.
 For multi-page decks it also reports `deckDiversity`, including repeated
 archetypes and card-grid overuse, so different source semantics do not collapse
 into the same visual mold.
