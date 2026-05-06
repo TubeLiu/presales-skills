@@ -81,6 +81,22 @@
 >
 > **Missing or empty section** → Executor falls back to `dense` for every page (current pre-rhythm behavior). Remove the whole section only for legacy decks; new decks authored by Strategist MUST fill it.
 
+## design_diversity
+- source: design_quality_checker.py deckDiversity
+- target_archetypes: at least 3 visual archetypes for decks with 6+ non-structural pages when source content contains mixed semantics
+- dominant_archetype_limit: <=55% unless the whole deck is intentionally a single artifact type such as a pure table appendix
+- card_grid_limit: <=45% for client-facing technical decks; route content into architecture stacks, process flows, matrices, code annotations, argument pages, KPI dashboards, or comparison bridges when appropriate
+- P02: kpi_dashboard
+- P03: architecture_stack
+- P04: comparison_bridge
+- P05: matrix_table
+- P06: process_flow
+
+> Per-page value is the intended visual archetype, not a rigid template name.
+> Strategist fills it from the page's source semantics. Executor preserves it
+> using component roles and visual grammar. The design checker verifies the
+> generated deck has real archetype variety instead of repeated card grids.
+
 ## semantic_routes
 - P02: platform_panorama | 03_content_panorama.svg | domain_row_platform_core_infra_row | title<=18; key_message<=36; notes_overflow=yes
 - P03: architecture_stack | 03_content_architecture.svg | four_layer_stack_with_downward_dependency | layer_title<=12; layer_desc<=38; notes_overflow=yes
@@ -130,6 +146,22 @@
 > Executor uses this section to choose component primitives and enforce
 > density/spacing before writing SVG. If no visual system file exists, omit the
 > section entirely.
+
+## design_semantics
+- default_text_policy: colored labels, chips, buttons, table headers, step circles, and small status blocks are centered horizontally and vertically
+- left_aligned_exception: only paragraph/card content areas with explicit padding; mark owning shape/text with data-role="content-card" or data-role="callout-content" plus data-text-align="left"
+- required_svg_attrs: data-role, data-slot, data-group, data-intent, data-text-align where needed
+- P02: components=layer-header,capability-card,platform-conclusion | slots=header-label,card-title,label-slot,body-callout | text_policy=labels_centered; conclusion_left_padded
+- P03: components=layer-stack,decision-card,dependency-connector | slots=layer-title,layer-body,connector-lane | text_policy=layer_titles_left_padded; connector_labels_centered
+- P04: components=migration-bridge,source-card,target-card,step-strip | slots=bridge-title,row-label,row-detail,step-number | text_policy=headers_centered; row_body_left_padded
+
+> Per-page format:
+>
+> `P<NN>: components=<roles> | slots=<slot roles> | text_policy=<default and exceptions>`
+>
+> Executor must translate these roles into SVG `data-*` attributes. The design
+> quality checker uses this semantic layer to evaluate component→slot→text
+> coverage without relying on brittle color or width heuristics.
 
 ## quality_samples
 - source: templates/human_quality_rubric.json

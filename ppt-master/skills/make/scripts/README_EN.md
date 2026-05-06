@@ -40,7 +40,7 @@ python3 scripts/update_repo.py
 |------|-----------------|---------------|
 | Conversion | `source_to_md/pdf_to_md.py`, `source_to_md/doc_to_md.py`, `source_to_md/ppt_to_md.py`, `source_to_md/web_to_md.py`, `source_to_md/web_to_md.cjs` | [docs/conversion.md](./docs/conversion.md) |
 | Project management | `project_manager.py`, `batch_validate.py`, `generate_examples_index.py`, `error_helper.py`, `pptx_template_import.py` | [docs/project.md](./docs/project.md) |
-| SVG pipeline | `finalize_svg.py`, `svg_to_pptx.py`, `total_md_split.py`, `svg_quality_checker.py` | [docs/svg-pipeline.md](./docs/svg-pipeline.md) |
+| SVG pipeline | `finalize_svg.py`, `svg_to_pptx.py`, `total_md_split.py`, `design_archetype_planner.py`, `svg_quality_checker.py`, `design_quality_checker.py`, `ppt_master_eval.py` | [docs/svg-pipeline.md](./docs/svg-pipeline.md) |
 | Spec maintenance | `update_spec.py` | [docs/update_spec.md](./docs/update_spec.md) |
 | Image tools | `analyze_images.py`, `gemini_watermark_remover.py`, `rotate_images.py` (AI generation delegated to the separate ai-image plugin via `Skill(skill="ai-image:gen")` or its `image_gen.py`) | [docs/image.md](./docs/image.md) |
 | Repo maintenance | `update_repo.py` | README install/update section |
@@ -77,6 +77,7 @@ Post-processing and export:
 ```bash
 python3 scripts/total_md_split.py <project_path>
 python3 scripts/finalize_svg.py <project_path>
+python3 scripts/ppt_master_eval.py --target <project_path> --design
 python3 scripts/svg_to_pptx.py <project_path> -s final
 ```
 
@@ -85,6 +86,22 @@ blocks is centered horizontally and vertically, and multi-label colored strips
 receive transparent slots so each label has a concrete center. Intentional
 left-aligned colored content must be marked with `data-text-align="left"` or
 `data-role="callout-content"`.
+
+Design quality evaluation:
+
+```bash
+python3 scripts/design_archetype_planner.py <project_path>
+python3 scripts/svg_quality_checker.py <project_path>
+python3 scripts/design_quality_checker.py <project_path>
+python3 scripts/ppt_master_eval.py --target <project_path> --design --plan-archetypes
+```
+
+`design_archetype_planner.py` derives page visual archetypes from source
+Markdown for `spec_lock.md ## design_diversity`.
+`svg_quality_checker.py` catches rendering risks. `design_quality_checker.py`
+scores page-level hierarchy, grouping, density, negative space, alignment, and
+`component -> slot -> text` semantic coverage, plus deck-level visual-archetype
+diversity to catch repeated card-grid overfitting.
 
 Image generation (delegated to the ai-image plugin — v1.0.0 c983037 removed the `image-gen` PATH bin entry, replaced by one of the two methods below):
 

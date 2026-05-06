@@ -8,7 +8,9 @@ Run these steps in order:
 
 ```bash
 python3 scripts/total_md_split.py <project_path>
+python3 scripts/design_archetype_planner.py <project_path>
 python3 scripts/finalize_svg.py <project_path>
+python3 scripts/ppt_master_eval.py --target <project_path> --svg-dir svg_final --design --plan-archetypes
 python3 scripts/svg_to_pptx.py <project_path> -s final
 ```
 
@@ -89,6 +91,54 @@ Checks include:
 - banned elements
 - width/height consistency
 - line-break structure
+- text overlap / container overflow
+- connector lane and card-border intrusion
+- shape-label centering
+
+## `design_archetype_planner.py`
+
+Plan visual archetypes from source Markdown before SVG generation.
+
+```bash
+python3 scripts/design_archetype_planner.py examples/project
+python3 scripts/design_archetype_planner.py examples/project --pages 12
+python3 scripts/design_archetype_planner.py source.md --output archetype_plan.json
+```
+
+The planner scans headings, tables, metrics, YAML/CRD examples, architecture
+keywords, process language, comparison language, and risk/rollback signals. It
+outputs a JSON/Markdown report plus a `spec_lock.md ## design_diversity`
+snippet. Strategist should use it as the first draft for per-page
+`visual_archetype`, then override only with explicit narrative reasoning.
+
+## `design_quality_checker.py`
+
+Evaluate page-level design quality after SVG generation.
+
+```bash
+python3 scripts/design_quality_checker.py examples/project
+python3 scripts/design_quality_checker.py examples/project --svg-dir svg_output
+python3 scripts/ppt_master_eval.py --target examples/project --svg-dir svg_final --design
+```
+
+This checker builds a general `component -> slot -> text` model from explicit
+`data-role` / `data-slot` attributes and geometry fallback. It scores:
+
+- visual hierarchy
+- semantic grouping
+- density balance
+- negative space
+- alignment discipline
+- design semantic coverage
+- client readiness
+- deck-level visual-archetype diversity
+
+Use this for capability work and human-quality iteration. It is deliberately
+not a route-specific rule list: if a generated page fails here, improve the
+upstream component/slot/text contract before hand-polishing a single SVG.
+For multi-page decks it also reports `deckDiversity`, including repeated
+archetypes and card-grid overuse, so different source semantics do not collapse
+into the same visual mold.
 
 ## `svg_position_calculator.py`
 

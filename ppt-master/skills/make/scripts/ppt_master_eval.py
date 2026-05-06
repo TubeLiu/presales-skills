@@ -10,6 +10,7 @@ for a generated project.
 Usage:
     python3 scripts/ppt_master_eval.py --output-dir /tmp/ppt-master-eval
     python3 scripts/ppt_master_eval.py --target /path/to/project --svg-dir svg_output
+    python3 scripts/ppt_master_eval.py --target /path/to/project --design
 """
 
 import argparse
@@ -30,6 +31,8 @@ from _ensure_deps import ensure_deps
 ensure_deps()
 
 from svg_quality_checker import SVGQualityChecker
+from design_quality_checker import DesignQualityChecker
+from design_archetype_planner import plan_archetypes, resolve_markdown_target
 
 
 FIXTURES = [
@@ -219,6 +222,17 @@ def run_target_eval(target: Path, svg_dir_name: str) -> Dict:
     }
 
 
+def run_design_eval(target: Path, svg_dir_name: str) -> Dict:
+    return DesignQualityChecker(expected_format="ppt169").check_target(target, svg_dir_name=svg_dir_name)
+
+
+def run_archetype_plan(target: Path, page_count: int) -> Dict:
+    markdown_path = resolve_markdown_target(target)
+    report = plan_archetypes(markdown_path.read_text(encoding="utf-8", errors="replace"), page_count=page_count)
+    report["source"] = str(markdown_path)
+    return report
+
+
 def write_reports(output_dir: Path, report: Dict) -> None:
     (output_dir / "report.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2) + "\n",
@@ -263,6 +277,63 @@ def write_reports(output_dir: Path, report: Dict) -> None:
         for key, count in target["issueCounts"].items():
             lines.append(f"| {key} | {count} |")
 
+    if report.get("design"):
+        design = report["design"]
+        lines.extend(
+            [
+                "",
+                "## Design Quality",
+                "",
+                f"- target: `{design['target']}`",
+                f"- svgDir: `{design['svgDir']}`",
+                f"- files: {design['totalFiles']}",
+                f"- averageScore: {design['averageScore']}",
+                f"- diversityScore: {design['deckDiversity']['score']}",
+                f"- releaseCandidates: {design['releaseCandidates']}/{design['totalFiles']}",
+                "",
+                "### Archetypes",
+                "",
+                "| Archetype | Count |",
+                "|---|---:|",
+            ]
+        )
+        for archetype, count in design["deckDiversity"]["archetypeCounts"].items():
+            lines.append(f"| {archetype} | {count} |")
+        if design["deckDiversity"]["issues"]:
+            lines.extend(["", "### Diversity Issues", ""])
+            for issue in design["deckDiversity"]["issues"]:
+                lines.append(f"- `{issue['code']}`: {issue['message']}")
+        lines.extend(
+            [
+                "",
+                "### Page Scores",
+                "",
+                "| File | Archetype | Score | Readiness | Low Metrics | Key Issues |",
+                "|---|---|---:|---|---|---|",
+            ]
+        )
+        for page in design["pages"]:
+            low_metrics = ", ".join(f"{k}:{v}" for k, v in page["metrics"].items() if v < 70) or "-"
+            issues = ", ".join(issue["code"] for issue in page["issues"][:5]) or "-"
+            lines.append(f"| {page['file']} | {page['archetype']} | {page['score']} | {page['readiness']} | {low_metrics} | {issues} |")
+
+    if report.get("archetypePlan"):
+        plan = report["archetypePlan"]
+        lines.extend(
+            [
+                "",
+                "## Source Archetype Plan",
+                "",
+                f"- source: `{plan['source']}`",
+                f"- pages: {plan['pageCount']}",
+                "",
+                "| Page | Planned Archetype | Source Heading |",
+                "|---|---|---|",
+            ]
+        )
+        for page in plan["pages"]:
+            lines.append(f"| {page['page']} | {page['visualArchetype']} | {page['sourceHeading']} |")
+
     (output_dir / "report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
@@ -271,6 +342,9 @@ def main() -> int:
     parser.add_argument("--output-dir", default="ppt_master_eval_output", help="Directory for fixtures and reports.")
     parser.add_argument("--target", help="Optional generated project directory to summarize.")
     parser.add_argument("--svg-dir", default="svg_output", help="SVG directory under --target.")
+    parser.add_argument("--design", action="store_true", help="Also run page-level design quality checks.")
+    parser.add_argument("--plan-archetypes", action="store_true", help="Also plan visual archetypes from the target project's Markdown source.")
+    parser.add_argument("--plan-pages", type=int, default=10, help="Maximum pages for --plan-archetypes.")
     args = parser.parse_args()
 
     output_dir = Path(args.output_dir).expanduser().resolve()
@@ -290,11 +364,21 @@ def main() -> int:
     }
 
     if args.target:
-        report["target"] = run_target_eval(Path(args.target).expanduser().resolve(), args.svg_dir)
+        target_path = Path(args.target).expanduser().resolve()
+        report["target"] = run_target_eval(target_path, args.svg_dir)
+        if args.design:
+            report["design"] = run_design_eval(target_path, args.svg_dir)
+        if args.plan_archetypes:
+            report["archetypePlan"] = run_archetype_plan(target_path, args.plan_pages)
 
     write_reports(output_dir, report)
 
     print(f"[ppt-master-eval] fixtures: {report['fixtureSummary']['passed']}/{report['fixtureSummary']['total']} passed")
+    if report.get("design"):
+        print(f"[ppt-master-eval] design average: {report['design']['averageScore']}")
+        print(f"[ppt-master-eval] diversity score: {report['design']['deckDiversity']['score']}")
+    if report.get("archetypePlan"):
+        print(f"[ppt-master-eval] planned archetypes: {', '.join(report['archetypePlan']['archetypeCounts'])}")
     print(f"[ppt-master-eval] report: {output_dir / 'report.md'}")
     print(f"[ppt-master-eval] json:   {output_dir / 'report.json'}")
     return 0 if report["fixtureSummary"]["failed"] == 0 else 1

@@ -40,7 +40,7 @@ python3 scripts/update_repo.py
 |------|----------|------|
 | 转换 | `source_to_md/pdf_to_md.py`、`source_to_md/doc_to_md.py`、`source_to_md/ppt_to_md.py`、`source_to_md/web_to_md.py`、`source_to_md/web_to_md.cjs` | [docs/conversion.md](./docs/conversion.md) |
 | 项目管理 | `project_manager.py`、`batch_validate.py`、`generate_examples_index.py`、`error_helper.py`、`pptx_template_import.py` | [docs/project.md](./docs/project.md) |
-| SVG 流水线 | `finalize_svg.py`、`svg_to_pptx.py`、`total_md_split.py`、`svg_quality_checker.py`、`ppt_master_eval.py` | [docs/svg-pipeline.md](./docs/svg-pipeline.md) |
+| SVG 流水线 | `finalize_svg.py`、`svg_to_pptx.py`、`total_md_split.py`、`design_archetype_planner.py`、`svg_quality_checker.py`、`design_quality_checker.py`、`ppt_master_eval.py` | [docs/svg-pipeline.md](./docs/svg-pipeline.md) |
 | 规范维护 | `update_spec.py` | [docs/update_spec.md](./docs/update_spec.md) |
 | 图片工具 | `analyze_images.py`、`gemini_watermark_remover.py`、`rotate_images.py`（AI 生图委托给独立的 ai-image plugin，通过 `Skill(skill="ai-image:gen")` 或 `image_gen.py`）| [docs/image.md](./docs/image.md) |
 | 仓库维护 | `update_repo.py` | README 安装 / 更新段 |
@@ -88,9 +88,19 @@ python3 scripts/svg_to_pptx.py <project_path> -s final
 视觉质量评估：
 
 ```bash
+python3 scripts/design_archetype_planner.py <project_path>
 python3 scripts/svg_quality_checker.py <project_path>
-python3 scripts/ppt_master_eval.py --target <project_path>
+python3 scripts/design_quality_checker.py <project_path>
+python3 scripts/ppt_master_eval.py --target <project_path> --design --plan-archetypes
 ```
+
+`design_archetype_planner.py` 从源 Markdown 生成页面视觉 archetype 规划，用于
+`spec_lock.md ## design_diversity`；
+`svg_quality_checker.py` 负责硬错误和渲染风险；`design_quality_checker.py`
+负责页面级质量：主次层级、组件分组、图元密度、留白、对齐纪律、
+`component -> slot -> text` 语义覆盖，以及整套 deck 的视觉 archetype 多样性。
+改进 `ppt-master` 生成质量时，应优先看
+`ppt_master_eval.py --design` 的目标项目报告，而不是只修一张样张 SVG。
 
 图片生成（委托给 ai-image plugin —— v1.0.0 c983037 删了 `image-gen` PATH bin 入口，改为下列两种调用方式之一）：
 
