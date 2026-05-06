@@ -81,6 +81,73 @@
 >
 > **Missing or empty section** → Executor falls back to `dense` for every page (current pre-rhythm behavior). Remove the whole section only for legacy decks; new decks authored by Strategist MUST fill it.
 
+## semantic_routes
+- P02: platform_panorama | 03_content_panorama.svg | domain_row_platform_core_infra_row | title<=18; key_message<=36; notes_overflow=yes
+- P03: architecture_stack | 03_content_architecture.svg | four_layer_stack_with_downward_dependency | layer_title<=12; layer_desc<=38; notes_overflow=yes
+- P04: migration_bridge | 03_content_migration.svg | before_bridge_after | panel_title<=12; panel_desc<=3 lines; notes_overflow=yes
+
+> One entry per non-structural content page **when the project uses a template
+> package with a semantic route catalog** (for example
+> `templates/semantic_routes.json` from the Alauda layout). Key format:
+> `P<NN>` matching `§IX Content Outline`. Value format is intentionally a
+> compact pipe-delimited string:
+>
+> `page_intent | template_variant | visual_grammar | payload_budget`
+>
+> This section is what lets Executor choose a concrete content-page variant
+> before drawing SVG. The route must match the **Semantic Route** block in
+> `design_spec.md §IX`. If no route fits, use:
+>
+> `custom_content | 03_content.svg | alauda_frame_custom_content | notes_overflow=yes`
+>
+> Payload budgets are short guardrails, not prose containers. If source
+> material exceeds the budget, keep the visual slot concise and move the
+> detail to speaker notes.
+
+## visual_system
+- source: templates/visual_system.json
+- component_library: templates/component_library.md
+- icon_library: chunk
+- icon_inventory: cube, server, database, cloud-arrow-up, robot, shield-check, route, git-branch, card-stack, checkmark, target, arrows-repeat
+- default_density: dense_technical
+- density_dense_technical: related_gap=12; group_gap=24; outer_margin=56; min_text_box_height=22; max_nested_levels=3; max_visible_micro_labels=34
+- density_balanced_technical: related_gap=16; group_gap=32; outer_margin=60; min_text_box_height=26; max_nested_levels=2; max_visible_micro_labels=22
+- connector_policy: min_text_lane_gap=72; route_through_whitespace=yes; avoid_title_row=yes; applies_to_all_connectors=yes
+- customer_canvas: no_visible_internal_metadata=yes; metadata_destination=notes_or_eval_report
+- route_quality_rules: apply matching templates/visual_system.json.routeQualityRules per page_intent
+- P02: dense_technical | layer_header_bar,nested_capability_block,tag_badge,layered_band | cube,server,database,cloud-arrow-up,robot,shield-check
+- P03: dense_technical | layered_band,side_accent_card,tag_badge,connector_line | layers,server,cube,database,shield,robot
+- P04: balanced_technical | before_after_block,directional_arrow,step_circle_label,connector_line | route,arrows-repeat,cloud-arrow-up,circle-checkmark,shield-check
+
+> One entry per template package with a visual execution contract
+> (`templates/visual_system.json`). Global lines declare the component library,
+> icon library/inventory, density profile constants, and connector policy.
+> Per-page lines mirror the page's **Semantic Route** block in
+> `design_spec.md §IX` using the compact format:
+>
+> `P<NN>: density | component_names | icon_names`
+>
+> Executor uses this section to choose component primitives and enforce
+> density/spacing before writing SVG. If no visual system file exists, omit the
+> section entirely.
+
+## quality_samples
+- source: templates/human_quality_rubric.json
+- rotation_policy: 3 non-structural pages; different page_intent values; include one dense technical page when available; avoid repeating the previous iteration's first sample
+- P03: architecture_stack | dense_technical | layered technical diagram quality sample
+- P05: mapping_table | dense_technical | compact editable mapping quality sample
+- P07: migration_bridge | balanced_technical | transition narrative quality sample
+
+> One section per template package with a human-quality rubric. These entries
+> select the first pages to inspect after generation. They do **not** reduce the
+> deck scope; Executor still generates every page in `design_spec.md §IX`.
+> Rotate these page numbers and route intents between quality iterations to
+> avoid repeatedly polishing the same SVG.
+>
+> Per-page format:
+>
+> `P<NN>: page_intent | density | review_reason`
+
 ## forbidden
 - Mixing icon libraries
 - rgba()

@@ -1,0 +1,405 @@
+{
+  "template": "alauda",
+  "purpose": "Alauda branded visual execution contract for component selection, icon inventory, density, and spacing.",
+  "componentLibrary": "component_library.md",
+  "componentPrimitives": [
+    "basic_card",
+    "side_accent_card",
+    "kpi_metric_card",
+    "dark_kpi_metric_card",
+    "numbered_card",
+    "tag_badge",
+    "before_after_block",
+    "layered_band",
+    "layer_header_bar",
+    "nested_capability_block",
+    "step_circle_label",
+    "connector_line",
+    "directional_arrow",
+    "timeline_node",
+    "lead_statement_banner",
+    "thesis_block",
+    "quote_block",
+    "code_terminal_block",
+    "browser_screenshot_frame",
+    "table_header_row",
+    "table_data_row",
+    "page_header",
+    "key_message_line",
+    "page_footer",
+    "dark_page_background",
+    "geometric_accent",
+    "divider_combo",
+    "vertical_sidebar_label"
+  ],
+  "iconSystem": {
+    "library": "chunk",
+    "style": "filled rectilinear enterprise-tech icons",
+    "inventory": [
+      "arrows-repeat",
+      "arrows-rotate-clockwise",
+      "box",
+      "card-stack",
+      "chart-bar",
+      "checkmark",
+      "circle-checkmark",
+      "cloud-arrow-up",
+      "code",
+      "cog",
+      "cube",
+      "database",
+      "git-branch",
+      "layers",
+      "receipt",
+      "robot",
+      "route",
+      "server",
+      "shield",
+      "shield-check",
+      "target",
+      "terminal"
+    ],
+    "rules": [
+      "Use <use data-icon=\"chunk/name\"> placeholders; finalize_svg.py embeds the icon SVG.",
+      "Do not hand-draw pseudo-icons when an inventory icon communicates the same idea.",
+      "One deck uses one icon library only."
+    ]
+  },
+  "densityProfiles": {
+    "dense_technical": {
+      "relatedGapPx": 12,
+      "groupGapPx": 24,
+      "outerMarginPx": 56,
+      "cardPaddingPx": 18,
+      "minTextBoxHeightPx": 22,
+      "minIconSizePx": 18,
+      "maxPrimaryGroups": 7,
+      "maxNestedLevels": 3,
+      "maxVisibleMicroLabels": 34,
+      "notesOverflow": true
+    },
+    "balanced_technical": {
+      "relatedGapPx": 16,
+      "groupGapPx": 32,
+      "outerMarginPx": 60,
+      "cardPaddingPx": 22,
+      "minTextBoxHeightPx": 26,
+      "minIconSizePx": 22,
+      "maxPrimaryGroups": 5,
+      "maxNestedLevels": 2,
+      "maxVisibleMicroLabels": 22,
+      "notesOverflow": true
+    },
+    "breathing_argument": {
+      "relatedGapPx": 20,
+      "groupGapPx": 40,
+      "outerMarginPx": 68,
+      "cardPaddingPx": 26,
+      "minTextBoxHeightPx": 30,
+      "minIconSizePx": 28,
+      "maxPrimaryGroups": 3,
+      "maxNestedLevels": 1,
+      "maxVisibleMicroLabels": 10,
+      "notesOverflow": true
+    }
+  },
+  "connectorPolicy": {
+    "minTextLaneGapPx": 72,
+    "minContainerBorderGapPx": 8,
+    "routeRequirement": "Horizontal connector arrows must travel in dedicated whitespace lanes, not inside title rows, table rows, card labels, or dense text bands.",
+    "preferredLanes": [
+      "between group headers and first content row",
+      "between adjacent cards when the y band is free of text",
+      "through diagram gutters that contain no labels"
+    ],
+    "avoidLanes": [
+      "same y band as a card title or table row label",
+      "same y band as a section heading in the target card",
+      "inside the left or right padding zone of a text-bearing card"
+    ],
+    "borderRule": "Connector arrows must not enter card/container fill areas or sit on top of card borders; keep at least minContainerBorderGapPx from the nearest container edge."
+  },
+  "shapeTextPolicy": {
+    "defaultRule": "Text inside a colored block is centered by default. Non-centered colored-block text is an exception and must be modeled as an explicit padded content area, not an accidental baseline/start-anchor placement.",
+    "singleLinePrimitiveRule": "Single-line text inside badges, buttons, pills, circle numbers, metric chips, and colored header bars must be geometrically centered, not baseline-offset by eye.",
+    "multiLabelStripRule": "When a colored header bar or table strip carries multiple labels, divide it into explicit visual slots or virtual columns and center each label horizontally and vertically within its own slot.",
+    "coloredBlockScope": "Includes saturated brand fills and pale tints such as light blue, light green, light yellow, and light red label blocks; excludes white/off-white/neutral gray content cards.",
+    "requiredSvgAttrs": [
+      "text-anchor=\"middle\"",
+      "dominant-baseline=\"middle\""
+    ],
+    "coordinateRule": "For centered primitive labels, set text x to the shape center x and y to the shape center y.",
+    "leftAlignedException": "Left-aligned text is allowed only for paragraph/card content areas with explicit padding and an explicit marker such as data-text-align=\"left\" or data-role=\"callout-content\"; it is not the default for label primitives.",
+    "checkerRule": "svg_quality_checker.py warns on shape text centering issues when a label-like shape uses baseline positioning or non-centered anchors."
+  },
+  "deliveryMode": {
+    "customerCanvas": {
+      "visibleInternalMetadata": "forbidden",
+      "forbiddenTextPatterns": [
+        "样张 P<NN>",
+        "page_intent names such as mapping_table or migration_bridge",
+        "density names such as dense_technical or balanced_technical"
+      ],
+      "metadataDestination": "speaker notes, eval report, or file manifest only"
+    }
+  },
+  "routeQualityRules": {
+    "platform_panorama": [
+      "Group capabilities by domain and platform layer; avoid a flat sea of equal cards.",
+      "Expose a primary platform thesis or anchor capability so the page has one scanning entry point.",
+      "Use compact labels and move long product explanations to notes."
+    ],
+    "architecture_stack": [
+      "Show control-plane and workload-plane separation explicitly when the source discusses platform architecture.",
+      "Use layered bands with a single dependency direction; do not scatter peer modules without hierarchy.",
+      "Each layer must carry a short operational meaning, not only technology names."
+    ],
+    "mapping_table": [
+      "Use compact rows with business-decision cues, not only object names.",
+      "Include at least one visible judgment signal such as risk, automation level, owner, rollback, or priority.",
+      "Do not render internal route or density labels on the slide canvas."
+    ],
+    "migration_bridge": [
+      "Make the bridge visually dominant: center panel or bridge band carries the main transformation logic.",
+      "Before and after panels may be simpler; they exist to frame the bridge, not to create three equal cards.",
+      "Connector arrows must use whitespace lanes and must not touch card titles or row labels."
+    ],
+    "risk_matrix": [
+      "Axis labels must be explicit, high-contrast, and readable before quadrant details.",
+      "Each quadrant title should be an action recommendation, not a neutral category.",
+      "Do not hide axis meaning in low-contrast microcopy."
+    ],
+    "process_flow": [
+      "Each step must show a tangible output or acceptance gate, not only an activity verb.",
+      "The final step must close with a customer-facing decision or go/no-go result.",
+      "Use connectors only between step nodes; keep them outside text lanes."
+    ]
+  },
+  "routeDefaults": {
+    "platform_panorama": {
+      "density": "dense_technical",
+      "components": [
+        "layer_header_bar",
+        "nested_capability_block",
+        "tag_badge",
+        "layered_band"
+      ],
+      "icons": [
+        "cube",
+        "server",
+        "database",
+        "cloud-arrow-up",
+        "robot",
+        "shield-check",
+        "cog"
+      ]
+    },
+    "architecture_stack": {
+      "density": "dense_technical",
+      "components": [
+        "layered_band",
+        "side_accent_card",
+        "tag_badge",
+        "connector_line"
+      ],
+      "icons": [
+        "layers",
+        "server",
+        "cube",
+        "database",
+        "shield",
+        "robot"
+      ]
+    },
+    "migration_bridge": {
+      "density": "balanced_technical",
+      "components": [
+        "before_after_block",
+        "directional_arrow",
+        "step_circle_label",
+        "connector_line"
+      ],
+      "icons": [
+        "route",
+        "arrows-repeat",
+        "cloud-arrow-up",
+        "circle-checkmark",
+        "shield-check"
+      ]
+    },
+    "mapping_table": {
+      "density": "dense_technical",
+      "components": [
+        "table_header_row",
+        "table_data_row",
+        "tag_badge",
+        "side_accent_card"
+      ],
+      "icons": [
+        "receipt",
+        "code",
+        "route",
+        "checkmark"
+      ]
+    },
+    "process_flow": {
+      "density": "balanced_technical",
+      "components": [
+        "timeline_node",
+        "step_circle_label",
+        "connector_line",
+        "tag_badge"
+      ],
+      "icons": [
+        "target",
+        "git-branch",
+        "cloud-arrow-up",
+        "circle-checkmark"
+      ]
+    },
+    "timeline": {
+      "density": "balanced_technical",
+      "components": [
+        "timeline_node",
+        "connector_line",
+        "tag_badge"
+      ],
+      "icons": [
+        "target",
+        "git-branch",
+        "checkmark"
+      ]
+    },
+    "capability_canvas": {
+      "density": "dense_technical",
+      "components": [
+        "basic_card",
+        "nested_capability_block",
+        "tag_badge"
+      ],
+      "icons": [
+        "card-stack",
+        "cube",
+        "cog",
+        "robot",
+        "shield-check"
+      ]
+    },
+    "comparison": {
+      "density": "balanced_technical",
+      "components": [
+        "before_after_block",
+        "side_accent_card",
+        "tag_badge"
+      ],
+      "icons": [
+        "arrows-repeat",
+        "checkmark",
+        "shield-check"
+      ]
+    },
+    "evidence_argument": {
+      "density": "breathing_argument",
+      "components": [
+        "lead_statement_banner",
+        "thesis_block",
+        "quote_block"
+      ],
+      "icons": [
+        "shield-check",
+        "chart-bar",
+        "target"
+      ]
+    },
+    "kpi_metrics": {
+      "density": "balanced_technical",
+      "components": [
+        "kpi_metric_card",
+        "dark_kpi_metric_card",
+        "lead_statement_banner"
+      ],
+      "icons": [
+        "chart-bar",
+        "target",
+        "checkmark"
+      ]
+    },
+    "risk_matrix": {
+      "density": "dense_technical",
+      "components": [
+        "basic_card",
+        "tag_badge",
+        "side_accent_card"
+      ],
+      "icons": [
+        "shield",
+        "target",
+        "checkmark"
+      ]
+    },
+    "code_sample": {
+      "density": "dense_technical",
+      "components": [
+        "code_terminal_block",
+        "side_accent_card",
+        "table_data_row"
+      ],
+      "icons": [
+        "code",
+        "terminal",
+        "route",
+        "checkmark"
+      ]
+    },
+    "screenshot_evidence": {
+      "density": "balanced_technical",
+      "components": [
+        "browser_screenshot_frame",
+        "side_accent_card",
+        "thesis_block"
+      ],
+      "icons": [
+        "target",
+        "checkmark",
+        "shield-check"
+      ]
+    },
+    "parallel_value": {
+      "density": "balanced_technical",
+      "components": [
+        "basic_card",
+        "tag_badge",
+        "connector_line"
+      ],
+      "icons": [
+        "arrows-repeat",
+        "cube",
+        "server",
+        "robot"
+      ]
+    }
+  },
+  "antiPatterns": [
+    "Do not replace a matched semantic route with a generic symmetric card grid.",
+    "Do not place CJK text in narrow vertical strips or rotate Chinese labels.",
+    "Do not let labels sit on top of separators, arrows, icons, or card borders.",
+    "Do not baseline-position text inside label primitives; center it with text-anchor=\"middle\" and dominant-baseline=\"middle\".",
+    "Do not place connector arrows in the same visual lane as text rows; route them through whitespace between title and content blocks, or between unrelated groups.",
+    "Do not let connector arrows intrude into card/container borders; shorten the arrow or widen the gutter.",
+    "Do not render eval metadata such as page_intent, density profile, or '样张 Pxx' on customer-facing slide canvases.",
+    "Do not make dense pages by shrinking text below the typography ramp; summarize and move overflow to notes.",
+    "Do not draw decorative icons manually when the approved chunk inventory has a close match.",
+    "Do not create more than three nested visual levels on technical architecture pages."
+  ],
+  "qaChecklist": [
+    "Every content page declares route density before SVG generation.",
+    "Visible text respects minTextBoxHeightPx and maxVisibleMicroLabels for the selected density.",
+    "Related elements are closer than groupGapPx; unrelated groups use at least groupGapPx.",
+    "Every connector arrow uses a whitespace lane and respects connectorPolicy.minTextLaneGapPx from same-lane text.",
+    "Every connector arrow respects connectorPolicy.minContainerBorderGapPx from card/container borders.",
+    "Every badge/button/pill/circle/header-strip label uses geometric center coordinates and dominant-baseline=\"middle\".",
+    "Customer-facing slide canvas contains no visible internal route, density, or sample labels.",
+    "Icon placeholders use only the approved inventory.",
+    "Dense architecture and panorama pages are checked for clipping, overlap, and label collision after render."
+  ]
+}

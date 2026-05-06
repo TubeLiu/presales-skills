@@ -17,12 +17,20 @@ python3 scripts/svg_to_pptx.py <project_path> -s final
 Unified post-processing entry point. This is the preferred way to run SVG cleanup.
 
 It aggregates:
+- `normalize_layout.py`
 - `embed_icons.py`
 - `crop_images.py`
 - `fix_image_aspect.py`
 - `embed_images.py`
 - `flatten_tspan.py`
 - `svg_rect_to_path.py`
+
+`normalize_layout.py` runs first by default. It treats text inside colored
+blocks as centered labels unless the shape or text declares an explicit
+left-aligned content role (`data-text-align="left"` or
+`data-role="callout-content"`). For colored strips with multiple labels, it
+adds transparent label slots and centers each label in its own slot so later
+checker/export steps have a concrete geometry contract.
 
 ## `svg_to_pptx.py`
 

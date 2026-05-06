@@ -745,6 +745,11 @@ def convert_text(elem: ET.Element, ctx: ConvertContext) -> ShapeResult | None:
     opacity = get_fill_opacity(elem, ctx)
     font_style = _get_attr(elem, 'font-style', ctx) or ''
     text_decoration = _get_attr(elem, 'text-decoration', ctx) or ''
+    dominant_baseline = (
+        _get_attr(elem, 'dominant-baseline', ctx)
+        or _get_attr(elem, 'alignment-baseline', ctx)
+        or ''
+    ).strip().lower()
 
     fonts = parse_font_family(font_family_str)
 
@@ -780,9 +785,13 @@ def convert_text(elem: ET.Element, ctx: ConvertContext) -> ShapeResult | None:
     else:
         box_x = x - padding
 
-    box_y = y - font_size * 0.85
     box_w = text_width + padding * 2
     box_h = text_height + padding
+    vertically_centered = dominant_baseline in {'middle', 'central'}
+    if vertically_centered:
+        box_y = y - box_h / 2
+    else:
+        box_y = y - font_size * 0.85
 
     # Letter spacing
     spc_attr = ''
@@ -805,6 +814,8 @@ def convert_text(elem: ET.Element, ctx: ConvertContext) -> ShapeResult | None:
     # Alignment
     algn_map = {'start': 'l', 'middle': 'ctr', 'end': 'r'}
     algn = algn_map.get(text_anchor, 'l')
+    body_anchor = 'ctr' if vertically_centered else 't'
+    body_anchor_ctr = '1' if vertically_centered else '0'
 
     # Shadow effect
     shape_effect_xml = ''
@@ -841,7 +852,7 @@ def convert_text(elem: ET.Element, ctx: ConvertContext) -> ShapeResult | None:
 {shape_effect_xml}
 </p:spPr>
 <p:txBody>
-<a:bodyPr wrap="none" lIns="0" tIns="0" rIns="0" bIns="0" anchor="t" anchorCtr="0">
+<a:bodyPr wrap="none" lIns="0" tIns="0" rIns="0" bIns="0" anchor="{body_anchor}" anchorCtr="{body_anchor_ctr}">
 <a:spAutoFit/>
 </a:bodyPr>
 <a:lstStyle/>

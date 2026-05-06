@@ -40,7 +40,7 @@ python3 scripts/update_repo.py
 |------|----------|------|
 | 转换 | `source_to_md/pdf_to_md.py`、`source_to_md/doc_to_md.py`、`source_to_md/ppt_to_md.py`、`source_to_md/web_to_md.py`、`source_to_md/web_to_md.cjs` | [docs/conversion.md](./docs/conversion.md) |
 | 项目管理 | `project_manager.py`、`batch_validate.py`、`generate_examples_index.py`、`error_helper.py`、`pptx_template_import.py` | [docs/project.md](./docs/project.md) |
-| SVG 流水线 | `finalize_svg.py`、`svg_to_pptx.py`、`total_md_split.py`、`svg_quality_checker.py` | [docs/svg-pipeline.md](./docs/svg-pipeline.md) |
+| SVG 流水线 | `finalize_svg.py`、`svg_to_pptx.py`、`total_md_split.py`、`svg_quality_checker.py`、`ppt_master_eval.py` | [docs/svg-pipeline.md](./docs/svg-pipeline.md) |
 | 规范维护 | `update_spec.py` | [docs/update_spec.md](./docs/update_spec.md) |
 | 图片工具 | `analyze_images.py`、`gemini_watermark_remover.py`、`rotate_images.py`（AI 生图委托给独立的 ai-image plugin，通过 `Skill(skill="ai-image:gen")` 或 `image_gen.py`）| [docs/image.md](./docs/image.md) |
 | 仓库维护 | `update_repo.py` | README 安装 / 更新段 |
@@ -78,6 +78,18 @@ python3 scripts/pptx_template_import.py <template.pptx> --manifest-only
 python3 scripts/total_md_split.py <project_path>
 python3 scripts/finalize_svg.py <project_path>
 python3 scripts/svg_to_pptx.py <project_path> -s final
+```
+
+`finalize_svg.py` 默认会先执行 `normalize-layout`：有色块内文字默认水平 /
+垂直居中，多标签色条会插入透明槽位并让每个标签居中；若确实是左对齐正文
+色块，需要在 SVG 上显式标记 `data-text-align="left"` 或
+`data-role="callout-content"`。
+
+视觉质量评估：
+
+```bash
+python3 scripts/svg_quality_checker.py <project_path>
+python3 scripts/ppt_master_eval.py --target <project_path>
 ```
 
 图片生成（委托给 ai-image plugin —— v1.0.0 c983037 删了 `image-gen` PATH bin 入口，改为下列两种调用方式之一）：
