@@ -30,9 +30,11 @@ from _ensure_deps import ensure_deps; ensure_deps()
 
 import sys
 import re
+import html
 from pathlib import Path
 from typing import List, Dict, Tuple
 from collections import defaultdict
+from svg_finalize.layout_semantics import alignment_issues as _semantic_alignment_issues
 
 try:
     from project_utils import CANVAS_FORMATS
@@ -60,6 +62,38 @@ HEX_VALUE_RE = re.compile(r"#[0-9A-Fa-f]{3,8}")
 RAMP_MIN_RATIO = 0.5
 RAMP_MAX_RATIO = 5.0
 
+# Conservative text layout heuristics. These are warnings only; they catch the
+# obvious "labels drawn on top of labels" failures without pretending to be a
+# browser-grade text shaper.
+TEXT_COLLISION_MAX_ELEMENTS = 180
+TEXT_COLLISION_MIN_OVERLAP_RATIO = 0.35
+TEXT_COLLISION_MIN_AREA = 32.0
+TEXT_CONTAINER_PADDING = 3.0
+TEXT_CONTAINER_MAX_AREA_RATIO = 0.75
+TEXT_OCCLUSION_MIN_AREA = 36.0
+TEXT_OCCLUSION_MIN_RATIO = 0.03
+TEXT_OCCLUSION_PADDING = 6.0
+CONNECTOR_ARROW_MIN_WIDTH = 28.0
+CONNECTOR_ARROW_MIN_ASPECT = 1.2
+CONNECTOR_TEXT_LANE_MIN_GAP = 72.0
+CONNECTOR_TEXT_LANE_MIN_Y_OVERLAP = 0.35
+CONNECTOR_CONTAINER_CLEARANCE = 8.0
+CONNECTOR_CONTAINER_INTRUSION_MIN_AREA = 24.0
+TEXT_CONTAINER_MIN_AREA = 100.0
+SHAPE_TEXT_CENTER_TOLERANCE = 3.0
+SHAPE_TEXT_LABEL_MAX_HEIGHT = 180.0
+SHAPE_TEXT_LABEL_MAX_WIDTH = 1150.0
+SHAPE_TEXT_STRIP_MAX_HEIGHT = 80.0
+SHAPE_TEXT_STACK_TOLERANCE = 8.0
+
+VISIBLE_METADATA_RE = re.compile(
+    r'(?:样张\s*P\d+|'
+    r'\b(?:platform_panorama|architecture_stack|migration_bridge|mapping_table|process_flow|timeline|'
+    r'capability_canvas|comparison|evidence_argument|kpi_metrics|risk_matrix|code_sample|'
+    r'screenshot_evidence|parallel_value)\b|'
+    r'\b(?:dense_technical|balanced_technical|breathing_argument)\b)'
+)
+
 
 class SVGQualityChecker:
     """SVG quality checker"""
@@ -80,6 +114,7 @@ class SVGQualityChecker:
             'colors': defaultdict(set),
             'fonts': defaultdict(set),
             'sizes': defaultdict(set),
+            'icons': defaultdict(set),
         }
         self._lock_seen = False  # True once we locate at least one spec_lock.md
 
@@ -369,6 +404,687 @@ class SVGQualityChecker:
                 f"Detected {len(text_matches)} potentially overly long single-line text(s) (consider using tspan for wrapping)"
             )
 
+        self._check_visible_metadata_leaks(content, result)
+        self._check_text_layout_heuristics(content, result)
+
+    def _check_visible_metadata_leaks(self, content: str, result: Dict):
+        leaked = []
+        for line in self._all_visible_text_lines(content):
+            if VISIBLE_METADATA_RE.search(line):
+                leaked.append(line)
+        if leaked:
+            examples = ", ".join(self._short_text(item, limit=28) for item in leaked[:3])
+            result['warnings'].append(
+                f"Detected {len(leaked)} visible eval/internal metadata text item(s): {examples}"
+            )
+
+    def _check_text_layout_heuristics(self, content: str, result: Dict):
+        """Warn on obvious text overlap and clipping using approximate boxes.
+
+        This deliberately stays heuristic: it estimates text width from glyph
+        counts and declared font-size. The goal is to catch blatant layout
+        mistakes before export, not to replace screenshot review.
+        """
+        connector_container_issues = self._find_connector_container_intrusions(content)
+        if connector_container_issues:
+            result['warnings'].append(
+                f"Detected {len(connector_container_issues)} connector arrow(s) intruding into card/container border safe zone"
+            )
+
+        shape_text_issues = self._find_shape_text_centering_issues(content)
+        if shape_text_issues:
+            examples = ", ".join(self._short_text(item['text']) for item in shape_text_issues[:4])
+            result['warnings'].append(
+                f"Detected {len(shape_text_issues)} possible shape text centering issue(s): {examples}"
+            )
+
+        boxes = self._extract_text_boxes(content, result)
+        if not boxes:
+            return
+
+        clipped = []
+        viewbox = result.get('info', {}).get('viewbox', '')
+        vb = self._parse_viewbox(viewbox)
+        if vb:
+            _, _, vb_w, vb_h = vb
+            for box in boxes:
+                if box['x1'] < -1 or box['y1'] < -1 or box['x2'] > vb_w + 1 or box['y2'] > vb_h + 1:
+                    clipped.append(box)
+            if clipped:
+                examples = ", ".join(self._short_text(b['text']) for b in clipped[:3])
+                result['warnings'].append(
+                    f"Detected {len(clipped)} possible text box clipping/out-of-canvas issue(s): {examples}"
+                )
+
+        if len(boxes) > TEXT_COLLISION_MAX_ELEMENTS:
+            result['warnings'].append(
+                f"Skipped text overlap heuristic: {len(boxes)} text boxes exceeds safe O(n^2) limit"
+            )
+            return
+
+        collisions = []
+        for i, a in enumerate(boxes):
+            for b in boxes[i + 1:]:
+                inter_w = min(a['x2'], b['x2']) - max(a['x1'], b['x1'])
+                inter_h = min(a['y2'], b['y2']) - max(a['y1'], b['y1'])
+                if inter_w <= 0 or inter_h <= 0:
+                    continue
+                inter_area = inter_w * inter_h
+                smaller_area = min(a['area'], b['area'])
+                if smaller_area <= 0:
+                    continue
+                if inter_area >= TEXT_COLLISION_MIN_AREA and inter_area / smaller_area >= TEXT_COLLISION_MIN_OVERLAP_RATIO:
+                    collisions.append((a, b))
+
+        if collisions:
+            examples = "; ".join(
+                f"{self._short_text(a['text'])} ↔ {self._short_text(b['text'])}"
+                for a, b in collisions[:3]
+            )
+            result['warnings'].append(
+                f"Detected {len(collisions)} possible text overlap/collision(s): {examples}"
+            )
+
+        container_overflows = self._find_text_container_overflows(content, boxes, result)
+        if container_overflows:
+            examples = ", ".join(self._short_text(b['text']) for b in container_overflows[:4])
+            result['warnings'].append(
+                f"Detected {len(container_overflows)} possible text container overflow(s): {examples}"
+            )
+
+        occlusions = self._find_text_shape_occlusions(content, boxes, result)
+        if occlusions:
+            examples = ", ".join(self._short_text(b['text']) for b in occlusions[:4])
+            result['warnings'].append(
+                f"Detected {len(occlusions)} possible shape-over-text occlusion(s): {examples}"
+            )
+
+        connector_lane_issues = self._find_connector_text_lane_issues(content, boxes)
+        if connector_lane_issues:
+            examples = ", ".join(self._short_text(b['text']) for b in connector_lane_issues[:4])
+            result['warnings'].append(
+                f"Detected {len(connector_lane_issues)} connector arrow(s) sharing a text lane too closely: {examples}"
+            )
+
+    def _extract_text_boxes(self, content: str, result: Dict) -> List[Dict]:
+        boxes = []
+        for m in re.finditer(r'<text\b([^>]*)>(.*?)</text>', content, re.IGNORECASE | re.DOTALL):
+            attrs = m.group(1)
+            inner = m.group(2)
+            transform = self._attr_value(attrs, 'transform') or ''
+            if 'rotate' in transform:
+                continue
+            x = self._attr_float(attrs, 'x')
+            y = self._attr_float(attrs, 'y')
+            if x is None or y is None:
+                continue
+            font_size = self._attr_float(attrs, 'font-size') or 16.0
+            lines = self._text_lines(inner)
+            if not lines:
+                continue
+            width = max(self._estimate_text_width(line, font_size) for line in lines)
+            height = max(font_size * 1.25 * len(lines), font_size)
+            anchor = (self._attr_value(attrs, 'text-anchor') or 'start').strip()
+            x1 = x
+            if anchor == 'middle':
+                x1 = x - width / 2
+            elif anchor == 'end':
+                x1 = x - width
+            y1 = y - font_size
+            boxes.append({
+                'x1': x1,
+                'y1': y1,
+                'x2': x1 + width,
+                'y2': y1 + height,
+                'area': width * height,
+                'text': " ".join(lines),
+                'anchor_x': x,
+                'anchor_y': y,
+            })
+        return boxes
+
+    def _find_text_container_overflows(self, content: str, boxes: List[Dict], result: Dict) -> List[Dict]:
+        """Find text that appears to spill outside its nearest rect container.
+
+        Many PPT-quality defects are not text-vs-text collisions, but text
+        leaving the card/tag/table-cell that should contain it. Before
+        finalize_svg.py converts rounded rects to paths, most generated
+        containers are <rect>; use those as a conservative containment signal.
+        """
+        rects = self._extract_container_boxes(content)
+        if not rects:
+            return []
+
+        vb = self._parse_viewbox(result.get('info', {}).get('viewbox', ''))
+        max_area = None
+        if vb:
+            _, _, vb_w, vb_h = vb
+            max_area = vb_w * vb_h * TEXT_CONTAINER_MAX_AREA_RATIO
+
+        overflows = []
+        for box in boxes:
+            cx = (box['x1'] + box['x2']) / 2
+            cy = (box['y1'] + box['y2']) / 2
+            candidates = []
+            for rect in rects:
+                if max_area and rect['area'] > max_area:
+                    continue
+                if not (rect['x1'] <= cx <= rect['x2'] and rect['y1'] <= cy <= rect['y2']):
+                    continue
+                candidates.append(rect)
+            if not candidates:
+                continue
+            containing = [rect for rect in candidates if self._box_fits_in_rect(box, rect)]
+            if containing:
+                continue
+            overflows.append(box)
+        return overflows
+
+    @staticmethod
+    def _box_fits_in_rect(box: Dict, rect: Dict) -> bool:
+        return (
+            box['x1'] >= rect['x1'] - TEXT_CONTAINER_PADDING
+            and box['y1'] >= rect['y1'] - TEXT_CONTAINER_PADDING
+            and box['x2'] <= rect['x2'] + TEXT_CONTAINER_PADDING
+            and box['y2'] <= rect['y2'] + TEXT_CONTAINER_PADDING
+        )
+
+    def _extract_rect_boxes(self, content: str) -> List[Dict]:
+        rects = []
+        for m in re.finditer(r'<rect\b([^>]*)/?>', content, re.IGNORECASE):
+            attrs = m.group(1)
+            x = self._attr_float(attrs, 'x') or 0.0
+            y = self._attr_float(attrs, 'y') or 0.0
+            w = self._attr_float(attrs, 'width')
+            h = self._attr_float(attrs, 'height')
+            if w is None or h is None or w <= 0 or h <= 0:
+                continue
+            rects.append({
+                'kind': 'rect',
+                'shape_id': f"rect:{len(rects)}",
+                'x1': x,
+                'y1': y,
+                'x2': x + w,
+                'y2': y + h,
+                'area': w * h,
+                'fill': self._attr_value(attrs, 'fill') or '',
+                'text_align': self._attr_value(attrs, 'data-text-align') or '',
+                'role': self._attr_value(attrs, 'data-role') or '',
+            })
+        return rects
+
+    def _extract_circle_label_boxes(self, content: str) -> List[Dict]:
+        boxes = []
+        for m in re.finditer(r'<(circle|ellipse)\b([^>]*)/?>', content, re.IGNORECASE):
+            tag = (m.group(1) or '').lower()
+            attrs = m.group(2) or ''
+            if self._shape_is_outline_only(attrs):
+                continue
+            box = self._shape_box(tag, attrs)
+            if not box:
+                continue
+            width = box['x2'] - box['x1']
+            height = box['y2'] - box['y1']
+            if width > SHAPE_TEXT_LABEL_MAX_WIDTH or height > SHAPE_TEXT_LABEL_MAX_HEIGHT:
+                continue
+            box.update({'kind': tag, 'shape_id': f"{tag}:{len(boxes)}", 'fill': self._attr_value(attrs, 'fill') or ''})
+            boxes.append(box)
+        return boxes
+
+    def _extract_container_boxes(self, content: str) -> List[Dict]:
+        """Extract possible text containers from rects and finalized rect paths.
+
+        finalize_svg.py converts rounded <rect> containers to <path> elements.
+        If we only inspect <rect>, helper strips used to square off rounded
+        headers can be mistaken for the actual text container and cause false
+        overflow warnings. Path boxes are coarse but good enough for containment.
+        """
+        boxes = self._extract_rect_boxes(content)
+        for m in re.finditer(r'<path\b([^>]*)/?>', content, re.IGNORECASE):
+            attrs = m.group(1) or ''
+            if self._shape_is_outline_only(attrs):
+                continue
+            d = self._attr_value(attrs, 'd')
+            if not d:
+                continue
+            box = self._path_bbox(d)
+            if not box or box['area'] < TEXT_CONTAINER_MIN_AREA:
+                continue
+            boxes.append(box)
+        return boxes
+
+    def _find_shape_text_centering_issues(self, content: str) -> List[Dict]:
+        """Warn when semantic label/header/cell slots are not centered."""
+        return _semantic_alignment_issues(content)
+
+    def _smallest_label_shape_containing(self, shapes: List[Dict], x: float, y: float) -> Dict | None:
+        candidates = []
+        for shape in shapes:
+            if not (shape['x1'] <= x <= shape['x2'] and shape['y1'] <= y <= shape['y2']):
+                continue
+            candidates.append(shape)
+        if not candidates:
+            return None
+        return min(candidates, key=lambda item: item['area'])
+
+    @staticmethod
+    def _shape_is_stack_card(shape: Dict) -> bool:
+        return (shape['y2'] - shape['y1']) > SHAPE_TEXT_STRIP_MAX_HEIGHT
+
+    @classmethod
+    def _shape_or_text_declares_left_aligned_exception(cls, shape: Dict, text_attrs: str) -> bool:
+        values = [
+            (shape.get('text_align') or '').strip().lower(),
+            (shape.get('role') or '').strip().lower(),
+            (cls._attr_value(text_attrs, 'data-text-align') or '').strip().lower(),
+            (cls._attr_value(text_attrs, 'data-role') or '').strip().lower(),
+        ]
+        return any(value in {'left', 'left-aligned', 'content', 'callout-content'} for value in values)
+
+    @classmethod
+    def _rect_requires_centered_label(cls, rect: Dict) -> bool:
+        width = rect['x2'] - rect['x1']
+        height = rect['y2'] - rect['y1']
+        if width <= 0 or height <= 0 or height > SHAPE_TEXT_LABEL_MAX_HEIGHT:
+            return False
+        fill = (rect.get('fill') or '').strip()
+        return cls._is_colored_label_fill(fill)
+
+    @staticmethod
+    def _is_colored_label_fill(fill: str) -> bool:
+        if not HEX_VALUE_RE.fullmatch(fill):
+            return False
+        raw = fill.lstrip('#')
+        if len(raw) == 3:
+            raw = ''.join(ch * 2 for ch in raw)
+        if len(raw) < 6:
+            return False
+        r, g, b = int(raw[0:2], 16), int(raw[2:4], 16), int(raw[4:6], 16)
+        chroma = max(r, g, b) - min(r, g, b)
+        saturation = chroma / max(max(r, g, b), 1)
+        # White/off-white and neutral gray cards are usually content containers
+        # with intentionally padded labels. Colored label blocks, including the
+        # pale Alauda tints (#D8EFF9, #F0FDF4, #FFF7D6, #CCFBF1), default to
+        # centered text unless the layout creates an explicit left-aligned text
+        # area outside the colored primitive.
+        if r >= 248 and g >= 248 and b >= 248:
+            return False
+        if chroma < 12 and saturation < 0.06:
+            return False
+        return True
+
+    @staticmethod
+    def _path_bbox(d: str) -> Dict | None:
+        tokens = re.findall(r'[MmLlHhVvAaZz]|-?\d+(?:\.\d+)?', d)
+        index = 0
+        cmd = None
+        x = y = 0.0
+        points = []
+
+        def num() -> float:
+            nonlocal index
+            value = float(tokens[index])
+            index += 1
+            return value
+
+        while index < len(tokens):
+            if re.fullmatch(r'[A-Za-z]', tokens[index]):
+                cmd = tokens[index]
+                index += 1
+                if cmd in {'Z', 'z'}:
+                    continue
+            try:
+                if cmd in {'M', 'm', 'L', 'l'}:
+                    if index + 1 >= len(tokens):
+                        break
+                    nx, ny = num(), num()
+                    if cmd.islower():
+                        x += nx
+                        y += ny
+                    else:
+                        x, y = nx, ny
+                    points.append((x, y))
+                    if cmd == 'M':
+                        cmd = 'L'
+                    elif cmd == 'm':
+                        cmd = 'l'
+                elif cmd in {'H', 'h'}:
+                    nx = num()
+                    x = x + nx if cmd.islower() else nx
+                    points.append((x, y))
+                elif cmd in {'V', 'v'}:
+                    ny = num()
+                    y = y + ny if cmd.islower() else ny
+                    points.append((x, y))
+                elif cmd in {'A', 'a'}:
+                    if index + 6 >= len(tokens):
+                        break
+                    _rx, _ry, _rot, _large, _sweep, nx, ny = num(), num(), num(), num(), num(), num(), num()
+                    if cmd.islower():
+                        x += nx
+                        y += ny
+                    else:
+                        x, y = nx, ny
+                    points.append((x, y))
+                else:
+                    index += 1
+            except (IndexError, ValueError):
+                break
+
+        if not points:
+            return None
+        xs = [point[0] for point in points]
+        ys = [point[1] for point in points]
+        width = max(xs) - min(xs)
+        height = max(ys) - min(ys)
+        if width <= 0 or height <= 0:
+            return None
+        return {'x1': min(xs), 'y1': min(ys), 'x2': max(xs), 'y2': max(ys), 'area': width * height}
+
+    def _find_text_shape_occlusions(self, content: str, boxes: List[Dict], result: Dict) -> List[Dict]:
+        """Warn when later non-text shapes appear to cover text boxes.
+
+        SVG paint order matters. If a filled polygon/rect/circle appears after
+        a text element and its bounding box substantially overlaps that text,
+        the shape can visually cover the text even when text-vs-text checks
+        pass. Keep this conservative and ignore outline-only shapes.
+        """
+        elements = self._extract_paint_order_elements(content)
+        if not elements:
+            return []
+        text_elements = [e for e in elements if e['kind'] == 'text']
+        shape_elements = [e for e in elements if e['kind'] == 'shape']
+        if not text_elements or not shape_elements:
+            return []
+        occluded = []
+        for text_el in text_elements:
+            box = text_el['box']
+            for shape_el in shape_elements:
+                if shape_el['index'] <= text_el['index']:
+                    continue
+                shape = shape_el['box']
+                padded = self._padded_box(box, TEXT_OCCLUSION_PADDING)
+                inter_w = min(padded['x2'], shape['x2']) - max(padded['x1'], shape['x1'])
+                inter_h = min(padded['y2'], shape['y2']) - max(padded['y1'], shape['y1'])
+                if inter_w <= 0 or inter_h <= 0:
+                    continue
+                inter_area = inter_w * inter_h
+                if inter_area >= TEXT_OCCLUSION_MIN_AREA and inter_area / box['area'] >= TEXT_OCCLUSION_MIN_RATIO:
+                    occluded.append(box)
+                    break
+        return occluded
+
+    def _find_connector_text_lane_issues(self, content: str, boxes: List[Dict]) -> List[Dict]:
+        """Warn when horizontal connector arrows run in the same visual lane as text.
+
+        Some presales diagrams look wrong even without literal overlap: an
+        arrow can sit directly beside a heading or row label, making the visual
+        read as if the connector belongs to the text. Detect horizontal arrow
+        polygons and require a clear lane around nearby text at the same y band.
+        """
+        arrows = self._extract_horizontal_arrow_boxes(content)
+        if not arrows or not boxes:
+            return []
+
+        issues = []
+        seen_texts = set()
+        for arrow in arrows:
+            arrow_h = max(arrow['y2'] - arrow['y1'], 1.0)
+            for box in boxes:
+                inter_h = min(arrow['y2'], box['y2']) - max(arrow['y1'], box['y1'])
+                if inter_h <= 0 or inter_h / min(arrow_h, max(box['y2'] - box['y1'], 1.0)) < CONNECTOR_TEXT_LANE_MIN_Y_OVERLAP:
+                    continue
+                if box['x2'] < arrow['x1']:
+                    gap = arrow['x1'] - box['x2']
+                elif arrow['x2'] < box['x1']:
+                    gap = box['x1'] - arrow['x2']
+                else:
+                    gap = 0.0
+                if gap <= CONNECTOR_TEXT_LANE_MIN_GAP:
+                    text_key = (round(box['x1'], 1), round(box['y1'], 1), box['text'])
+                    if text_key not in seen_texts:
+                        issues.append(box)
+                        seen_texts.add(text_key)
+                    break
+        return issues
+
+    def _find_connector_container_intrusions(self, content: str) -> List[Dict]:
+        """Warn when connector arrows intrude into card/container borders.
+
+        Connectors should live in gutters between visual groups. A small gap is
+        enough, but the arrow head or shaft should not enter the filled card
+        body or sit on top of its border.
+        """
+        arrows = self._extract_horizontal_arrow_boxes(content)
+        if not arrows:
+            return []
+        containers = self._extract_container_boxes(content)
+        if not containers:
+            return []
+
+        issues = []
+        for arrow in arrows:
+            # Ignore tiny text-cell containers and page-sized background boxes.
+            for container in containers:
+                cw = container['x2'] - container['x1']
+                ch = container['y2'] - container['y1']
+                if cw < 120 or ch < 80:
+                    continue
+                if cw > 1100 and ch > 560:
+                    continue
+                safe = self._padded_box(container, CONNECTOR_CONTAINER_CLEARANCE)
+                inter_w = min(arrow['x2'], safe['x2']) - max(arrow['x1'], safe['x1'])
+                inter_h = min(arrow['y2'], safe['y2']) - max(arrow['y1'], safe['y1'])
+                if inter_w <= 0 or inter_h <= 0:
+                    continue
+                if inter_w * inter_h >= CONNECTOR_CONTAINER_INTRUSION_MIN_AREA:
+                    issues.append(arrow)
+                    break
+        return issues
+
+    def _extract_horizontal_arrow_boxes(self, content: str) -> List[Dict]:
+        arrows = []
+        for m in re.finditer(r'<polygon\b([^>]*)/?>', content, re.IGNORECASE):
+            attrs = m.group(1) or ''
+            if self._shape_is_outline_only(attrs):
+                continue
+            raw = self._attr_value(attrs, 'points')
+            if not raw:
+                continue
+            nums = [float(n) for n in re.findall(r'-?\d+(?:\.\d+)?', raw)]
+            if len(nums) < 12:
+                continue
+            xs = nums[0::2]
+            ys = nums[1::2]
+            width = max(xs) - min(xs)
+            height = max(ys) - min(ys)
+            if height <= 0:
+                continue
+            if width < CONNECTOR_ARROW_MIN_WIDTH or width / height < CONNECTOR_ARROW_MIN_ASPECT:
+                continue
+            # Horizontal connector arrows usually have a pointed tip and a
+            # rectangular shaft, so one x extremum appears fewer times than the
+            # shaft/notch x coordinates. This avoids treating ordinary panels as arrows.
+            min_x_count = sum(1 for x in xs if abs(x - min(xs)) < 0.1)
+            max_x_count = sum(1 for x in xs if abs(x - max(xs)) < 0.1)
+            if min(min_x_count, max_x_count) > 2:
+                continue
+            arrows.append({'x1': min(xs), 'y1': min(ys), 'x2': max(xs), 'y2': max(ys), 'area': width * height})
+        return arrows
+
+    @staticmethod
+    def _padded_box(box: Dict, padding: float) -> Dict:
+        return {
+            **box,
+            'x1': box['x1'] - padding,
+            'y1': box['y1'] - padding,
+            'x2': box['x2'] + padding,
+            'y2': box['y2'] + padding,
+        }
+
+    def _extract_paint_order_elements(self, content: str) -> List[Dict]:
+        raw_elements = []
+        text_pattern = re.compile(r'<text\b(?P<attrs>[^>]*)>(?P<inner>.*?)</text>', re.IGNORECASE | re.DOTALL)
+        shape_pattern = re.compile(
+            r'<(?P<tag>rect|polygon|circle|ellipse)\b(?P<attrs>[^>]*?)(?:/>|></(?P=tag)>)',
+            re.IGNORECASE | re.DOTALL,
+        )
+
+        for m in text_pattern.finditer(content):
+            box = self._text_box_from_attrs(m.group('attrs') or '', m.group('inner') or '')
+            if box:
+                raw_elements.append({'kind': 'text', 'pos': m.start(), 'box': box})
+
+        for m in shape_pattern.finditer(content):
+            attrs = m.group('attrs') or ''
+            if self._shape_is_outline_only(attrs):
+                continue
+            box = self._shape_box((m.group('tag') or '').lower(), attrs)
+            if box:
+                raw_elements.append({'kind': 'shape', 'pos': m.start(), 'box': box})
+
+        raw_elements.sort(key=lambda e: e['pos'])
+        return [
+            {'kind': item['kind'], 'index': index, 'box': item['box']}
+            for index, item in enumerate(raw_elements)
+        ]
+
+    def _text_box_from_attrs(self, attrs: str, inner: str) -> Dict | None:
+        transform = self._attr_value(attrs, 'transform') or ''
+        if 'rotate' in transform:
+            return None
+        x = self._attr_float(attrs, 'x')
+        y = self._attr_float(attrs, 'y')
+        if x is None or y is None:
+            return None
+        font_size = self._attr_float(attrs, 'font-size') or 16.0
+        lines = self._text_lines(inner)
+        if not lines:
+            return None
+        width = max(self._estimate_text_width(line, font_size) for line in lines)
+        height = max(font_size * 1.25 * len(lines), font_size)
+        anchor = (self._attr_value(attrs, 'text-anchor') or 'start').strip()
+        x1 = x
+        if anchor == 'middle':
+            x1 = x - width / 2
+        elif anchor == 'end':
+            x1 = x - width
+        y1 = y - font_size
+        return {
+            'x1': x1,
+            'y1': y1,
+            'x2': x1 + width,
+            'y2': y1 + height,
+            'area': width * height,
+            'text': " ".join(lines),
+        }
+
+    def _shape_box(self, tag: str, attrs: str) -> Dict | None:
+        if tag == 'rect':
+            x = self._attr_float(attrs, 'x') or 0.0
+            y = self._attr_float(attrs, 'y') or 0.0
+            w = self._attr_float(attrs, 'width')
+            h = self._attr_float(attrs, 'height')
+            if w is None or h is None or w <= 0 or h <= 0:
+                return None
+            return {'x1': x, 'y1': y, 'x2': x + w, 'y2': y + h, 'area': w * h}
+        if tag == 'polygon':
+            raw = self._attr_value(attrs, 'points')
+            if not raw:
+                return None
+            nums = [float(n) for n in re.findall(r'-?\d+(?:\.\d+)?', raw)]
+            if len(nums) < 4:
+                return None
+            xs = nums[0::2]
+            ys = nums[1::2]
+            area = max(max(xs) - min(xs), 0) * max(max(ys) - min(ys), 0)
+            return {'x1': min(xs), 'y1': min(ys), 'x2': max(xs), 'y2': max(ys), 'area': area}
+        if tag == 'circle':
+            cx = self._attr_float(attrs, 'cx')
+            cy = self._attr_float(attrs, 'cy')
+            r = self._attr_float(attrs, 'r')
+            if cx is None or cy is None or r is None:
+                return None
+            return {'x1': cx - r, 'y1': cy - r, 'x2': cx + r, 'y2': cy + r, 'area': (2 * r) ** 2}
+        if tag == 'ellipse':
+            cx = self._attr_float(attrs, 'cx')
+            cy = self._attr_float(attrs, 'cy')
+            rx = self._attr_float(attrs, 'rx')
+            ry = self._attr_float(attrs, 'ry')
+            if cx is None or cy is None or rx is None or ry is None:
+                return None
+            return {'x1': cx - rx, 'y1': cy - ry, 'x2': cx + rx, 'y2': cy + ry, 'area': 4 * rx * ry}
+        return None
+
+    @classmethod
+    def _shape_is_outline_only(cls, attrs: str) -> bool:
+        fill = (cls._attr_value(attrs, 'fill') or '').strip().lower()
+        return fill == 'none'
+
+    @staticmethod
+    def _attr_value(attrs: str, name: str) -> str | None:
+        m = re.search(rf'\b{name}\s*=\s*(["\'])(.*?)\1', attrs)
+        return m.group(2) if m else None
+
+    @classmethod
+    def _attr_float(cls, attrs: str, name: str) -> float | None:
+        raw = cls._attr_value(attrs, name)
+        if raw is None:
+            return None
+        m = re.match(r'\s*(-?\d+(?:\.\d+)?)', raw)
+        if not m:
+            return None
+        return float(m.group(1))
+
+    @staticmethod
+    def _text_lines(inner: str) -> List[str]:
+        tspan_matches = re.findall(r'<tspan\b[^>]*>(.*?)</tspan>', inner, re.IGNORECASE | re.DOTALL)
+        raw_lines = tspan_matches if tspan_matches else [inner]
+        lines = []
+        for raw in raw_lines:
+            text = re.sub(r'<[^>]+>', '', raw)
+            text = html.unescape(text)
+            text = re.sub(r'\s+', ' ', text).strip()
+            if text:
+                lines.append(text)
+        return lines
+
+    @classmethod
+    def _all_visible_text_lines(cls, content: str) -> List[str]:
+        lines = []
+        for m in re.finditer(r'<text\b[^>]*>(.*?)</text>', content, re.IGNORECASE | re.DOTALL):
+            lines.extend(cls._text_lines(m.group(1) or ''))
+        return lines
+
+    @staticmethod
+    def _estimate_text_width(text: str, font_size: float) -> float:
+        width = 0.0
+        for ch in text:
+            if '\u4e00' <= ch <= '\u9fff':
+                width += font_size
+            elif ch.isspace():
+                width += font_size * 0.3
+            elif ord(ch) < 128:
+                width += font_size * 0.55
+            else:
+                width += font_size * 0.8
+        return width
+
+    @staticmethod
+    def _parse_viewbox(value: str) -> Tuple[float, float, float, float] | None:
+        parts = value.split()
+        if len(parts) != 4:
+            return None
+        try:
+            return tuple(float(p) for p in parts)  # type: ignore[return-value]
+        except ValueError:
+            return None
+
+    @staticmethod
+    def _short_text(text: str, limit: int = 18) -> str:
+        text = text.strip()
+        return text if len(text) <= limit else text[: limit - 1] + "…"
+
     def _check_image_references(self, content: str, svg_path: Path, result: Dict):
         """Check image file existence and resolution vs display size."""
         # Find all <image ...> elements (capture the full tag)
@@ -461,7 +1177,8 @@ class SVGQualityChecker:
     def _check_spec_lock_drift(self, content: str, svg_path: Path, result: Dict):
         """Detect values used in the SVG that fall outside spec_lock.md.
 
-        Covers colors (fill / stroke / stop-color), font-family, and font-size.
+        Covers colors (fill / stroke / stop-color), font-family, font-size,
+        and icon placeholders / embedded icon comments.
         Emits per-file warnings summarising the drift counts; exact drifting
         values are accumulated in self._drift_summary for the end-of-run
         aggregation. When spec_lock.md is missing, silently skip (consistent
@@ -509,6 +1226,21 @@ class SVGQualityChecker:
                 except (ValueError, TypeError):
                     body_px = None
 
+        # Icons: `icons` is the canonical lock; `visual_system` may mirror a
+        # larger template inventory. Accept either so finalized SVGs generated
+        # from a visual-system-aware spec do not false-positive when
+        # `icons.inventory` was intentionally kept narrower for a page subset.
+        allowed_icon_library = lock.get('icons', {}).get('library', '').strip()
+        allowed_icons = set()
+        for section_name in ('icons', 'visual_system'):
+            inventory = lock.get(section_name, {}).get('inventory') or lock.get(section_name, {}).get('icon_inventory')
+            if not inventory:
+                continue
+            for item in re.split(r'\s*,\s*', inventory):
+                icon = item.strip()
+                if icon:
+                    allowed_icons.add(icon)
+
         # Scan SVG for used values
         color_drifts = set()
         for attr in ('fill', 'stroke', 'stop-color'):
@@ -540,6 +1272,27 @@ class SVGQualityChecker:
                     pass
             size_drifts.add(val)
 
+        icon_drifts = set()
+        icon_refs = set()
+        for m in re.finditer(r'data-icon\s*=\s*["\']([^"\']+)["\']', content):
+            icon_refs.add(m.group(1).strip())
+        # finalized SVGs keep `<!-- icon: library/name -->` comments after
+        # `finalize_svg.py` embeds the placeholder, so drift remains auditable.
+        for m in re.finditer(r'<!--\s*icon:\s*([^>]+?)\s*-->', content):
+            icon_refs.add(m.group(1).strip())
+        for ref in icon_refs:
+            if not ref:
+                continue
+            if '/' in ref:
+                lib, name = ref.split('/', 1)
+            else:
+                lib, name = 'chunk', ref
+            if allowed_icon_library and lib != allowed_icon_library:
+                icon_drifts.add(f"{lib}/{name}")
+                continue
+            if allowed_icons and name not in allowed_icons:
+                icon_drifts.add(f"{lib}/{name}")
+
         # Record in run-wide aggregation
         fname = svg_path.name
         for v in color_drifts:
@@ -548,6 +1301,8 @@ class SVGQualityChecker:
             self._drift_summary['fonts'][v].add(fname)
         for v in size_drifts:
             self._drift_summary['sizes'][v].add(fname)
+        for v in icon_drifts:
+            self._drift_summary['icons'][v].add(fname)
 
         # Per-file warning (one condensed line; details live in summary)
         parts = []
@@ -557,6 +1312,8 @@ class SVGQualityChecker:
             parts.append(f"{len(font_drifts)} font-family value(s)")
         if size_drifts:
             parts.append(f"{len(size_drifts)} font-size value(s)")
+        if icon_drifts:
+            parts.append(f"{len(icon_drifts)} icon(s)")
         if parts:
             result['warnings'].append(
                 f"spec_lock drift: {', '.join(parts)} not in spec_lock.md "
@@ -702,13 +1459,14 @@ class SVGQualityChecker:
             return
         has_drift = any(self._drift_summary[cat] for cat in self._drift_summary)
         if not has_drift:
-            print("\n[OK] spec_lock drift: none — all colors, fonts, and sizes are anchored to spec_lock.md")
+            print("\n[OK] spec_lock drift: none — all colors, fonts, sizes, and icons are anchored to spec_lock.md")
             return
 
         print("\nspec_lock drift — values used outside spec_lock.md:")
         labels = [('colors', 'Colors'),
                   ('fonts', 'Font families'),
-                  ('sizes', 'Font sizes')]
+                  ('sizes', 'Font sizes'),
+                  ('icons', 'Icons')]
         for category, label in labels:
             items = self._drift_summary.get(category, {})
             if not items:

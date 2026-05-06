@@ -19,7 +19,11 @@ import subprocess
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-SKILL_FILES = sorted(REPO_ROOT.glob("**/SKILL.md"))
+SKILL_FILES = sorted(
+    path
+    for path in REPO_ROOT.glob("**/SKILL.md")
+    if ".claude/worktrees" not in path.relative_to(REPO_ROOT).as_posix()
+)
 
 # 豁免：anythingllm-mcp 的 mcpServers args 必须保留 ${CLAUDE_PLUGIN_ROOT}
 EXEMPT_PLACEHOLDER_FILES = {

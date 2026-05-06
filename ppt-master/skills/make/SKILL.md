@@ -125,6 +125,7 @@ fi
 | `$SKILL_DIR/scripts/analyze_images.py` | Image analysis |
 | ai-image plugin | AI image generation (multi-provider) — call via `Skill(skill="ai-image:gen")` (Claude Code) or `python3 "$AI_IMAGE_SKILL_DIR/scripts/image_gen.py"` (cross-agent fallback) |
 | `$SKILL_DIR/scripts/svg_quality_checker.py` | SVG quality check |
+| `$SKILL_DIR/scripts/ppt_master_eval.py` | Repeatable visual quality eval fixtures + target project summary |
 | `$SKILL_DIR/scripts/total_md_split.py` | Speaker notes splitting |
 | `$SKILL_DIR/scripts/finalize_svg.py` | SVG post-processing (unified entry) |
 | `$SKILL_DIR/scripts/svg_to_pptx.py` | Export to PPTX |
@@ -219,10 +220,14 @@ except Exception:
 " 2>/dev/null || echo '')
 
 if [ -n "$DEFAULT_LAYOUT" ]; then
-    cp $SKILL_DIR/templates/layouts/$DEFAULT_LAYOUT/*.svg <project_path>/templates/
-    cp $SKILL_DIR/templates/layouts/$DEFAULT_LAYOUT/design_spec.md <project_path>/templates/
-    cp $SKILL_DIR/templates/layouts/$DEFAULT_LAYOUT/*.png <project_path>/images/ 2>/dev/null || true
-    cp $SKILL_DIR/templates/layouts/$DEFAULT_LAYOUT/*.jpg <project_path>/images/ 2>/dev/null || true
+    cp ${SKILL_DIR}/templates/layouts/${DEFAULT_LAYOUT}/*.svg <project_path>/templates/
+    cp ${SKILL_DIR}/templates/layouts/${DEFAULT_LAYOUT}/design_spec.md <project_path>/templates/
+    cp ${SKILL_DIR}/templates/layouts/${DEFAULT_LAYOUT}/semantic_routes.json <project_path>/templates/ 2>/dev/null || true
+    cp ${SKILL_DIR}/templates/layouts/${DEFAULT_LAYOUT}/visual_system.json <project_path>/templates/ 2>/dev/null || true
+    cp ${SKILL_DIR}/templates/layouts/${DEFAULT_LAYOUT}/human_quality_rubric.json <project_path>/templates/ 2>/dev/null || true
+    cp ${SKILL_DIR}/templates/layouts/${DEFAULT_LAYOUT}/component_library.md <project_path>/templates/ 2>/dev/null || true
+    cp ${SKILL_DIR}/templates/layouts/${DEFAULT_LAYOUT}/*.png <project_path>/images/ 2>/dev/null || true
+    cp ${SKILL_DIR}/templates/layouts/${DEFAULT_LAYOUT}/*.jpg <project_path>/images/ 2>/dev/null || true
 fi
 ```
 
@@ -311,7 +316,7 @@ python3 $SKILL_DIR/scripts/analyze_images.py <project_path>/images
 
 Strategist 必须输出 `<project_path>/design_review.md` 并暂停等待用户确认。
 
-`design_review.md` 必含 3 项：① 选定模板 + 简短理由（cross-link `templates/layouts/layouts_index.json` 中本模板 entry 的 `summary` 字段）② 页数 + 一级大纲 ③ Image_Generator 触发列表。其它细节（主题色 / 字体 / 节奏）从 `spec_lock.md` 链接，不复述。
+`design_review.md` 必含 4 项：① 选定模板 + 简短理由（cross-link `templates/layouts/layouts_index.json` 中本模板 entry 的 `summary` 字段）② 页数 + 一级大纲 ③ Image_Generator 触发列表 ④ 质量样张轮换页（来自 `spec_lock.md ## quality_samples`，用于人工感/客户可发布度检查）。其它细节（主题色 / 字体 / 节奏）从 `spec_lock.md` 链接，不复述。
 
 用户回复判定：**复用 Step 4 user reply contract**（同上文八项确认表）。未确认前禁止进入 Step 5 / Step 6 / 单跑 ai-image。**AI 在等待用户确认时永不主动推进**——下次 AI 输出时优先追问而非继续执行（AI 无真实计时能力，不依赖"超时"概念）。
 
@@ -381,8 +386,10 @@ Read references/executor-consultant-top.md # Top consulting style (MBB level)
 python3 $SKILL_DIR/scripts/svg_quality_checker.py <project_path>
 ```
 - Any `error` (banned SVG features, viewBox mismatch, spec_lock drift, etc.) MUST be fixed on the offending page before proceeding — go back to Visual Construction, re-generate that page, re-run the check.
-- `warning` entries (e.g., low-resolution image, non-PPT-safe font tail) should be reviewed and fixed when straightforward; may be acknowledged and released otherwise.
+- `warning` entries (e.g., low-resolution image, non-PPT-safe font tail, possible text overlap, off-contract icon drift) should be reviewed and fixed when straightforward; for branded templates, text overlap / clipping / icon drift warnings are release blockers unless proven false positive.
 - Running the checker against `svg_output/` is required — running it only after `finalize_svg.py` is too late (finalize rewrites SVG and some violations get masked).
+- If `spec_lock.md ## quality_samples` exists, inspect those rotating sample pages first for human-made quality: narrative specificity, composition hierarchy, density control, brand-native execution, technical legibility, and client readiness. Do not repeatedly polish the same page across iterations; rotate sample page numbers and route intents according to the template rubric.
+- When improving `ppt-master` itself or investigating repeated visual defects, run `python3 $SKILL_DIR/scripts/ppt_master_eval.py --target <project_path>` and use its fixture + target report as evidence. Do not judge capability changes only by one manually patched sample SVG.
 
 **Logic Construction Phase**:
 - Generate speaker notes → `<project_path>/notes/total.md`

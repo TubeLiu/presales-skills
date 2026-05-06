@@ -95,7 +95,7 @@ node "${CLAUDE_SKILL_DIR}/scripts/check-deps.mjs"
 
 ## MCP installer (presales-skills integration)
 
-`scripts/mcp_installer.py` registers search-class MCP servers (tavily / exa / minimax-token-plan) into `~/.claude.json`. Called by the setup wizards of [tender-workflow](https://github.com/TubeLiu/presales-skills) and [solution-master](https://github.com/TubeLiu/presales-skills); also runnable standalone via CLI.
+`scripts/mcp_installer.py` registers search-class MCP servers (tavily / exa / minimax-token-plan) into `~/.claude.json`. Called by the setup wizards of [tender-workflow](https://github.com/Alauda-io/presales-skills) and [solution-master](https://github.com/Alauda-io/presales-skills); also runnable standalone via CLI.
 
 ```bash
 python3 "${CLAUDE_SKILL_DIR}/scripts/mcp_installer.py" check uv

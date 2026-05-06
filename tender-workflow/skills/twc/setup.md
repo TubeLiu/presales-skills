@@ -151,7 +151,7 @@ drawio 现已从 tender-workflow 独立成 `presales-skills` marketplace 内的 
      ```
      /plugin install drawio@presales-skills
      ```
-   - 若 marketplace `presales-skills` 尚未注册，先 `/plugin marketplace add TubeLiu/presales-skills`（远程订阅）或本地路径 `/plugin marketplace add /path/to/presales-skills`
+   - 若 marketplace `presales-skills` 尚未注册，先 `/plugin marketplace add Alauda-io/presales-skills`（远程订阅）或本地路径 `/plugin marketplace add /path/to/presales-skills`
    - 安装后 `/reload-plugins` 生效，随后 setup 可返回此步继续检测
 
 #### Step 4：MCP 搜索工具配置（可选）

@@ -80,6 +80,12 @@ python3 scripts/finalize_svg.py <project_path>
 python3 scripts/svg_to_pptx.py <project_path> -s final
 ```
 
+`finalize_svg.py` runs `normalize-layout` by default: text inside colored
+blocks is centered horizontally and vertically, and multi-label colored strips
+receive transparent slots so each label has a concrete center. Intentional
+left-aligned colored content must be marked with `data-text-align="left"` or
+`data-role="callout-content"`.
+
 Image generation (delegated to the ai-image plugin — v1.0.0 c983037 removed the `image-gen` PATH bin entry, replaced by one of the two methods below):
 
 **Claude Code** (recommended):

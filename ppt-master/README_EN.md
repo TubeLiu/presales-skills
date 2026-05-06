@@ -2,7 +2,7 @@
 
 [中文](./README.md) | **English**
 
-PPT Master is a plugin in the [presales-skills](https://github.com/TubeLiu/presales-skills) marketplace that converts multi-source documents (PDF / DOCX / URL / Markdown) into **natively editable PPTX** — real PowerPoint shapes, text boxes, and charts, not images.
+PPT Master is a plugin in the [presales-skills](https://github.com/Alauda-io/presales-skills) marketplace that converts multi-source documents (PDF / DOCX / URL / Markdown) into **natively editable PPTX** — real PowerPoint shapes, text boxes, and charts, not images.
 
 > 🙏 **Upstream attribution**: This plugin is vendored from [hugohe3/ppt-master](https://github.com/hugohe3/ppt-master) (MIT License © 2025-2026 Hugo He) and adapted to the presales-skills marketplace conventions — the core pipeline, SKILL.md body, 22 built-in layouts, and script tools all follow upstream design and implementation. Thanks to Hugo He for the open-source work. See [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md) for the full borrowed-files list, change notes relative to upstream, and the original LICENSE.
 

@@ -1,0 +1,204 @@
+{
+  "template": "alauda",
+  "purpose": "Route source content intent to Alauda content-page variants before SVG generation.",
+  "defaultRoute": {
+    "pageIntent": "custom_content",
+    "variantFile": "03_content.svg",
+    "visualGrammar": "alauda_frame_custom_content",
+    "payloadBudget": {
+      "title": "<=18 CJK chars",
+      "keyMessage": "<=36 CJK chars",
+      "body": "Use explicit line breaks; move overflow to notes"
+    }
+  },
+  "routes": [
+    {
+      "pageIntent": "platform_panorama",
+      "variantFile": "03_content_panorama.svg",
+      "visualGrammar": "domain_row_platform_core_infra_row",
+      "bestFor": ["product family", "capability map", "platform panorama", "full-stack product architecture", "产品全景", "能力地图", "产品族", "全栈平台", "平台底座", "统一治理"],
+      "avoidFor": ["single feature deep dive", "long prose", "precise comparison table"],
+      "payloadBudget": {
+        "domain": "<=8 CJK chars",
+        "capabilityTitle": "<=7 CJK chars",
+        "capabilitySub": "<=14 CJK chars",
+        "environment": "<=12 CJK chars",
+        "anchorThesis": "one visible platform thesis or anchor capability must guide scanning",
+        "notesOverflow": true
+      }
+    },
+    {
+      "pageIntent": "architecture_stack",
+      "variantFile": "03_content_architecture.svg",
+      "visualGrammar": "four_layer_stack_with_downward_dependency",
+      "bestFor": ["layered architecture", "technology stack", "control plane vs workload plane", "component hierarchy", "架构分层", "技术架构", "技术栈", "控制面", "工作负载面", "组件层级"],
+      "avoidFor": ["many peer modules", "timeline", "before-after migration"],
+      "payloadBudget": {
+        "layerTitle": "<=12 CJK chars",
+        "layerDesc": "<=38 CJK chars",
+        "maxLayers": 4,
+        "dependencyDirection": "one clear dependency direction; control plane and workload plane are explicit when relevant",
+        "notesOverflow": true
+      }
+    },
+    {
+      "pageIntent": "migration_bridge",
+      "variantFile": "03_content_migration.svg",
+      "visualGrammar": "before_bridge_after",
+      "bestFor": ["old-to-new migration", "current state to target state", "transition path", "dual-run bridge", "迁移路径", "现状到目标", "双轨并进", "灰度迁移", "迁移桥", "目标态"],
+      "avoidFor": ["symmetric feature comparison", "5+ phases", "detailed object mapping"],
+      "payloadBudget": {
+        "panelTitle": "<=12 CJK chars",
+        "panelDesc": "<=3 lines, <=18 CJK chars per line",
+        "bridgeEmphasis": "center bridge carries the main transformation logic; before/after are framing context",
+        "notesOverflow": true
+      }
+    },
+    {
+      "pageIntent": "mapping_table",
+      "variantFile": "03_content_table.svg",
+      "visualGrammar": "four_column_five_row_table",
+      "bestFor": ["term mapping", "object mapping", "capability matrix", "compatibility table", "术语对照", "对象映射", "能力对标", "兼容性表", "Route", "SCC", "BuildConfig", "ImageStream"],
+      "avoidFor": ["narrative argument", "wide data tables", "more than 5 primary rows"],
+      "payloadBudget": {
+        "columnHeader": "<=8 CJK chars",
+        "cell": "<=16 CJK chars",
+        "maxRows": 5,
+        "decisionCue": "each row should expose a migration judgment such as automation, risk, rollback, owner, or priority",
+        "notesOverflow": true
+      }
+    },
+    {
+      "pageIntent": "process_flow",
+      "variantFile": "03_content_process.svg",
+      "visualGrammar": "four_step_horizontal_process",
+      "bestFor": ["implementation method", "PoC process", "workflow", "migration stages", "实施流程", "PoC", "试点", "迁移阶段", "迁移方法", "工作流"],
+      "avoidFor": ["branching decision tree", "more than 4 equal steps", "calendar roadmap"],
+      "payloadBudget": {
+        "stepTitle": "<=8 CJK chars",
+        "stepDesc": "<=3 lines, <=14 CJK chars per line",
+        "stepOutput": "each step shows a concrete output or acceptance gate",
+        "notesOverflow": true
+      }
+    },
+    {
+      "pageIntent": "timeline",
+      "variantFile": "03_content_timeline.svg",
+      "visualGrammar": "five_node_horizontal_timeline",
+      "bestFor": ["roadmap", "release plan", "migration waves", "milestones", "路线图", "发布计划", "迁移波次", "里程碑", "阶段计划"],
+      "avoidFor": ["non-temporal process", "deep implementation detail"],
+      "payloadBudget": {
+        "timeLabel": "<=8 CJK chars",
+        "eventTitle": "<=10 CJK chars",
+        "eventDesc": "<=18 CJK chars",
+        "maxNodes": 5,
+        "notesOverflow": true
+      }
+    },
+    {
+      "pageIntent": "capability_canvas",
+      "variantFile": "03_content_canvas.svg",
+      "visualGrammar": "three_column_capability_canvas",
+      "bestFor": ["3-domain capability grouping", "operating model canvas", "functional taxonomy", "三域能力", "能力分组", "运营模型", "功能分类", "能力画布"],
+      "avoidFor": ["strict hierarchy", "numeric KPI dashboard"],
+      "payloadBudget": {
+        "columnHeader": "<=10 CJK chars",
+        "capabilityTitle": "<=10 CJK chars",
+        "capabilityDesc": "<=18 CJK chars",
+        "notesOverflow": true
+      }
+    },
+    {
+      "pageIntent": "comparison",
+      "variantFile": "03_content_compare.svg",
+      "visualGrammar": "before_after_two_panel_comparison",
+      "bestFor": ["before-after", "OCP vs ACP summary", "pain point vs improvement", "前后对比", "OCP 对 ACP", "痛点改善", "能力对比", "替代前后"],
+      "avoidFor": ["3-way comparison", "term mapping table"],
+      "payloadBudget": {
+        "sideTitle": "<=10 CJK chars",
+        "bullet": "<=18 CJK chars",
+        "maxBulletsPerSide": 4,
+        "notesOverflow": true
+      }
+    },
+    {
+      "pageIntent": "evidence_argument",
+      "variantFile": "03_content_evidence.svg",
+      "visualGrammar": "thesis_plus_three_proofs",
+      "bestFor": ["sales argument", "value proof", "claim with evidence", "executive persuasion", "价值证明", "销售论证", "核心主张", "证据支撑", "高层说服"],
+      "avoidFor": ["neutral capability catalog", "process description"],
+      "payloadBudget": {
+        "thesis": "<=32 CJK chars",
+        "evidenceTitle": "<=10 CJK chars",
+        "evidenceDesc": "<=26 CJK chars",
+        "notesOverflow": true
+      }
+    },
+    {
+      "pageIntent": "kpi_metrics",
+      "variantFile": "03_content_kpi.svg",
+      "visualGrammar": "four_metric_cards",
+      "bestFor": ["quantified value", "business impact", "SLA metrics", "before-after measured result", "量化价值", "业务影响", "SLA 指标", "成效指标", "度量结果"],
+      "avoidFor": ["unquantified claims", "technical architecture"],
+      "payloadBudget": {
+        "metricValue": "<=8 chars",
+        "metricLabel": "<=10 CJK chars",
+        "metricDesc": "<=18 CJK chars",
+        "maxMetrics": 4,
+        "notesOverflow": true
+      }
+    },
+    {
+      "pageIntent": "risk_matrix",
+      "variantFile": "03_content_matrix.svg",
+      "visualGrammar": "two_by_two_matrix",
+      "bestFor": ["risk quadrant", "priority classification", "complexity vs impact", "migration scope classification", "风险矩阵", "优先级分类", "复杂度影响", "迁移范围分类", "风险分级"],
+      "avoidFor": ["linear process", "large table"],
+      "payloadBudget": {
+        "axisLabel": "<=8 CJK chars",
+        "quadrantTitle": "<=10 CJK chars",
+        "quadrantDesc": "<=18 CJK chars",
+        "axisVisibility": "axis labels must be explicit and high-contrast; do not rely on faint microcopy",
+        "notesOverflow": true
+      }
+    },
+    {
+      "pageIntent": "code_sample",
+      "variantFile": "03_content_code.svg",
+      "visualGrammar": "code_block_with_side_notes",
+      "bestFor": ["YAML conversion", "CLI example", "configuration sample", "API mapping", "YAML 转换", "CLI 示例", "配置样例", "API 映射", "代码示例"],
+      "avoidFor": ["long source files", "non-technical executive summary"],
+      "payloadBudget": {
+        "codeLines": "<=14 visible lines",
+        "noteTitle": "<=10 CJK chars",
+        "noteDesc": "<=18 CJK chars",
+        "notesOverflow": true
+      }
+    },
+    {
+      "pageIntent": "screenshot_evidence",
+      "variantFile": "03_content_screenshot.svg",
+      "visualGrammar": "product_screenshot_with_caption",
+      "bestFor": ["UI evidence", "product screenshot", "console proof", "dashboard view", "UI 证据", "产品截图", "控制台截图", "仪表盘", "界面证明"],
+      "avoidFor": ["diagram that should remain editable", "no real screenshot available"],
+      "payloadBudget": {
+        "caption": "<=28 CJK chars",
+        "callout": "<=16 CJK chars",
+        "notesOverflow": true
+      }
+    },
+    {
+      "pageIntent": "parallel_value",
+      "variantFile": "03_content_parallel.svg",
+      "visualGrammar": "two_parallel_value_streams",
+      "bestFor": ["two workstreams", "dual value propositions", "business and technical tracks", "双工作流", "双价值", "业务技术双线", "并行推进"],
+      "avoidFor": ["strict before-after replacement", "3+ workstreams"],
+      "payloadBudget": {
+        "panelTitle": "<=12 CJK chars",
+        "item": "<=18 CJK chars",
+        "maxItemsPerPanel": 4,
+        "notesOverflow": true
+      }
+    }
+  ]
+}

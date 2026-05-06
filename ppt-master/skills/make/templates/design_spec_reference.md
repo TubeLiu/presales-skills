@@ -203,6 +203,13 @@ Two views on the same font decisions — fill both, keep them consistent:
 - **Built-in icon library**: `templates/icons/` (6700+ icons across three libraries)
 - **Usage method**: Placeholder format `{{icon:category/icon-name}}`
 
+> **Template visual system override**: When the copied template package
+> provides `templates/visual_system.json`, icon decisions MUST come from its
+> `iconSystem` block. Use the declared library and inventory, write the same
+> inventory into `spec_lock.md ## icons`, and instruct Executor to use
+> `<use data-icon="library/name">` placeholders. Do not hand-draw pseudo-icons
+> when the visual system inventory has a close match.
+
 ### Recommended Icon List (fill as needed)
 
 | Purpose | Icon Path | Page |
@@ -245,6 +252,15 @@ Two views on the same font decisions — fill both, keep them consistent:
 
 ## IX. Content Outline
 
+> **Semantic route for branded layout templates**: When the project uses a
+> template package that provides a semantic route catalog (for example
+> `templates/semantic_routes.json` copied from the Alauda layout), every
+> non-structural content page MUST include a **Semantic Route** block before
+> the layout/content bullets. This block is the contract that turns source
+> text into a visual grammar before SVG authoring begins. Long prose that
+> does not fit the declared payload budget must move to speaker notes instead
+> of being squeezed into the page.
+
 ### Part 1: [Chapter Name]
 
 #### Slide 01 - Cover
@@ -256,6 +272,17 @@ Two views on the same font decisions — fill both, keep them consistent:
 
 #### Slide 02 - [Page Name]
 
+- **Semantic Route**:
+  - `page_intent`: [e.g., `migration_bridge` / `architecture_stack` / `mapping_table` / `custom_content`]
+  - `template_variant`: [e.g., `03_content_migration.svg`; use `03_content.svg` only when no semantic variant fits]
+  - `visual_grammar`: [e.g., `before_bridge_after` / `four_layer_stack_with_downward_dependency`]
+  - `payload_budget`: [short budget summary copied from the route catalog]
+  - `density_profile`: [from `templates/visual_system.json`, e.g., `dense_technical` / `balanced_technical`]
+  - `component_primitives`: [comma-separated primitives from the route default and `component_library.md`]
+  - `icon_inventory`: [approved icon names from the visual system for this page]
+  - `connector_policy`: [if connectors are used, reserve whitespace lanes and keep at least the visual system's text-lane gap from nearby labels]
+  - `route_quality_rules`: [customer-facing quality constraints copied from `templates/visual_system.json.routeQualityRules` when available]
+  - `notes_overflow`: [yes/no; default yes for dense technical decks]
 - **Layout**: [Choose a pattern from §V, combine two, or break the grid as the content demands]
 - **Title**: [Page title]
 - **Visualization**: [visualization_type] (see VII. Visualization Reference List)

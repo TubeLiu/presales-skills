@@ -5,7 +5,7 @@
 ## Table of Contents
 
 - [何时触发](#何时触发)
-- [design_review.md 3 项产物详解](#design_reviewmd-3-项产物详解)
+- [design_review.md 4 项产物详解](#design_reviewmd-4-项产物详解)
 - [用户回复判定](#用户回复判定)
 - [边界 case](#边界-case)
 - [与 spec_lock.md / design_spec.md 的引用关系](#与-spec_lockmd--design_specmd-的引用关系)
@@ -20,7 +20,7 @@
 
 ---
 
-## design_review.md 3 项产物详解
+## design_review.md 4 项产物详解
 
 ### ① 选定模板 + 简短理由
 
@@ -81,6 +81,27 @@
 - ❌ 漏写"不触发的页面"（用户会以为每页都要图）
 - ❌ 不给预算评估（用户无法判断要不要砍图）
 
+### ④ 质量样张轮换页
+
+**字段**：从 `spec_lock.md ## quality_samples` 摘出 3 张非结构页，列出页码、page intent、density 和本轮检查理由。若模板包提供 `templates/human_quality_rubric.json`，样张选择必须遵循其中的 `qualitySampleRotation`。
+
+**目的**：避免陷入反复修改同一张 SVG。用户确认方案后，Executor 仍生成完整 deck，但质量复盘优先看这 3 张轮换样张，覆盖不同页型与信息密度。
+
+**示例**：
+```markdown
+## 质量样张轮换页
+
+- **P03 架构分层**: `architecture_stack | dense_technical` — 检查层级关系、标签可读性、侧栏证据密度
+- **P05 对象映射**: `mapping_table | dense_technical` — 检查表格紧凑度、术语短标签、状态提示
+- **P07 迁移路径**: `migration_bridge | balanced_technical` — 检查 before/bridge/after 视觉逻辑
+```
+
+**反模式**：
+- ❌ 每轮都选同一页作为样张
+- ❌ 只选最容易做漂亮的低密度页
+- ❌ 把样张机制理解成"只生成这几页"
+- ❌ 在技能优化时一直改同一张 SVG，而不是回到 route / visual system / checker 改能力
+
 ---
 
 ## 用户回复判定
@@ -127,9 +148,9 @@ AI 没有真实计时能力，不能"5 分钟后超时自动推进"。任何"超
 ```
 design_spec.md       ←── Strategist 八项确认的"完整方案"（每页详细 bullet）
        ↓
-   spec_lock.md      ←── Strategist 锁定的"执行决策"（颜色 / 字体 / 图标 / page_rhythm）
+  spec_lock.md      ←── Strategist 锁定的"执行决策"（颜色 / 字体 / 图标 / page_rhythm / quality_samples）
        ↓
-design_review.md     ←── 给用户复核的"摘要视图"（3 项：模板 / 大纲 / 图片预算）
+design_review.md     ←── 给用户复核的"摘要视图"（4 项：模板 / 大纲 / 图片预算 / 质量样张）
        ↓
    user confirm
        ↓

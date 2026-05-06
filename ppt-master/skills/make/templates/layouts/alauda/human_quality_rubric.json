@@ -1,0 +1,87 @@
+{
+  "template": "alauda",
+  "purpose": "Human-made quality rubric for Alauda technical presales decks. Use this to judge generation quality across rotating page samples, not to hand-polish one SVG.",
+  "referenceSignals": [
+    "Alauda content pages feel like engineered diagrams first, decorated slides second.",
+    "Dense pages preserve clear functional grouping through bands, rails, separators, and aligned labels.",
+    "The page title is quiet and precise; the main visual carries the message.",
+    "Technical labels are short, horizontal, and deliberately placed; no rotated CJK labels.",
+    "Side explanations are compact proof bullets, not generic copy blocks.",
+    "Brand color is used as structure and emphasis, not as full-page blue fill by default."
+  ],
+  "qualityDimensions": {
+    "narrativeSpecificity": {
+      "weight": 20,
+      "excellent": "Each page has one technical sales job and the visual grammar matches that job.",
+      "poor": "The page is a generic card grid that could fit any topic."
+    },
+    "compositionHierarchy": {
+      "weight": 20,
+      "excellent": "Viewer can scan title, key message, primary diagram, and secondary proof in that order.",
+      "poor": "All elements compete equally, or the largest shape is not the most important idea."
+    },
+    "densityControl": {
+      "weight": 20,
+      "excellent": "Dense architecture detail is grouped; whitespace and separators explain relationships.",
+      "poor": "Density is achieved by shrinking fonts, adding many boxes, or stacking labels."
+    },
+    "brandNativeExecution": {
+      "weight": 15,
+      "excellent": "Uses Alauda frame, blue/gray structure, component library, and chunk icons consistently.",
+      "poor": "Looks like a generic AI template with random rounded cards or handmade icons."
+    },
+    "technicalLegibility": {
+      "weight": 15,
+      "excellent": "Labels remain editable, horizontal, non-overlapping, and readable in PowerPoint.",
+      "poor": "Labels collide with icons, arrows, separators, borders, or each other."
+    },
+    "clientReadiness": {
+      "weight": 10,
+      "excellent": "A presales engineer could present it to a customer after content review.",
+      "poor": "Requires visual cleanup before an internal review."
+    }
+  },
+  "pageArchetypes": {
+    "platform_panorama": "Human target: product-family map with domain bands, platform core, infra row, and sparse side value rail.",
+    "architecture_stack": "Human target: layered operating architecture with clear control-plane/workload-plane relationships and compact proof bullets.",
+    "migration_bridge": "Human target: current-state to target-state transition diagram with a visible bridge and risk-control path.",
+    "mapping_table": "Human target: editable compact mapping table with short object names and visual status cues.",
+    "process_flow": "Human target: four-step implementation path with numbered anchors and a single forward direction.",
+    "timeline": "Human target: milestone rail that shows waves or phases without becoming a generic roadmap.",
+    "capability_canvas": "Human target: three-domain operating canvas with capability clustering, not equal decorative cards.",
+    "comparison": "Human target: before/after proof page with asymmetric emphasis on improvement.",
+    "evidence_argument": "Human target: one thesis, three proof points, enough negative space for persuasion.",
+    "kpi_metrics": "Human target: numbers as evidence, with restrained context and no decorative KPI stuffing.",
+    "risk_matrix": "Human target: readable quadrant classification with risk-control interpretation.",
+    "code_sample": "Human target: code/config snippet plus side annotations; avoid screenshot-like fake code.",
+    "screenshot_evidence": "Human target: real product evidence framed with caption and callouts.",
+    "parallel_value": "Human target: two parallel value streams with shared outcome, not two unrelated panels."
+  },
+  "qualitySampleRotation": {
+    "sampleSize": 3,
+    "policy": [
+      "Pick non-structural pages from different pageIntent values.",
+      "Always include at least one dense technical diagram page when the deck has one.",
+      "Prefer page intents not used in the previous quality iteration.",
+      "Do not use the same first sample page across consecutive iterations unless the source deck has fewer than four content pages.",
+      "When improving the skill itself, rotate sample page numbers and route intents instead of repeatedly editing the same generated SVG."
+    ],
+    "preferredIntentSets": [
+      ["platform_panorama", "architecture_stack", "migration_bridge"],
+      ["mapping_table", "process_flow", "risk_matrix"],
+      ["capability_canvas", "evidence_argument", "code_sample"],
+      ["timeline", "comparison", "capability_canvas"],
+      ["kpi_metrics", "screenshot_evidence", "architecture_stack"]
+    ],
+    "specLockFormat": "P<NN>: page_intent | density | review_reason"
+  },
+  "releaseBar": {
+    "minimumScore": 82,
+    "hardStops": [
+      "Any visible text overlap, clipping, or out-of-canvas label.",
+      "Any off-contract icon library or handmade pseudo-icon when an approved icon exists.",
+      "Any dense page that uses generic symmetric cards instead of the routed visual grammar.",
+      "Any CJK label rotated vertically or placed in a narrow unreadable strip."
+    ]
+  }
+}

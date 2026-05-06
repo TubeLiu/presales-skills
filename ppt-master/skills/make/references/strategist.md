@@ -299,6 +299,86 @@ When content outline pages involve **data visualization or infographic-style str
 > - Prefer specificity: if `vertical_list` fits better than generic `numbered_steps`, choose the more specific template
 > - When no built-in template fits, note "custom layout" instead of forcing a poor match
 
+### Branded Template Semantic Routes (Non-blocking — mandatory when available)
+
+When the project uses a copied layout template package and that package
+contains `templates/semantic_routes.json`, Strategist MUST read it before
+writing §IX Content Outline. This is especially important for Alauda decks,
+where the difference between a human-feeling technical sales deck and an
+AI-looking template fill is often decided before SVG generation.
+
+**Selection workflow**:
+1. Read `templates/semantic_routes.json` after the template is copied into the project.
+2. For every non-structural content page, classify the source material into a `page_intent` from the route catalog.
+3. Select the corresponding `template_variant` and `visual_grammar`; use the catalog `defaultRoute` only when no semantic route fits.
+4. Copy the route's payload budget into the page brief, then compress visual content to that budget. Move overflow details to speaker notes.
+5. Mirror the chosen route into `spec_lock.md ## semantic_routes` using the compact format:
+   `P<NN>: page_intent | template_variant | visual_grammar | payload_budget`.
+
+**Rules**:
+- The route is a design decision, not a decorative label. Do not choose
+  `03_content.svg` merely because it is flexible when a more specific variant fits.
+- Prefer a slightly opinionated visual grammar over a generic card grid. For
+  example, use `migration_bridge` for current-state / transition / target-state
+  narratives, and `mapping_table` for OpenShift-to-Kubernetes object mappings.
+- Payload budgets are visual constraints. If the source paragraph is longer
+  than the route allows, summarize the page to the slot limit and place the
+  remaining substance in notes.
+- Structural pages (`cover`, `toc`, `chapter`, `ending`) do not need semantic
+  route entries unless the template package explicitly defines them.
+
+### Branded Template Visual System (Non-blocking — mandatory when available)
+
+When the same copied layout package contains `templates/visual_system.json`,
+Strategist MUST read it immediately after `templates/semantic_routes.json`.
+This file is the template-level execution contract for component primitives,
+icon inventory, density profiles, and spacing. For Alauda decks, it is what
+turns a routed page into a brand-native technical diagram instead of a
+generic SVG composition.
+
+**Selection workflow**:
+1. Read `templates/visual_system.json`; if it names `component_library.md`, read that file too before finalizing §IX.
+2. For every routed content page, copy the route default `density`, `components`, and relevant `icons` into that page's **Semantic Route** block.
+3. Keep icon selection inside `iconSystem.inventory`; if a needed metaphor is missing, choose the closest approved icon rather than switching libraries.
+4. If the route uses `connector_line` or `directional_arrow`, copy `connectorPolicy` into the page plan and reserve connector lanes before assigning text rows.
+5. If `routeQualityRules` has a matching `page_intent`, copy those rules into the page brief as customer-facing quality constraints.
+6. Use the selected density profile to set visible-label budgets, group spacing, and page-rhythm choices. Dense pages may carry many elements, but only within the profile's gap and nesting limits.
+7. Mirror the decisions into `spec_lock.md ## visual_system` so Executor can re-read them page by page.
+
+**Rules**:
+- `visual_system.json` does not replace narrative judgment; it constrains how
+  a chosen route is drawn.
+- Do not invent per-page component names when a matching primitive exists in
+  `component_library.md`.
+- Do not solve density by shrinking text below the typography ramp. Reduce
+  visible labels, merge nearby items, or move details to notes.
+- Connector routing is a page-level contract: every connector on a page must
+  obey `connectorPolicy`, including secondary arrows between later groups.
+- Customer-facing canvases must not display eval/internal metadata such as
+  route names, density names, variant names, or `样张 Pxx` labels.
+- Anti-patterns listed in `visual_system.json` override generic layout habits.
+
+### Human Quality Rubric + Rotating Samples (Non-blocking — mandatory when available)
+
+If the template package contains `templates/human_quality_rubric.json`,
+Strategist MUST read it after `visual_system.json`. This rubric defines what
+"human-made" means for the template and how quality samples rotate. It is not
+a request to generate only a few slides; it is a way to avoid overfitting the
+skill to one repeatedly edited SVG.
+
+**Selection workflow**:
+1. Read `templates/human_quality_rubric.json` and apply its `qualityDimensions` while choosing page rhythm, route, and visible payload.
+2. Choose `quality_samples` from non-structural pages after §IX is complete. Pick the rubric's `sampleSize` pages when possible.
+3. The sample set MUST cover different `page_intent` values; include at least one dense technical diagram page when the deck contains one.
+4. Prefer route intents not used in the previous quality iteration. When improving `ppt-master` itself, rotate page numbers and page intents instead of repeatedly polishing the same generated SVG.
+5. Mirror the result into `spec_lock.md ## quality_samples`, and include the same list in `design_review.md` item ④.
+
+**Rules**:
+- Quality samples are a review lens, not a reduced generation scope. Executor
+  still generates the full deck.
+- Do not choose only low-density pages that are easy to make attractive.
+- If the rubric has `hardStops`, treat them as release blockers during review.
+
 ### Speaker Notes Requirements (Default — no discussion needed)
 
 - File naming: Recommended to match SVG names (`01_cover.svg` → `notes/01_cover.md`), also compatible with `notes/slide01.md`
@@ -439,7 +519,7 @@ The Strategist should make professional judgments on the template basis generate
 | VI. Icon Usage Spec | Source description, placeholder syntax, recommended icon list |
 | VII. Visualization Reference List | Visualization type, reference template path, used-in pages, purpose |
 | VIII. Image Resource List | Filename, dimensions, ratio, purpose, status, generation description |
-| IX. Content Outline | Grouped by chapter; each page includes layout, title, content points, visualization type (if applicable) |
+| IX. Content Outline | Grouped by chapter; each page includes semantic route (when template catalog exists), layout, title, content points, visualization type (if applicable) |
 | X. Speaker Notes Requirements | File naming rules, content structure description |
 | XI. Technical Constraints Reminder | SVG generation rules, PPT compatibility rules |
 
@@ -447,9 +527,12 @@ The Strategist should make professional judgments on the template basis generate
 1. Read reference template: `templates/design_spec_reference.md`
 2. Generate complete spec from scratch based on analysis
 3. Save to: `projects/<project_name>.../design_spec.md`
-4. **Generate execution lock**: read `templates/spec_lock_reference.md` and produce `projects/<project_name>.../spec_lock.md` — a distilled, machine-readable short form of the color / typography / icon / image / **page_rhythm** decisions above. This file is what the Executor re-reads before every page (see [executor-base.md](executor-base.md) §2.1). The values in `spec_lock.md` MUST exactly match the decisions recorded in `design_spec.md`; if they ever diverge, `spec_lock.md` wins and `design_spec.md` should be treated as historical narrative.
+4. **Generate execution lock**: read `templates/spec_lock_reference.md` and produce `projects/<project_name>.../spec_lock.md` — a distilled, machine-readable short form of the color / typography / icon / image / **page_rhythm** / semantic route / visual system decisions above. This file is what the Executor re-reads before every page (see [executor-base.md](executor-base.md) §2.1). The values in `spec_lock.md` MUST exactly match the decisions recorded in `design_spec.md`; if they ever diverge, `spec_lock.md` wins and `design_spec.md` should be treated as historical narrative.
    - **page_rhythm is mandatory**: Based on the page list in §IX Content Outline, assign each page one of `anchor` / `dense` / `breathing` (see `spec_lock_reference.md` for the full vocabulary). This is what breaks the uniform "every page is a card grid" feel — without it the Executor defaults all pages to `dense`.
    - **Rhythm follows narrative, not quota**: `breathing` pages should appear at natural narrative pauses — chapter transitions, a single argument worth standalone emphasis (hero quote / big number / feature image), an SCQA "Question" bridge, or a deliberate stop after a chain of dense argumentation. If the content is genuinely a high-density data briefing or rigorous consulting analysis, the deck may legitimately be nearly all `dense` — **do NOT invent filler pages** ("Thank you", "Chapter divider with no content") to pad the rhythm, because filler is itself a hallmark AI-generated pattern. Validation test: every `breathing` page must answer "what independent thing is this page saying?" — if it can't, it shouldn't exist.
+   - **semantic_routes is mandatory when available**: If `templates/semantic_routes.json` exists, add `## semantic_routes` entries for all non-structural content pages. These entries must match each page's Semantic Route block in `design_spec.md §IX` and must name a concrete template variant or the catalog default route.
+   - **visual_system is mandatory when available**: If `templates/visual_system.json` exists, add `## visual_system` with the source, component library, icon library/inventory, default density settings, connector policy, and per-page route density/component/icon decisions. These entries must match each page's Semantic Route block in `design_spec.md §IX`.
+   - **quality_samples is mandatory when available**: If `templates/human_quality_rubric.json` exists, add `## quality_samples` with rotating sample pages selected from different non-structural page intents. These are the first pages to inspect for human-made quality after generation.
 
 ---
 

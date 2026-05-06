@@ -160,9 +160,23 @@
 
 ---
 
-## VII. Content Page Variants (Layout Primitives)
+## VII. Content Page Variants (Semantic Routes + Layout Primitives)
 
-In addition to the generic `03_content.svg`, this template includes 8 pre-built content page variants from the Alauda design system. The Executor can reference these when the content matches a specific layout pattern.
+In addition to the generic `03_content.svg`, this template includes semantic
+content page variants from the Alauda design system. The Strategist should
+route each content page through **`semantic_routes.json`** before the Executor
+draws SVG. This prevents generic card-grid pages and forces source content to
+be translated into a concrete visual grammar such as product panorama,
+architecture stack, migration bridge, mapping table, or process flow.
+
+**Route contract**:
+
+1. Strategist reads `semantic_routes.json` when Alauda is copied into a project.
+2. Each non-structural page receives `page_intent`, `template_variant`,
+   `visual_grammar`, and `payload_budget` in `design_spec.md §IX`.
+3. The same decision is mirrored into `spec_lock.md ## semantic_routes`.
+4. Executor uses the declared variant as the primary template and moves text
+   that exceeds the payload budget into speaker notes.
 
 | Variant File | Layout Pattern | Origin | Key Placeholders |
 | --- | --- | --- | --- |
@@ -194,10 +208,43 @@ In addition to the generic `03_content.svg`, this template includes 8 pre-built 
 
 For atomic-level SVG primitives (individual card shapes, layer bands, step circles, arrows, code blocks, table rows, etc.), see **`component_library.md`**. The component library provides copy-pasteable SVG snippets that the Executor can freely compose into any layout — not limited to the pre-built variant templates above.
 
+### Visual System Contract
+
+For route-level execution rules, see **`visual_system.json`**. This file binds
+each semantic route to:
+
+- a density profile (`dense_technical`, `balanced_technical`, or `breathing_argument`)
+- allowed component primitives from `component_library.md`
+- the approved `chunk` icon inventory
+- anti-patterns that must be avoided on Alauda technical decks
+
+Strategist must read `visual_system.json` after `semantic_routes.json`, then
+mirror each routed page's density, component primitives, and icon choices into
+both `design_spec.md §IX` and `spec_lock.md ## visual_system`. Executor must
+read the same lock before drawing each page. This prevents dense architecture
+and product panorama slides from falling back to generic card grids, rotated
+labels, hand-drawn pseudo-icons, or text fitted by shrinking.
+
+### Human Quality Rubric
+
+For release-quality review standards, see **`human_quality_rubric.json`**.
+This rubric captures the human-made Alauda signals: engineered diagrams before
+decoration, compact side proof bullets, horizontal technical labels, density
+controlled by grouping rather than shrinking, and brand color used as structure.
+
+Strategist must use the rubric to select rotating `quality_samples` and write
+them into `spec_lock.md ## quality_samples` plus `design_review.md`. Executor
+uses those pages as the first review set after generation. The goal is to
+raise the deck-wide generation standard, not to repeatedly hand-edit one SVG.
+
 ### Usage Guidelines
 
-- **Variant templates are references, not rigid constraints.** The Executor may adapt, combine, or simplify them based on actual content.
-- **For layouts not covered by any variant**, compose directly from `component_library.md` primitives.
+- **Semantic routes are first-class design decisions.** Prefer the route catalog over generic content layout whenever a page matches a listed intent.
+- **The visual system is first-class execution data.** Apply the route's density profile, component primitives, and icon inventory before composing the SVG.
+- **Human-quality samples are rotating review anchors.** Use them to check client-readiness across different page intents; do not keep optimizing the same page number across iterations.
+- **Variant templates are references, not rigid constraints.** The Executor may adapt, combine, or simplify them based on actual content, but should preserve the declared visual grammar.
+- **Payload budgets are part of the route.** Do not shrink fonts or overfill boxes to fit source prose; summarize the visible text and move overflow into speaker notes.
+- **For layouts not covered by any variant**, compose directly from `component_library.md` primitives while still respecting `visual_system.json` density and icon rules.
 - All variants share the same header/footer frame (top blue bar, "Alauda" footer, page number).
 - Each variant uses the standard Alauda color palette and font stack.
 - The generic `03_content.svg` remains the default for any content that does not match a specific variant.
