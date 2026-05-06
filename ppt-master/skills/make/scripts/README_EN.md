@@ -96,12 +96,17 @@ python3 scripts/design_quality_checker.py <project_path>
 python3 scripts/ppt_master_eval.py --target <project_path> --design --plan-archetypes
 ```
 
-`design_archetype_planner.py` derives page visual archetypes from source
-Markdown for `spec_lock.md ## design_diversity`.
+`design_archetype_planner.py` derives page visual archetypes and
+`density_contract` minimums from source Markdown for `spec_lock.md
+## design_diversity` and `## density_contract`.
 `svg_quality_checker.py` catches rendering risks. `design_quality_checker.py`
-scores page-level hierarchy, grouping, density, negative space, alignment, and
-`component -> slot -> text` semantic coverage, plus deck-level visual-archetype
-diversity to catch repeated card-grid overfitting.
+scores page-level hierarchy, grouping, density, information density, negative
+space, visual focus / component scale hierarchy, alignment, and `component ->
+slot -> text` semantic coverage, plus deck-level visual-archetype diversity to
+catch repeated card-grid overfitting.
+Its `generationGuidance` / `deckGenerationGuidance` fields are regeneration
+briefs: change route, components, slots, density, and hierarchy instead of
+hand-moving coordinates in one SVG.
 
 Image generation (delegated to the ai-image plugin — v1.0.0 c983037 removed the `image-gen` PATH bin entry, replaced by one of the two methods below):
 

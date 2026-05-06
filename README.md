@@ -359,7 +359,7 @@ Verify（多维校验 + 汇报）
 
 | 想了解 | 看这里 |
 |---|---|
-| **修改代码必读的工程纪律**（版本号 bump / 跨 plugin 路径 / 运行时陷阱） | [CLAUDE.md](CLAUDE.md) — Claude Code 在本仓库会话中自动加载 |
+| **修改代码必读的工程纪律**（版本号 bump / 跨 plugin 路径 / 运行时陷阱 / harness 防硬编码） | [CLAUDE.md](CLAUDE.md)（Claude Code）/ [AGENTS.md](AGENTS.md)（Codex） |
 | 设计原理（仅 skills/ / 路径自定位 / SessionStart / Task subagent / MCP installer） | [docs/architecture.md](docs/architecture.md) |
 | Cursor / Codex / OpenCode 装载 + 兼容性矩阵 + Windows 适配 | [docs/cross-agent.md](docs/cross-agent.md) |
 | 配置文件物理布局 + 纯 CLI 配置 + 自动依赖安装 | [docs/configuration.md](docs/configuration.md) |

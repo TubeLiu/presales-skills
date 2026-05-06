@@ -567,6 +567,230 @@ def test_svg_quality_checker_allows_geometrically_centered_shape_text(tmp_path):
     assert not any("shape text centering issue" in warning for warning in result["warnings"])
 
 
+def test_svg_quality_checker_ignores_page_chrome_accent_for_shape_text_centering(tmp_path):
+    scripts_dir = ROOT / "ppt-master/skills/make/scripts"
+    sys.path.insert(0, str(scripts_dir))
+    try:
+        from svg_quality_checker import SVGQualityChecker
+    finally:
+        sys.path.pop(0)
+
+    svg_path = tmp_path / "page_chrome_accent.svg"
+    svg_path.write_text(
+        """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <rect width="1280" height="720" fill="#FFFFFF" data-role="page-background"/>
+  <circle cx="1210" cy="560" r="260" fill="#EEF8FC" data-role="geometric-accent"/>
+  <text x="1188" y="686" fill="#8AA0B8" font-family="Arial, sans-serif" font-size="12" text-anchor="end" data-role="page-number">P01</text>
+  <rect x="220" y="220" width="260" height="48" fill="#3BAEE3" rx="6"/>
+  <text x="350" y="244" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="17" text-anchor="middle" dominant-baseline="middle">主体标签</text>
+</svg>
+""",
+        encoding="utf-8",
+    )
+
+    result = SVGQualityChecker().check_file(str(svg_path), expected_format="ppt169")
+
+    assert not any("shape text centering issue" in warning for warning in result["warnings"])
+
+
+def test_svg_quality_checker_flags_child_shape_overflowing_semantic_parent(tmp_path):
+    scripts_dir = ROOT / "ppt-master/skills/make/scripts"
+    sys.path.insert(0, str(scripts_dir))
+    try:
+        from svg_quality_checker import SVGQualityChecker
+    finally:
+        sys.path.pop(0)
+
+    svg_path = tmp_path / "child_shape_overflow.svg"
+    svg_path.write_text(
+        """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <rect width="1280" height="720" fill="#FFFFFF"/>
+  <rect x="160" y="220" width="240" height="120" fill="#FFFFFF" stroke="#DCE6F2" rx="6" data-role="content-card"/>
+  <rect x="190" y="310" width="180" height="38" fill="#D8EFF9" rx="6" data-role="label" data-slot="label"/>
+  <text x="280" y="329" font-family="Arial, sans-serif" font-size="16" fill="#125B7D" text-anchor="middle" dominant-baseline="middle">越界标签</text>
+</svg>
+""",
+        encoding="utf-8",
+    )
+
+    result = SVGQualityChecker().check_file(str(svg_path), expected_format="ppt169")
+
+    assert any("semantic parent overflow" in warning for warning in result["warnings"])
+
+
+def test_svg_quality_checker_flags_large_text_overflowing_semantic_parent(tmp_path):
+    scripts_dir = ROOT / "ppt-master/skills/make/scripts"
+    sys.path.insert(0, str(scripts_dir))
+    try:
+        from svg_quality_checker import SVGQualityChecker
+    finally:
+        sys.path.pop(0)
+
+    svg_path = tmp_path / "large_text_parent_overflow.svg"
+    svg_path.write_text(
+        """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <rect width="1280" height="720" fill="#FFFFFF"/>
+  <rect x="470" y="160" width="300" height="240" fill="#EFF6FF" stroke="#BFDBFE" rx="8" data-role="bridge"/>
+  <text x="510" y="260" font-family="Arial, sans-serif" font-size="32" font-weight="700" fill="#334155">5% → 20% → 50% → 100%</text>
+</svg>
+""",
+        encoding="utf-8",
+    )
+
+    result = SVGQualityChecker().check_file(str(svg_path), expected_format="ppt169")
+
+    assert any("semantic parent overflow" in warning for warning in result["warnings"])
+
+
+def test_svg_quality_checker_allows_header_flush_inside_semantic_parent(tmp_path):
+    scripts_dir = ROOT / "ppt-master/skills/make/scripts"
+    sys.path.insert(0, str(scripts_dir))
+    try:
+        from svg_quality_checker import SVGQualityChecker
+    finally:
+        sys.path.pop(0)
+
+    svg_path = tmp_path / "header_flush_parent.svg"
+    svg_path.write_text(
+        """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <rect width="1280" height="720" fill="#FFFFFF"/>
+  <rect x="470" y="160" width="300" height="240" fill="#EFF6FF" stroke="#BFDBFE" rx="8" data-role="bridge"/>
+  <rect x="470" y="160" width="300" height="44" fill="#3BAEE3" rx="8" data-role="label" data-slot="header"/>
+  <text x="620" y="182" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle">迁移桥</text>
+</svg>
+""",
+        encoding="utf-8",
+    )
+
+    result = SVGQualityChecker().check_file(str(svg_path), expected_format="ppt169")
+
+    assert not any("semantic parent overflow" in warning for warning in result["warnings"])
+
+
+def test_svg_quality_checker_flags_text_overflowing_intermediate_slot(tmp_path):
+    scripts_dir = ROOT / "ppt-master/skills/make/scripts"
+    sys.path.insert(0, str(scripts_dir))
+    try:
+        from svg_quality_checker import SVGQualityChecker
+    finally:
+        sys.path.pop(0)
+
+    svg_path = tmp_path / "intermediate_slot_text_overflow.svg"
+    svg_path.write_text(
+        """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <rect width="1280" height="720" fill="#FFFFFF"/>
+  <rect x="124" y="226" width="148" height="276" rx="6" fill="#EAF5FF" stroke="#DDE6F1" data-role="content-card"/>
+  <rect x="142" y="312" width="112" height="28" rx="6" fill="#FFFFFF" stroke="#DDE6F1" data-role="label" data-slot="label"/>
+  <text x="198" y="326" font-family="Arial, sans-serif" font-size="11" font-weight="700" fill="#2F3E52" text-anchor="middle" dominant-baseline="middle">Prometheus / Jaeger / Loki</text>
+</svg>
+""",
+        encoding="utf-8",
+    )
+
+    result = SVGQualityChecker().check_file(str(svg_path), expected_format="ppt169")
+
+    assert any("semantic parent overflow" in warning for warning in result["warnings"])
+
+
+def test_svg_quality_checker_flags_borderline_bold_text_overflowing_bridge(tmp_path):
+    scripts_dir = ROOT / "ppt-master/skills/make/scripts"
+    sys.path.insert(0, str(scripts_dir))
+    try:
+        from svg_quality_checker import SVGQualityChecker
+    finally:
+        sys.path.pop(0)
+
+    svg_path = tmp_path / "bold_bridge_overflow.svg"
+    svg_path.write_text(
+        """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <rect width="1280" height="720" fill="#FFFFFF"/>
+  <rect x="478" y="146" width="326" height="497" fill="#EAF5FF" stroke="#B8D9FB" data-role="bridge"/>
+  <text x="520" y="230" font-family="Arial, sans-serif" font-size="23.59" font-weight="bold" fill="#2F3E52" text-anchor="start">5% → 20% → 50% → 100%</text>
+</svg>
+""",
+        encoding="utf-8",
+    )
+
+    result = SVGQualityChecker().check_file(str(svg_path), expected_format="ppt169")
+
+    assert any("semantic parent overflow" in warning for warning in result["warnings"])
+
+
+def test_svg_quality_checker_flags_semantic_sibling_overlap(tmp_path):
+    scripts_dir = ROOT / "ppt-master/skills/make/scripts"
+    sys.path.insert(0, str(scripts_dir))
+    try:
+        from svg_quality_checker import SVGQualityChecker
+    finally:
+        sys.path.pop(0)
+
+    svg_path = tmp_path / "semantic_sibling_overlap.svg"
+    svg_path.write_text(
+        """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <rect width="1280" height="720" fill="#FFFFFF"/>
+  <rect x="88" y="152" width="1104" height="464" rx="6" fill="#EAF5FF" stroke="#B8D9FB" data-role="content-card"/>
+  <rect x="122" y="254" width="226" height="144" rx="6" fill="#FFFFFF" stroke="#DDE6F1" data-role="content-card"/>
+  <rect x="148" y="394" width="984" height="38" rx="6" fill="#F4F7FA" stroke="#DDE6F1" data-role="label" data-slot="label"/>
+</svg>
+""",
+        encoding="utf-8",
+    )
+
+    result = SVGQualityChecker().check_file(str(svg_path), expected_format="ppt169")
+
+    assert any("semantic component overlap/spacing" in warning for warning in result["warnings"])
+
+
+def test_svg_quality_checker_allows_nested_semantic_label_without_sibling_overlap(tmp_path):
+    scripts_dir = ROOT / "ppt-master/skills/make/scripts"
+    sys.path.insert(0, str(scripts_dir))
+    try:
+        from svg_quality_checker import SVGQualityChecker
+    finally:
+        sys.path.pop(0)
+
+    svg_path = tmp_path / "nested_semantic_label.svg"
+    svg_path.write_text(
+        """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <rect width="1280" height="720" fill="#FFFFFF"/>
+  <rect x="122" y="254" width="226" height="144" rx="6" fill="#FFFFFF" stroke="#DDE6F1" data-role="content-card"/>
+  <rect x="144" y="318" width="174" height="20" rx="6" fill="#D8F0FA" data-role="label" data-slot="label"/>
+  <rect x="144" y="344" width="174" height="20" rx="6" fill="#D8F0FA" data-role="label" data-slot="label"/>
+</svg>
+""",
+        encoding="utf-8",
+    )
+
+    result = SVGQualityChecker().check_file(str(svg_path), expected_format="ppt169")
+
+    assert not any("semantic component overlap/spacing" in warning for warning in result["warnings"])
+
+
+def test_svg_quality_checker_keeps_semantic_path_slots_after_finalize(tmp_path):
+    scripts_dir = ROOT / "ppt-master/skills/make/scripts"
+    sys.path.insert(0, str(scripts_dir))
+    try:
+        from svg_quality_checker import SVGQualityChecker
+    finally:
+        sys.path.pop(0)
+
+    svg_path = tmp_path / "finalized_path_slot_text_overflow.svg"
+    svg_path.write_text(
+        """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <rect width="1280" height="720" fill="#FFFFFF"/>
+  <path fill="#EAF5FF" stroke="#DDE6F1" data-role="content-card" d="M130,226 H266 A6,6 0 0 1 272,232 V496 A6,6 0 0 1 266,502 H130 A6,6 0 0 1 124,496 V232 A6,6 0 0 1 130,226 Z"/>
+  <path fill="#FFFFFF" stroke="#DDE6F1" data-role="label" data-slot="label" d="M148,312 H248 A6,6 0 0 1 254,318 V334 A6,6 0 0 1 248,340 H148 A6,6 0 0 1 142,334 V318 A6,6 0 0 1 148,312 Z"/>
+  <text x="198" y="326" font-family="Arial, sans-serif" font-size="11" font-weight="700" fill="#2F3E52" text-anchor="middle" dominant-baseline="middle">Nginx → ASM Gateway</text>
+</svg>
+""",
+        encoding="utf-8",
+    )
+
+    result = SVGQualityChecker().check_file(str(svg_path), expected_format="ppt169")
+
+    assert any("semantic parent overflow" in warning for warning in result["warnings"])
+
+
 def test_svg_quality_checker_uses_semantic_path_component_for_centering(tmp_path):
     scripts_dir = ROOT / "ppt-master/skills/make/scripts"
     sys.path.insert(0, str(scripts_dir))
@@ -862,6 +1086,305 @@ def test_finalize_normalize_layout_centers_colored_card_stack(tmp_path):
     assert not any("shape text centering issue" in warning for warning in result["warnings"])
 
 
+def test_finalize_normalize_layout_fits_text_inside_semantic_label_slot(tmp_path):
+    project = tmp_path / "project"
+    svg_output = project / "svg_output"
+    svg_output.mkdir(parents=True)
+    (svg_output / "01_slot_fit.svg").write_text(
+        """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <rect width="1280" height="720" fill="#FFFFFF"/>
+  <rect x="124" y="226" width="148" height="276" rx="6" fill="#EAF5FF" stroke="#DDE6F1" data-role="content-card"/>
+  <rect x="142" y="312" width="112" height="28" rx="6" fill="#FFFFFF" stroke="#DDE6F1" data-role="label" data-slot="label"/>
+  <text x="198" y="326" font-family="Arial, sans-serif" font-size="11" font-weight="700" fill="#2F3E52" text-anchor="middle" dominant-baseline="middle">Prometheus / Jaeger / Loki</text>
+</svg>
+""",
+        encoding="utf-8",
+    )
+
+    script = ROOT / "ppt-master/skills/make/scripts/finalize_svg.py"
+    subprocess.run(
+        [sys.executable, str(script), str(project), "--only", "normalize-layout", "--quiet"],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    final_svg = (project / "svg_final/01_slot_fit.svg").read_text(encoding="utf-8")
+    assert 'width="136"' in final_svg
+    assert 'font-size="8.' in final_svg
+
+    scripts_dir = ROOT / "ppt-master/skills/make/scripts"
+    sys.path.insert(0, str(scripts_dir))
+    try:
+        from svg_quality_checker import SVGQualityChecker
+    finally:
+        sys.path.pop(0)
+    result = SVGQualityChecker().check_file(str(project / "svg_final/01_slot_fit.svg"), expected_format="ppt169")
+    assert not any("semantic parent overflow" in warning for warning in result["warnings"])
+
+
+def test_finalize_normalize_layout_expands_component_to_direct_content(tmp_path):
+    project = tmp_path / "project"
+    svg_output = project / "svg_output"
+    svg_output.mkdir(parents=True)
+    (svg_output / "01_component_fit.svg").write_text(
+        """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <rect width="1280" height="720" fill="#FFFFFF"/>
+  <rect x="88" y="152" width="1104" height="458" rx="6" fill="#EAF5FF" stroke="#B8D9FB" data-role="content-card"/>
+  <rect x="128" y="460" width="300" height="76" fill="#4EA9DC" opacity="0.18" data-role="content-card" data-text-align="left"/>
+  <text x="146" y="488" font-family="Arial, sans-serif" font-size="21" font-weight="700" fill="#2F3E52">容器平台</text>
+  <text x="146" y="516" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#5D6B7C">已容器化无状态服务</text>
+  <text x="146" y="540" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#1E6684">灰度治理主战场</text>
+</svg>
+""",
+        encoding="utf-8",
+    )
+
+    script = ROOT / "ppt-master/skills/make/scripts/finalize_svg.py"
+    subprocess.run(
+        [sys.executable, str(script), str(project), "--only", "normalize-layout", "--quiet"],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    final_svg = (project / "svg_final/01_component_fit.svg").read_text(encoding="utf-8")
+    assert 'height="91.25"' in final_svg
+
+    scripts_dir = ROOT / "ppt-master/skills/make/scripts"
+    sys.path.insert(0, str(scripts_dir))
+    try:
+        from svg_quality_checker import SVGQualityChecker
+    finally:
+        sys.path.pop(0)
+    result = SVGQualityChecker().check_file(str(project / "svg_final/01_component_fit.svg"), expected_format="ppt169")
+    assert not any("semantic parent overflow" in warning for warning in result["warnings"])
+
+
+def test_finalize_normalize_layout_fits_direct_component_text_width(tmp_path):
+    project = tmp_path / "project"
+    svg_output = project / "svg_output"
+    svg_output.mkdir(parents=True)
+    (svg_output / "01_bridge_text_fit.svg").write_text(
+        """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <rect width="1280" height="720" fill="#FFFFFF"/>
+  <rect x="478" y="146" width="326" height="400" fill="#EAF5FF" stroke="#B8D9FB" data-role="bridge"/>
+  <text x="520" y="230" font-family="Arial, sans-serif" font-size="26" font-weight="700" fill="#2F3E52" text-anchor="start">5% → 20% → 50% → 100%</text>
+</svg>
+""",
+        encoding="utf-8",
+    )
+
+    script = ROOT / "ppt-master/skills/make/scripts/finalize_svg.py"
+    subprocess.run(
+        [sys.executable, str(script), str(project), "--only", "normalize-layout", "--quiet"],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    final_svg = (project / "svg_final/01_bridge_text_fit.svg").read_text(encoding="utf-8")
+    assert 'x="641" y="220.25"' in final_svg
+    assert 'font-size="24.' in final_svg
+    assert 'text-anchor="middle"' in final_svg
+    assert 'dominant-baseline="middle"' in final_svg
+
+    scripts_dir = ROOT / "ppt-master/skills/make/scripts"
+    sys.path.insert(0, str(scripts_dir))
+    try:
+        from svg_quality_checker import SVGQualityChecker
+    finally:
+        sys.path.pop(0)
+    result = SVGQualityChecker().check_file(str(project / "svg_final/01_bridge_text_fit.svg"), expected_format="ppt169")
+    assert not any("text container overflow" in warning for warning in result["warnings"])
+    assert not any("semantic parent overflow" in warning for warning in result["warnings"])
+    assert not any("shape text centering issue" in warning for warning in result["warnings"])
+
+
+def test_svg_quality_checker_flags_uncentered_direct_component_emphasis(tmp_path):
+    scripts_dir = ROOT / "ppt-master/skills/make/scripts"
+    sys.path.insert(0, str(scripts_dir))
+    try:
+        from svg_quality_checker import SVGQualityChecker
+    finally:
+        sys.path.pop(0)
+
+    svg_path = tmp_path / "uncentered_emphasis.svg"
+    svg_path.write_text(
+        """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <rect width="1280" height="720" fill="#FFFFFF"/>
+  <rect x="92" y="166" width="286" height="370" fill="#FFF1F0" stroke="#F4C9C5" data-role="content-card" data-text-align="left"/>
+  <rect x="92" y="166" width="286" height="44" fill="#F0524A" data-role="label" data-slot="label"/>
+  <text x="235" y="188" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle">当前发布模式</text>
+  <text x="122" y="244" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#F0524A" text-anchor="start">23:00-06:00</text>
+</svg>
+""",
+        encoding="utf-8",
+    )
+
+    result = SVGQualityChecker().check_file(str(svg_path), expected_format="ppt169")
+
+    assert any("shape text centering issue" in warning for warning in result["warnings"])
+
+
+def test_finalize_normalize_layout_centers_direct_component_emphasis(tmp_path):
+    project = tmp_path / "project"
+    svg_output = project / "svg_output"
+    svg_output.mkdir(parents=True)
+    (svg_output / "01_emphasis_center.svg").write_text(
+        """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <rect width="1280" height="720" fill="#FFFFFF"/>
+  <rect x="92" y="166" width="286" height="370" fill="#FFF1F0" stroke="#F4C9C5" data-role="content-card" data-text-align="left"/>
+  <rect x="92" y="166" width="286" height="44" fill="#F0524A" data-role="label" data-slot="label"/>
+  <text x="235" y="188" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle">当前发布模式</text>
+  <text x="122" y="244" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#F0524A" text-anchor="start">23:00-06:00</text>
+</svg>
+""",
+        encoding="utf-8",
+    )
+
+    script = ROOT / "ppt-master/skills/make/scripts/finalize_svg.py"
+    subprocess.run(
+        [sys.executable, str(script), str(project), "--only", "normalize-layout", "--quiet"],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    final_svg = (project / "svg_final/01_emphasis_center.svg").read_text(encoding="utf-8")
+    assert 'x="235" y="232.75"' in final_svg
+    assert 'text-anchor="middle"' in final_svg
+    assert 'dominant-baseline="middle"' in final_svg
+
+    scripts_dir = ROOT / "ppt-master/skills/make/scripts"
+    sys.path.insert(0, str(scripts_dir))
+    try:
+        from svg_quality_checker import SVGQualityChecker
+    finally:
+        sys.path.pop(0)
+    result = SVGQualityChecker().check_file(str(project / "svg_final/01_emphasis_center.svg"), expected_format="ppt169")
+    assert not any("shape text centering issue" in warning for warning in result["warnings"])
+
+
+def test_finalize_normalize_layout_respects_left_aligned_component_emphasis_exception(tmp_path):
+    project = tmp_path / "project"
+    svg_output = project / "svg_output"
+    svg_output.mkdir(parents=True)
+    (svg_output / "01_left_exception.svg").write_text(
+        """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <rect width="1280" height="720" fill="#FFFFFF"/>
+  <rect x="128" y="460" width="300" height="76" fill="#4EA9DC" data-role="content-card" data-text-align="left"/>
+  <text x="146" y="488" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#2F3E52" text-anchor="start">容器平台</text>
+</svg>
+""",
+        encoding="utf-8",
+    )
+
+    script = ROOT / "ppt-master/skills/make/scripts/finalize_svg.py"
+    subprocess.run(
+        [sys.executable, str(script), str(project), "--only", "normalize-layout", "--quiet"],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    final_svg = (project / "svg_final/01_left_exception.svg").read_text(encoding="utf-8")
+    assert 'x="146" y="488"' in final_svg
+    assert 'text-anchor="start"' in final_svg
+
+
+def test_finalize_normalize_layout_preserves_sibling_gap_after_component_growth(tmp_path):
+    project = tmp_path / "project"
+    svg_output = project / "svg_output"
+    svg_output.mkdir(parents=True)
+    (svg_output / "01_sibling_gap.svg").write_text(
+        """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <rect width="1280" height="720" fill="#FFFFFF"/>
+  <rect x="88" y="152" width="1104" height="464" rx="6" fill="#EAF5FF" stroke="#B8D9FB" data-role="content-card"/>
+  <rect x="122" y="254" width="226" height="112" rx="6" fill="#FFFFFF" stroke="#DDE6F1" data-role="content-card"/>
+  <rect x="144" y="318" width="174" height="20" rx="6" fill="#D8F0FA" data-role="label" data-slot="label"/>
+  <rect x="144" y="344" width="174" height="20" rx="6" fill="#D8F0FA" data-role="label" data-slot="label"/>
+  <rect x="144" y="370" width="174" height="20" rx="6" fill="#D8F0FA" data-role="label" data-slot="label"/>
+  <rect x="148" y="394" width="984" height="38" rx="6" fill="#F4F7FA" stroke="#DDE6F1" data-role="label" data-slot="label"/>
+  <text x="640" y="413" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#2F3E52" text-anchor="middle" dominant-baseline="middle">运行形态：单体 + Spring Cloud 微服务 + Python/PHP 历史模块 + RocketMQ 容器化</text>
+</svg>
+""",
+        encoding="utf-8",
+    )
+
+    script = ROOT / "ppt-master/skills/make/scripts/finalize_svg.py"
+    subprocess.run(
+        [sys.executable, str(script), str(project), "--only", "normalize-layout", "--quiet"],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    final_svg = (project / "svg_final/01_sibling_gap.svg").read_text(encoding="utf-8")
+    assert 'x="148" y="410" width="984" height="38"' in final_svg
+    assert 'x="640" y="429"' in final_svg
+
+    scripts_dir = ROOT / "ppt-master/skills/make/scripts"
+    sys.path.insert(0, str(scripts_dir))
+    try:
+        from svg_quality_checker import SVGQualityChecker
+    finally:
+        sys.path.pop(0)
+    result = SVGQualityChecker().check_file(str(project / "svg_final/01_sibling_gap.svg"), expected_format="ppt169")
+    assert not any("semantic component overlap/spacing" in warning for warning in result["warnings"])
+
+
+def test_finalize_normalize_layout_does_not_expand_layer_from_sibling_text(tmp_path):
+    project = tmp_path / "project"
+    svg_output = project / "svg_output"
+    svg_output.mkdir(parents=True)
+    (svg_output / "01_layer_stack.svg").write_text(
+        """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <rect width="1280" height="720" fill="#FFFFFF"/>
+  <rect x="92" y="150" width="1096" height="430" rx="6" fill="#EAF5FF" stroke="#B8D9FB" data-role="content-card"/>
+  <rect x="142" y="184" width="996" height="58" rx="6" fill="#4EA9DC" data-role="content-card" data-slot="layer"/>
+  <text x="168" y="220" font-family="Arial, sans-serif" font-size="21" font-weight="700" fill="#2F3E52">南北向入口层</text>
+  <rect x="142" y="268" width="996" height="58" rx="6" fill="#40B879" data-role="content-card" data-slot="layer"/>
+  <text x="168" y="304" font-family="Arial, sans-serif" font-size="21" font-weight="700" fill="#2F3E52">服务网格层</text>
+  <rect x="142" y="352" width="996" height="58" rx="6" fill="#F5C43A" data-role="content-card" data-slot="layer"/>
+  <text x="168" y="388" font-family="Arial, sans-serif" font-size="21" font-weight="700" fill="#2F3E52">业务应用层</text>
+  <rect x="142" y="436" width="996" height="58" rx="6" fill="#4EA9DC" data-role="content-card" data-slot="layer"/>
+  <text x="168" y="472" font-family="Arial, sans-serif" font-size="21" font-weight="700" fill="#2F3E52">观测平台层</text>
+  <rect x="168" y="524" width="244" height="42" rx="6" fill="#FFFFFF" stroke="#DDE6F1" data-role="content-card"/>
+  <text x="186" y="551" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#2F3E52">控制面声明</text>
+</svg>
+""",
+        encoding="utf-8",
+    )
+
+    script = ROOT / "ppt-master/skills/make/scripts/finalize_svg.py"
+    subprocess.run(
+        [sys.executable, str(script), str(project), "--only", "normalize-layout", "--quiet"],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+
+    final_svg = (project / "svg_final/01_layer_stack.svg").read_text(encoding="utf-8")
+    assert final_svg.count('height="58"') == 4
+
+    scripts_dir = ROOT / "ppt-master/skills/make/scripts"
+    sys.path.insert(0, str(scripts_dir))
+    try:
+        from svg_quality_checker import SVGQualityChecker
+    finally:
+        sys.path.pop(0)
+    result = SVGQualityChecker().check_file(str(project / "svg_final/01_layer_stack.svg"), expected_format="ppt169")
+    assert not any("semantic component overlap/spacing" in warning for warning in result["warnings"])
+
+
 def test_svg_to_pptx_maps_middle_baseline_to_vertical_center_anchor():
     scripts_dir = ROOT / "ppt-master/skills/make/scripts"
     sys.path.insert(0, str(scripts_dir))
@@ -898,14 +1421,15 @@ def test_ppt_master_eval_runs_fixture_suite(tmp_path):
         check=True,
     )
 
-    assert "fixtures: 9/9 passed" in completed.stdout
+    assert "fixtures: 10/10 passed" in completed.stdout
     report = json.loads((output_dir / "report.json").read_text(encoding="utf-8"))
-    assert report["fixtureSummary"] == {"total": 9, "passed": 9, "failed": 0}
+    assert report["fixtureSummary"] == {"total": 10, "passed": 10, "failed": 0}
     assert any(case["name"] == "connector_text_lane" and case["passed"] for case in report["fixtures"])
     assert any(case["name"] == "visible_internal_metadata" and case["passed"] for case in report["fixtures"])
     assert any(case["name"] == "shape_text_centering" and case["passed"] for case in report["fixtures"])
     assert any(case["name"] == "multi_label_strip_centering" and case["passed"] for case in report["fixtures"])
     assert any(case["name"] == "pale_colored_block_centering" and case["passed"] for case in report["fixtures"])
+    assert any(case["name"] == "component_emphasis_centering" and case["passed"] for case in report["fixtures"])
     assert (output_dir / "report.md").exists()
 
 
@@ -948,6 +1472,40 @@ def test_design_quality_checker_rewards_semantic_human_like_page(tmp_path):
     assert not any(issue["code"] == "flat_peer_grid" for issue in result["issues"])
 
 
+def test_design_quality_checker_negative_space_excludes_page_chrome(tmp_path):
+    scripts_dir = ROOT / "ppt-master/skills/make/scripts"
+    sys.path.insert(0, str(scripts_dir))
+    try:
+        from design_quality_checker import DesignQualityChecker
+    finally:
+        sys.path.pop(0)
+
+    svg = tmp_path / "page_chrome.svg"
+    svg.write_text(
+        """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <rect width="1280" height="720" fill="#FFFFFF" data-role="page-background"/>
+  <circle cx="1200" cy="560" r="240" fill="#EEF8FC" data-role="geometric-accent"/>
+  <rect x="44" y="44" width="20" height="46" fill="#3BAEE3" data-role="accent-bar"/>
+  <text x="76" y="78" font-family="Arial, sans-serif" font-size="36" font-weight="700" fill="#334155">灰度发布能力建设</text>
+  <text x="76" y="116" font-family="Arial, sans-serif" font-size="18" fill="#64748B">页眉页脚不应污染主体内容的留白判断</text>
+  <rect x="140" y="196" width="450" height="220" fill="#EEF6FF" stroke="#BFDBFE" data-role="content-card" data-text-align="left"/>
+  <rect x="170" y="236" width="180" height="48" fill="#3BAEE3" data-role="label"/>
+  <text x="260" y="260" font-family="Arial, sans-serif" font-size="20" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle">主体内容</text>
+  <text x="170" y="332" font-family="Arial, sans-serif" font-size="18" fill="#334155" data-text-align="left">只用这块卡片评估页面主体填充。</text>
+  <line x1="80" y1="662" x2="1200" y2="662" stroke="#DDE6F1"/>
+  <text x="80" y="686" font-family="Arial, sans-serif" font-size="12" fill="#8AA0B8" data-role="footer">Alauda</text>
+  <text x="1188" y="686" font-family="Arial, sans-serif" font-size="12" fill="#8AA0B8" text-anchor="end" data-role="page-number">P01</text>
+</svg>
+""",
+        encoding="utf-8",
+    )
+
+    result = DesignQualityChecker().check_file(svg)
+
+    assert result["metrics"]["negativeSpace"] >= 80
+    assert result["model"]["contentFillRatio"] < 0.40
+
+
 def test_design_quality_checker_flags_flat_unsemantic_grid(tmp_path):
     scripts_dir = ROOT / "ppt-master/skills/make/scripts"
     sys.path.insert(0, str(scripts_dir))
@@ -974,7 +1532,80 @@ def test_design_quality_checker_flags_flat_unsemantic_grid(tmp_path):
     result = DesignQualityChecker().check_file(svg)
 
     assert result["score"] < 78
+    assert result["metrics"]["visualFocus"] < 70
     assert any(issue["code"] in {"flat_peer_grid", "missing_main_message", "low_visual_hierarchy"} for issue in result["issues"])
+    assert any(issue["code"] == "low_visual_focus" for issue in result["issues"])
+    guidance_codes = {item["code"] for item in result["generationGuidance"]}
+    assert "regenerate_with_visual_focus" in guidance_codes
+    assert "strengthen_component_slot_semantics" in guidance_codes
+
+
+def test_design_quality_checker_does_not_flag_structured_process_as_flat_grid(tmp_path):
+    scripts_dir = ROOT / "ppt-master/skills/make/scripts"
+    sys.path.insert(0, str(scripts_dir))
+    try:
+        from design_quality_checker import DesignQualityChecker
+    finally:
+        sys.path.pop(0)
+
+    steps = []
+    for idx, x in enumerate((100, 380, 660, 940), start=1):
+        steps.append(f'<rect x="{x}" y="210" width="220" height="210" fill="#FFFFFF" stroke="#DCE6F2" rx="6" data-role="process-step" data-intent="process"/>')
+        steps.append(f'<circle cx="{x + 36}" cy="250" r="24" fill="#3BAEE3" data-role="label"/>')
+        steps.append(f'<text x="{x + 36}" y="250" font-family="Arial, sans-serif" font-size="16" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle">{idx}</text>')
+        steps.append(f'<text x="{x + 74}" y="258" font-family="Arial, sans-serif" font-size="20" fill="#334155" font-weight="700">阶段 {idx}</text>')
+        steps.append(f'<text x="{x + 24}" y="326" font-family="Arial, sans-serif" font-size="17" fill="#475569">交付物 / 验收门禁</text>')
+    svg = tmp_path / "structured_process.svg"
+    svg.write_text(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">'
+        '<rect width="1280" height="720" fill="#FFFFFF"/>'
+        '<text x="72" y="80" font-family="Arial, sans-serif" font-size="38" fill="#334155" font-weight="700">四阶段灰度验证流程</text>'
+        + "".join(steps)
+        + "</svg>",
+        encoding="utf-8",
+    )
+
+    result = DesignQualityChecker().check_file(svg)
+
+    assert result["archetype"] == "process_flow"
+    assert result["metrics"]["visualFocus"] >= 70
+    assert not any(issue["code"] == "flat_peer_grid" for issue in result["issues"])
+    assert not any(issue["code"] == "low_visual_focus" for issue in result["issues"])
+    assert not any(item["code"] == "regenerate_with_visual_focus" for item in result["generationGuidance"])
+
+
+def test_design_quality_checker_flags_repetitive_micro_label_stacks(tmp_path):
+    scripts_dir = ROOT / "ppt-master/skills/make/scripts"
+    sys.path.insert(0, str(scripts_dir))
+    try:
+        from design_quality_checker import DesignQualityChecker
+    finally:
+        sys.path.pop(0)
+
+    cards = []
+    for col, x in enumerate((110, 370, 630, 890)):
+        cards.append(f'<rect x="{x}" y="210" width="210" height="150" fill="#FFFFFF" stroke="#DCE6F2" rx="6" data-role="content-card"/>')
+        cards.append(f'<text x="{x + 24}" y="248" font-family="Arial, sans-serif" font-size="20" fill="#334155" font-weight="700">能力组 {col + 1}</text>')
+        for row, label in enumerate(("标签一", "标签二", "标签三")):
+            y = 278 + row * 28
+            cards.append(f'<rect x="{x + 24}" y="{y}" width="160" height="20" fill="#D8EFF9" rx="4" data-role="label" data-slot="label"/>')
+            cards.append(f'<text x="{x + 104}" y="{y + 10}" font-family="Arial, sans-serif" font-size="12" fill="#125B7D" text-anchor="middle" dominant-baseline="middle">{label}</text>')
+    svg = tmp_path / "micro_stacks.svg"
+    svg.write_text(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">'
+        '<rect width="1280" height="720" fill="#FFFFFF"/>'
+        '<text x="72" y="80" font-family="Arial, sans-serif" font-size="38" fill="#334155" font-weight="700">微标签堆叠反模式</text>'
+        + "".join(cards)
+        + "</svg>",
+        encoding="utf-8",
+    )
+
+    result = DesignQualityChecker().check_file(svg)
+
+    assert result["model"]["repetitiveLabelStacks"] == 4
+    assert result["model"]["stackedLabelCount"] == 12
+    assert any(issue["code"] == "repetitive_micro_label_stacks" for issue in result["issues"])
+    assert any(item["code"] == "replace_repetitive_micro_label_stacks" for item in result["generationGuidance"])
 
 
 def test_ppt_master_eval_can_include_design_quality_summary(tmp_path):
@@ -1008,6 +1639,7 @@ def test_ppt_master_eval_can_include_design_quality_summary(tmp_path):
     assert "design average:" in completed.stdout
     assert "diversity score:" in completed.stdout
     assert "## Design Quality" in (output_dir / "report.md").read_text(encoding="utf-8")
+    assert "Regeneration Guidance" in (output_dir / "report.md").read_text(encoding="utf-8")
 
 
 def _write_archetype_svg(path: Path, body: str) -> None:
@@ -1071,6 +1703,8 @@ def test_design_quality_checker_flags_repeated_card_grid_deck(tmp_path):
     assert report["deckDiversity"]["score"] < 70
     issue_codes = {issue["code"] for issue in report["deckDiversity"]["issues"]}
     assert {"low_archetype_variety", "repeated_visual_archetype", "card_grid_overuse"} <= issue_codes
+    guidance_codes = {item["code"] for item in report["deckGenerationGuidance"]}
+    assert {"rebalance_deck_archetypes", "reduce_card_grid_overuse"} <= guidance_codes
 
 
 def test_design_archetype_planner_maps_mixed_source_to_distinct_archetypes():
@@ -1115,6 +1749,103 @@ Kubernetes 滚动更新无法满足请求级灰度验证。
 
     assert {"comparison_bridge", "kpi_dashboard", "architecture_stack", "process_flow", "matrix_table", "code_annotation", "argument_thesis"} <= archetypes
     assert "## design_diversity" in report["specLockSnippet"]
+    assert "## density_contract" in report["specLockSnippet"]
+    assert all("densityContract" in page for page in report["pages"])
+    dense_pages = [page for page in report["pages"] if page["densityContract"]["visibleLabelsMin"] >= 12]
+    assert len(dense_pages) >= 4
+    assert any(page["contentLedger"]["visibleObjects"] for page in report["pages"])
+
+
+def test_design_quality_checker_flags_sparse_page_against_density_contract(tmp_path):
+    scripts_dir = ROOT / "ppt-master/skills/make/scripts"
+    sys.path.insert(0, str(scripts_dir))
+    try:
+        from design_quality_checker import DesignQualityChecker
+    finally:
+        sys.path.pop(0)
+
+    project = tmp_path / "project"
+    svg_dir = project / "svg_output"
+    svg_dir.mkdir(parents=True)
+    (project / "spec_lock.md").write_text(
+        """## density_contract
+- source: test
+- P01: visible_claims>=3; visible_objects>=8; visible_labels>=12; evidence_items>=3; relationships>=3; notes_only_ratio<=0.35; fill=0.50-0.72 | expose=Route,SCC,Ingress
+""",
+        encoding="utf-8",
+    )
+    (svg_dir / "01_sparse.svg").write_text(
+        """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <rect width="1280" height="720" fill="#FFFFFF"/>
+  <text x="72" y="80" font-family="Arial, sans-serif" font-size="38" fill="#334155" font-weight="700">迁移方案</text>
+  <rect x="160" y="240" width="280" height="100" fill="#FFFFFF" rx="6" data-role="content-card"/>
+  <text x="300" y="295" font-family="Arial, sans-serif" font-size="22" fill="#334155" text-anchor="middle" dominant-baseline="middle">标准化承载</text>
+</svg>
+""",
+        encoding="utf-8",
+    )
+
+    report = DesignQualityChecker().check_target(project, svg_dir_name="svg_output")
+    page = report["pages"][0]
+    issue_codes = {issue["code"] for issue in page["issues"]}
+
+    assert page["metrics"]["informationDensity"] < 70
+    assert "low_information_density" in issue_codes
+    assert any(item["code"] == "raise_visible_density_from_contract" for item in page["generationGuidance"])
+
+
+def test_design_quality_checker_accepts_dense_page_against_density_contract(tmp_path):
+    scripts_dir = ROOT / "ppt-master/skills/make/scripts"
+    sys.path.insert(0, str(scripts_dir))
+    try:
+        from design_quality_checker import DesignQualityChecker
+    finally:
+        sys.path.pop(0)
+
+    project = tmp_path / "project"
+    svg_dir = project / "svg_output"
+    svg_dir.mkdir(parents=True)
+    (project / "spec_lock.md").write_text(
+        """## density_contract
+- source: test
+- P01: visible_claims>=3; visible_objects>=8; visible_labels>=12; evidence_items>=3; relationships>=3; notes_only_ratio<=0.35; fill=0.30-0.74 | expose=Route,SCC,Ingress
+""",
+        encoding="utf-8",
+    )
+    labels = [
+        ("Route -> Ingress", "对象映射", "风险中", "回退点1"),
+        ("SCC -> PSS", "安全约束", "策略组", "人工复核"),
+        ("ImageStream -> Harbor", "镜像仓库", "风险低", "保留仓库"),
+        ("BuildConfig -> Tekton", "流水线", "风险中", "双轨验证"),
+    ]
+    rows = []
+    for row, values in enumerate(labels):
+        y = 210 + row * 72
+        rows.append(f'<rect x="120" y="{y}" width="920" height="52" fill="#FFFFFF" stroke="#DDE8F3" data-role="table-row"/>')
+        for col, value in enumerate(values):
+            rows.append(f'<text x="{150 + col * 220}" y="{y + 32}" font-family="Arial, sans-serif" font-size="17" fill="#334155">{value}</text>')
+    (svg_dir / "01_dense.svg").write_text(
+        f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <rect width="1280" height="720" fill="#FFFFFF"/>
+  <text x="72" y="80" font-family="Arial, sans-serif" font-size="38" fill="#334155" font-weight="700">OCP 对象到 ACP 标准对象映射</text>
+  <text x="72" y="118" font-family="Arial, sans-serif" font-size="18" fill="#64748B">4 类对象按自动化程度、风险级别和回退点切分批次</text>
+  <rect x="120" y="150" width="920" height="44" fill="#3BAEE3" data-role="table-header"/>
+  <text x="150" y="178" font-family="Arial, sans-serif" font-size="17" fill="#FFFFFF">OCP 对象</text>
+  <text x="370" y="178" font-family="Arial, sans-serif" font-size="17" fill="#FFFFFF">ACP 对象</text>
+  <text x="590" y="178" font-family="Arial, sans-serif" font-size="17" fill="#FFFFFF">风险 / 责任</text>
+  <text x="810" y="178" font-family="Arial, sans-serif" font-size="17" fill="#FFFFFF">回退点</text>
+  {''.join(rows)}
+  <text x="120" y="560" font-family="Arial, sans-serif" font-size="18" fill="#334155">证据：4类对象、2个中风险项、1个低风险项、Go/No-Go 门禁。</text>
+</svg>
+""",
+        encoding="utf-8",
+    )
+
+    report = DesignQualityChecker().check_target(project, svg_dir_name="svg_output")
+    page = report["pages"][0]
+
+    assert page["metrics"]["informationDensity"] >= 78
+    assert not any(issue["code"] == "low_information_density" for issue in page["issues"])
 
 
 def test_ppt_master_eval_can_plan_source_archetypes(tmp_path):
@@ -1164,4 +1895,6 @@ kind: VirtualService
     report = json.loads((output_dir / "report.json").read_text(encoding="utf-8"))
     assert "archetypePlan" in report
     assert report["archetypePlan"]["pageCount"] >= 1
+    assert "densityContract" in report["archetypePlan"]["pages"][0]
     assert "planned archetypes:" in completed.stdout
+    assert "density contracts:" in completed.stdout

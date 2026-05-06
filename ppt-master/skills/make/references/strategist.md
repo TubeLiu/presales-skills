@@ -362,6 +362,13 @@ Use the generated report as a starting point for `design_spec.md` per-page
 entry when narrative judgment demands it, but do not ignore the signal and
 default every section to cards.
 
+The same report also contains `densityContract` and `contentLedger` for each
+page. Treat this as the minimum visible information contract: concrete source
+objects, relationships, evidence items, and labels should appear on the slide
+when the page is dense or balanced. Do not hide most details in speaker notes
+and call the result "minimal"; notes are overflow, not the default information
+sink.
+
 For every non-structural content page, identify:
 
 - `components`: the visible groups that carry meaning, e.g. migration bridge,
@@ -371,6 +378,9 @@ For every non-structural content page, identify:
   area, metric chip, header cell, row label, connector lane.
 - `text_policy`: default centered labels versus explicit left-aligned content
   exceptions.
+- `density_contract`: visible claims / objects / labels / evidence /
+  relationships minimums from the source ledger, adjusted only when narrative
+  judgment clearly calls for a sparse page.
 
 Mirror these choices into `spec_lock.md ## design_semantics`. If the page is
 dense, this section is more important, not less: it helps the checker
@@ -562,6 +572,7 @@ The Strategist should make professional judgments on the template basis generate
    - **page_rhythm is mandatory**: Based on the page list in §IX Content Outline, assign each page one of `anchor` / `dense` / `breathing` (see `spec_lock_reference.md` for the full vocabulary). This is what breaks the uniform "every page is a card grid" feel — without it the Executor defaults all pages to `dense`.
    - **Rhythm follows narrative, not quota**: `breathing` pages should appear at natural narrative pauses — chapter transitions, a single argument worth standalone emphasis (hero quote / big number / feature image), an SCQA "Question" bridge, or a deliberate stop after a chain of dense argumentation. If the content is genuinely a high-density data briefing or rigorous consulting analysis, the deck may legitimately be nearly all `dense` — **do NOT invent filler pages** ("Thank you", "Chapter divider with no content") to pad the rhythm, because filler is itself a hallmark AI-generated pattern. Validation test: every `breathing` page must answer "what independent thing is this page saying?" — if it can't, it shouldn't exist.
    - **design_diversity is mandatory**: Add `## design_diversity` with per-page visual archetypes. For mixed technical/business source material, use content semantics to vary archetypes across architecture stacks, process flows, matrices, code annotations, KPI dashboards, comparison bridges, and argument pages. Do not assign the same card-grid archetype to most pages just because it is visually safe.
+   - **density_contract is mandatory for content-rich decks**: Add `## density_contract` with per-page minimums for visible claims, source objects, labels, evidence items, relationships, notes-only ratio, and target content fill. This prevents detailed source material from collapsing into sparse summary cards.
    - **semantic_routes is mandatory when available**: If `templates/semantic_routes.json` exists, add `## semantic_routes` entries for all non-structural content pages. These entries must match each page's Semantic Route block in `design_spec.md §IX` and must name a concrete template variant or the catalog default route.
    - **visual_system is mandatory when available**: If `templates/visual_system.json` exists, add `## visual_system` with the source, component library, icon library/inventory, default density settings, connector policy, and per-page route density/component/icon decisions. These entries must match each page's Semantic Route block in `design_spec.md §IX`.
    - **design_semantics is mandatory**: Add `## design_semantics` with global component→slot→text rules plus per-page component roles. This is how the Executor and `design_quality_checker.py` evaluate design quality without route-specific hardcoding.

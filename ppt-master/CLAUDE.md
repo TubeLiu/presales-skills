@@ -8,6 +8,19 @@ PPT Master is an AI-driven presentation generation system. Through multi-role co
 
 **Core Pipeline**: `Source Document → Create Project → Template Option → Strategist Eight Confirmations → [Step 4.5 User Review Gate] → [Image_Generator] → Executor → Post-processing → Export PPTX`
 
+## Harness Engineering Guardrails
+
+PPT quality work must improve the generator, not just the current sample. Treat recurring visual defects as missing semantics, missing contracts, or missing eval coverage.
+
+**Anti-Hardcoding Harness Rule**:
+
+- Do not key layout fixes on page titles, customer names, fixed Chinese phrases, slide numbers, or one-off screenshots.
+- Do not use color, width, height, or coordinate ranges as the primary meaning of a layout primitive. Geometry may be a fallback only after `component -> slot -> text`, `visual_archetype`, `density_contract`, `semantic_routes`, or explicit `data-role` / `data-slot` has been checked.
+- Each new quality rule needs coverage across at least 2-3 different page archetypes or fixtures; otherwise it is a sample patch, not a harness improvement.
+- Repeated defects must be fixed upstream in planner output, `design_spec.md`, `spec_lock.md`, component semantics, checkers, or retry harness logic. Do not keep hand-polishing SVG files.
+- Information density is part of the contract: complex technical slides should declare visible objects, labels, evidence, and relationships through `density_contract` so necessary content is not hidden in speaker notes under the guise of minimalism.
+- Exceptions such as left alignment, sparse composition, asymmetric layout, or deliberately weak hierarchy must be explicit semantic choices, not local if/else bypasses.
+
 ## Common Commands
 
 ```bash

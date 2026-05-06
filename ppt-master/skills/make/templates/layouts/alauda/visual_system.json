@@ -147,7 +147,8 @@
     "platform_panorama": [
       "Group capabilities by domain and platform layer; avoid a flat sea of equal cards.",
       "Expose a primary platform thesis or anchor capability so the page has one scanning entry point.",
-      "Use compact labels and move long product explanations to notes."
+      "Use compact labels and move long product explanations to notes.",
+      "Do not use repeated small pill stacks across peer cards as the main density mechanism; use bands, rails, relationship lines, or a scope decision block when the source is an operating-state diagnosis."
     ],
     "architecture_stack": [
       "Show control-plane and workload-plane separation explicitly when the source discusses platform architecture.",
@@ -162,6 +163,7 @@
     "migration_bridge": [
       "Make the bridge visually dominant: center panel or bridge band carries the main transformation logic.",
       "Before and after panels may be simpler; they exist to frame the bridge, not to create three equal cards.",
+      "The bridge must expose transformation mechanics such as gates, control points, validation signals, or rollback logic; a large percentage ramp alone is not sufficient.",
       "Connector arrows must use whitespace lanes and must not touch card titles or row labels."
     ],
     "risk_matrix": [
@@ -388,6 +390,8 @@
     "Do not let connector arrows intrude into card/container borders; shorten the arrow or widen the gutter.",
     "Do not render eval metadata such as page_intent, density profile, or '样张 Pxx' on customer-facing slide canvases.",
     "Do not make dense pages by shrinking text below the typography ramp; summarize and move overflow to notes.",
+    "Do not make dense pages by repeating identical micro-label stacks inside three or more peer cards.",
+    "Do not make a migration bridge page where the center bridge is only a slogan or large number; show the control logic that changes current state into target state.",
     "Do not draw decorative icons manually when the approved chunk inventory has a close match.",
     "Do not create more than three nested visual levels on technical architecture pages."
   ],

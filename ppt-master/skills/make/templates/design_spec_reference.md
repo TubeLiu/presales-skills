@@ -283,6 +283,7 @@ Two views on the same font decisions — fill both, keep them consistent:
   - `connector_policy`: [if connectors are used, reserve whitespace lanes and keep at least the visual system's text-lane gap from nearby labels]
   - `route_quality_rules`: [customer-facing quality constraints copied from `templates/visual_system.json.routeQualityRules` when available]
   - `visual_archetype`: [intended deck-level archetype, e.g., `architecture_stack` / `process_flow` / `matrix_table` / `code_annotation` / `kpi_dashboard` / `comparison_bridge` / `argument_thesis`; must vary according to content semantics]
+  - `density_contract`: [visible claims / objects / labels / evidence / relationships minimums copied or adapted from `design_archetype_planner.py`; notes are overflow, not the default hiding place]
   - `design_semantics`: [component roles, slot roles, and text alignment policy; e.g., `component=process-step`, `slots=label/body/connector-lane`, `labels=centered`, `body=left-padded`]
   - `notes_overflow`: [yes/no; default yes for dense technical decks]
 - **Layout**: [Choose a pattern from §V, combine two, or break the grid as the content demands]

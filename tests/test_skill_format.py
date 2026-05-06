@@ -649,3 +649,69 @@ def test_ai_image_setup_md_does_not_offer_pixel_literal():
     assert "default_aspect_ratio" in section, (
         "setup.md §5 必须单独问 default_aspect_ratio（与 default_size 是独立参数）"
     )
+
+
+def test_ppt_master_harness_guardrails_are_documented_for_agents_and_claude():
+    """PPT 质量优化必须有防穷举 / 防硬编码 harness 规范。
+
+    回归约束：后续 AI 编程不能再次退回到按页面标题、颜色、宽高、坐标
+    写 if/else 修某一张样张。Codex 使用 AGENTS.md，Claude Code 使用
+    CLAUDE.md，因此两套入口文件都必须含同一类护栏。
+    """
+    files = [
+        REPO_ROOT / "AGENTS.md",
+        REPO_ROOT / "CLAUDE.md",
+        REPO_ROOT / "ppt-master/AGENTS.md",
+        REPO_ROOT / "ppt-master/CLAUDE.md",
+    ]
+    required_terms = [
+        "Anti-Hardcoding Harness Rule",
+        "component -> slot -> text",
+        "density_contract",
+        "visual_archetype",
+        "semantic_routes",
+        "data-role",
+        "data-slot",
+    ]
+    for path in files:
+        assert path.exists(), f"{path.relative_to(REPO_ROOT)} missing"
+        text = _read(path)
+        missing = [term for term in required_terms if term not in text]
+        assert not missing, (
+            f"{path.relative_to(REPO_ROOT)} 缺少 harness guardrail 关键词: "
+            + ", ".join(missing)
+        )
+
+    root_text = _read(REPO_ROOT / "AGENTS.md") + "\n" + _read(REPO_ROOT / "CLAUDE.md")
+    for forbidden_guardrail in ["页面标题", "客户名", "颜色 / 宽高 / 坐标", "speaker notes"]:
+        assert forbidden_guardrail in root_text, (
+            f"根级 AGENTS/CLAUDE 必须明确覆盖 {forbidden_guardrail!r} "
+            "相关的防硬编码 / 信息密度约束"
+        )
+
+
+def test_version_bump_policy_separates_local_commit_from_remote_release():
+    """版本号是远端升级信号，不是本地 commit 计数器。"""
+    docs = {
+        "AGENTS.md": _read(REPO_ROOT / "AGENTS.md"),
+        "CLAUDE.md": _read(REPO_ROOT / "CLAUDE.md"),
+        "docs/contributing.md": _read(REPO_ROOT / "docs/contributing.md"),
+    }
+    required_terms = [
+        "远端升级信号",
+        "本地 commit 不要求 bump",
+        "推送远端 / 发版前才 bump",
+        "一个用户可见发布只 bump 一次",
+    ]
+    for name, text in docs.items():
+        missing = [term for term in required_terms if term not in text]
+        assert not missing, f"{name} 缺少版本号发布节奏约束: {', '.join(missing)}"
+
+    for name in ["AGENTS.md", "CLAUDE.md"]:
+        text = docs[name]
+        assert "版本号 bump 三处规则（每次提交必查）" not in text, (
+            f"{name} 不应再把 version bump 绑定到每次提交"
+        )
+        assert "每次改了某个 plugin 的代码，**三处版本号都要 +1**" not in text, (
+            f"{name} 不应要求每个 plugin 代码改动都立即 bump"
+        )

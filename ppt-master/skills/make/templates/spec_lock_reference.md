@@ -97,6 +97,21 @@
 > using component roles and visual grammar. The design checker verifies the
 > generated deck has real archetype variety instead of repeated card grids.
 
+## density_contract
+- source: design_archetype_planner.py
+- policy: visible page content must expose source objects, relationships, and evidence; speaker notes are overflow, not the default hiding place
+- target: avoid AI-sparse slides by giving each page visible information minimums before SVG generation
+- P02: visible_claims>=3; visible_objects>=8; visible_labels>=12; evidence_items>=2; relationships>=3; notes_only_ratio<=0.38; fill=0.50-0.72 | expose=source-specific terms
+- P03: visible_claims>=3; visible_objects>=10; visible_labels>=14; evidence_items>=1; relationships>=3; notes_only_ratio<=0.40; fill=0.52-0.74 | expose=source-specific terms
+
+> One entry per content page when source material contains concrete details.
+> This is the contract that prevents the model from hiding detailed source
+> material in notes and drawing only three abstract cards. Values are minimums,
+> not exact quotas. Executor should satisfy the contract through appropriate
+> visual forms: tables, annotations, swimlanes, architecture layers, KPI chips,
+> mapping rows, or dense callouts. If a page is intentionally sparse, it must be
+> justified by page rhythm / archetype and should carry a lower contract.
+
 ## semantic_routes
 - P02: platform_panorama | 03_content_panorama.svg | domain_row_platform_core_infra_row | title<=18; key_message<=36; notes_overflow=yes
 - P03: architecture_stack | 03_content_architecture.svg | four_layer_stack_with_downward_dependency | layer_title<=12; layer_desc<=38; notes_overflow=yes

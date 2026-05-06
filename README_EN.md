@@ -319,7 +319,7 @@ For applicable scenarios, see `skill-optimizer/README.md`.
 
 | Want to learn | See here |
 |---|---|
-| **Engineering discipline required for code changes** (version-number bump / cross-plugin paths / runtime pitfalls) | [CLAUDE.md](CLAUDE.md) — auto-loaded by Claude Code in this repo's sessions |
+| **Engineering discipline required for code changes** (version-number bump / cross-plugin paths / runtime pitfalls / anti-hardcoding harness) | [CLAUDE.md](CLAUDE.md) for Claude Code / [AGENTS.md](AGENTS.md) for Codex |
 | Design rationale (skills/ only / path self-locate / SessionStart / Task subagent / MCP installer) | [docs/architecture.md](docs/architecture.md) |
 | Cursor / Codex / OpenCode loading + compatibility matrix + Windows adaptation | [docs/cross-agent.md](docs/cross-agent.md) |
 | Config file physical layout + pure CLI config + auto-dependency install | [docs/configuration.md](docs/configuration.md) |

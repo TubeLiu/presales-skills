@@ -20,6 +20,9 @@ from typing import Iterable, List
 HEX_VALUE_RE = re.compile(r"#[0-9A-Fa-f]{3,8}")
 CENTER_TOLERANCE = 3.0
 STACK_TOLERANCE = 8.0
+COMPONENT_EMPHASIS_MIN_FONT_SIZE = 24.0
+COMPONENT_EMPHASIS_TOP_BAND_RATIO = 0.42
+COMPONENT_EMPHASIS_MIN_WIDTH_RATIO = 0.32
 
 
 @dataclass
@@ -94,6 +97,7 @@ class TextNode:
     x: float
     y: float
     font_size: float
+    font_weight: str
     anchor: str
     dominant: str
     role: str = ""
@@ -212,6 +216,7 @@ def extract_texts(content: str) -> List[TextNode]:
                 x=x,
                 y=y,
                 font_size=_attr_float(attrs, "font-size", 16.0) or 16.0,
+                font_weight=(_attr_value(attrs, "font-weight") or "").strip().lower(),
                 anchor=(_attr_value(attrs, "text-anchor") or "start").strip().lower(),
                 dominant=(
                     _attr_value(attrs, "dominant-baseline")
@@ -352,6 +357,35 @@ def alignment_issues(content: str) -> List[dict]:
     return issues
 
 
+def component_emphasis_alignment_issues(content: str) -> List[dict]:
+    shapes = extract_shapes(content)
+    texts = extract_texts(content)
+    issues: List[dict] = []
+    for text in texts:
+        parent = _nearest_text_component_parent(text, shapes)
+        if not parent:
+            continue
+        slot_shape = _smallest_shape_containing_text(text, shapes)
+        if slot_shape and slot_shape is not parent and _is_slot_shape(slot_shape):
+            continue
+        if not _is_direct_component_emphasis(text, parent, shapes):
+            continue
+        if text.anchor != "middle" or abs(text.x - parent.box.cx) > CENTER_TOLERANCE:
+            issues.append(
+                {
+                    "text": text.text,
+                    "component": parent.role or parent.slot or "component",
+                    "slot": "component-emphasis",
+                    "shape": parent.kind,
+                    "anchor_x": text.x,
+                    "anchor_y": text.y,
+                    "center_x": parent.box.cx,
+                    "center_y": parent.box.cy,
+                }
+            )
+    return issues
+
+
 def _issue(slot: SlotNode, text: TextNode) -> dict:
     return {
         "text": text.text,
@@ -381,7 +415,7 @@ def text_lines(inner: str) -> List[str]:
     return [stripped] if stripped else []
 
 
-def estimate_text_width(text: str, font_size: float) -> float:
+def estimate_text_width(text: str, font_size: float, font_weight: str | float | int | None = None) -> float:
     width = 0.0
     for char in text:
         if "\u4e00" <= char <= "\u9fff":
@@ -394,16 +428,153 @@ def estimate_text_width(text: str, font_size: float) -> float:
             width += font_size * 0.85
         else:
             width += font_size * 0.58
+    if _is_bold_weight(font_weight):
+        width *= 1.08
     return width
 
 
+def _is_bold_weight(font_weight: str | float | int | None) -> bool:
+    if font_weight is None:
+        return False
+    if isinstance(font_weight, (int, float)):
+        return font_weight >= 600
+    value = str(font_weight).strip().lower()
+    if value in {"bold", "bolder", "heavy", "black"}:
+        return True
+    if value.isdigit():
+        return int(value) >= 600
+    return False
+
+
 def visual_text_center_x(text: TextNode) -> float:
-    width = estimate_text_width(text.text, text.font_size)
+    width = estimate_text_width(text.text, text.font_size, text.font_weight)
     if text.anchor == "middle":
         return text.x
     if text.anchor == "end":
         return text.x - width / 2
     return text.x + width / 2
+
+
+def _nearest_text_component_parent(text: TextNode, shapes: List[ShapeNode]) -> ShapeNode | None:
+    text_box = _text_box(text)
+    candidates = [
+        shape
+        for shape in shapes
+        if _is_component_parent(shape)
+        and shape.box.area > text_box.area * 1.18
+        and shape.box.contains_point(text.x, text.y, pad=1)
+    ]
+    if not candidates:
+        return None
+    return min(candidates, key=lambda shape: shape.box.area)
+
+
+def _smallest_shape_containing_text(text: TextNode, shapes: List[ShapeNode]) -> ShapeNode | None:
+    candidates = [shape for shape in shapes if shape.box.contains_point(text.x, text.y, pad=1)]
+    if not candidates:
+        return None
+    return min(candidates, key=lambda shape: shape.box.area)
+
+
+def _is_direct_component_emphasis(text: TextNode, parent: ShapeNode, shapes: List[ShapeNode]) -> bool:
+    if parent.slot in {"layer", "body-slot"}:
+        return False
+    if declares_left_aligned_exception(parent, text) and not _is_headered_display_component(parent, shapes):
+        return False
+    if text.role in {"content", "callout-content", "body"}:
+        return False
+    if text.font_size < COMPONENT_EMPHASIS_MIN_FONT_SIZE:
+        return False
+    if parent.box.height <= 0:
+        return False
+    relative_y = (text.y - parent.box.y1) / parent.box.height
+    if relative_y > COMPONENT_EMPHASIS_TOP_BAND_RATIO:
+        return False
+    text_box = _text_box(text)
+    if text_box.width < parent.box.width * COMPONENT_EMPHASIS_MIN_WIDTH_RATIO and text.font_size < 28:
+        return False
+    if _has_same_band_companion_shape(text_box, parent, shapes):
+        return False
+    return True
+
+
+def _is_headered_display_component(parent: ShapeNode, shapes: List[ShapeNode]) -> bool:
+    for shape in shapes:
+        if shape is parent:
+            continue
+        if not parent.box.contains_box(shape.box, pad=1):
+            continue
+        if shape.role not in {"label", "header", "table-header"} and shape.slot not in {"label", "header"}:
+            continue
+        if shape.box.height > 72:
+            continue
+        if shape.box.width < parent.box.width * 0.65:
+            continue
+        if abs(shape.box.y1 - parent.box.y1) > 4:
+            continue
+        return True
+    return False
+
+
+def _is_component_parent(shape: ShapeNode) -> bool:
+    if shape.role in {
+        "content-card",
+        "bridge",
+        "process-step",
+        "metric-card",
+        "risk-quadrant",
+        "risk-matrix",
+        "table",
+        "mapping-row",
+        "architecture-layer",
+        "layer-stack",
+        "callout-content",
+        "section",
+        "panel",
+    }:
+        return True
+    return shape.slot in {"panel", "layer", "body-slot"}
+
+
+def _is_slot_shape(shape: ShapeNode) -> bool:
+    return (
+        shape.role in {"label", "header", "table-header", "header-cell", "table-cell", "badge", "tag", "label-slot"}
+        or shape.slot in {"label", "header", "cell", "badge", "tag"}
+        or shape.is_transparent_slot
+    )
+
+
+def _has_same_band_companion_shape(text_box: Box, parent: ShapeNode, shapes: List[ShapeNode]) -> bool:
+    for shape in shapes:
+        if shape is parent:
+            continue
+        if not parent.box.contains_box(shape.box, pad=1):
+            continue
+        if _is_page_background(shape) or _is_decorative_background_shape(shape) or _is_slot_shape(shape):
+            continue
+        inter_h = min(text_box.y2, shape.box.y2) - max(text_box.y1, shape.box.y1)
+        if inter_h <= 0:
+            continue
+        if inter_h / max(min(text_box.height, shape.box.height), 1.0) < 0.25:
+            continue
+        return True
+    return False
+
+
+def _text_box(text: TextNode) -> Box:
+    width = estimate_text_width(text.text, text.font_size, text.font_weight)
+    height = max(text.font_size * 1.25, text.font_size)
+    if text.anchor == "middle":
+        x1 = text.x - width / 2
+    elif text.anchor == "end":
+        x1 = text.x - width
+    else:
+        x1 = text.x
+    if text.dominant in {"middle", "central"}:
+        y1 = text.y - height / 2
+    else:
+        y1 = text.y - text.font_size
+    return Box(x1, y1, x1 + width, y1 + height)
 
 
 def is_colored_fill(fill: str) -> bool:
@@ -535,11 +706,15 @@ def _is_white_or_neutral_container(shape: ShapeNode) -> bool:
 
 
 def _is_page_background(shape: ShapeNode) -> bool:
+    if shape.role in {"page-background", "background"}:
+        return True
     fill = (shape.fill or "").strip().upper()
     return fill in {"#FFFFFF", "WHITE"} and shape.box.width >= 1000 and shape.box.height >= 600
 
 
 def _is_decorative_background_shape(shape: ShapeNode) -> bool:
+    if shape.role in {"geometric-accent", "decorative-accent", "decoration", "accent-background"}:
+        return True
     if shape.role or shape.slot or (shape.fill_opacity == 0 and shape.box.height <= 100):
         return False
     if shape.fill_opacity >= 0.15:
