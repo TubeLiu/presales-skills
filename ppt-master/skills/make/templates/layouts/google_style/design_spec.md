@@ -230,7 +230,7 @@ Color order: Blue → Red → Yellow → Green
 
 The following SVG features are prohibited (not PPT-compatible):
 
-- `clipPath`, `mask`
+- `mask`; `clipPath` is allowed only on `<image>` under `shared-standards.md` §1.2
 - `<style>` tag, `class` attribute
 - `foreignObject`
 - `textPath`

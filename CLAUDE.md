@@ -73,12 +73,12 @@ grep '"version"' .claude-plugin/marketplace.json */.claude-plugin/plugin.json
 
 本仓库同时发布到两个不同 marketplace：
 
-- `origin` → `Alauda-io/presales-skills`
+- `origin` → `TubeLiu/presales-skills`
 - `tubeliu` → `TubeLiu/presales-skills`
 
 两边面向不同用户群，`README.md`、`.claude-plugin/marketplace.json`、`*/.claude-plugin/plugin.json` 中的安装命令、`homepage`、`repository` 等 repo-specific 内容必须分别指向各自仓库：
 
-- Alauda 侧示例：`/plugin marketplace add Alauda-io/presales-skills`
+- Alauda 侧示例：`/plugin marketplace add TubeLiu/presales-skills`
 - TubeLiu 侧示例：`/plugin marketplace add TubeLiu/presales-skills`
 
 推送远端时不要把一边的 marketplace / README / plugin metadata 直接覆盖到另一边。正确流程是：

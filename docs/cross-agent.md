@@ -26,9 +26,9 @@
 ## 2. Cursor / Codex / OpenCode 装载
 
 ```bash
-npx --yes skills add Alauda-io/presales-skills -a cursor   # Cursor
-npx --yes skills add Alauda-io/presales-skills -a codex    # Codex
-npx --yes skills add Alauda-io/presales-skills -a opencode # OpenCode
+npx --yes skills add TubeLiu/presales-skills -a cursor   # Cursor
+npx --yes skills add TubeLiu/presales-skills -a codex    # Codex
+npx --yes skills add TubeLiu/presales-skills -a opencode # OpenCode
 ```
 
 vercel-labs/skills CLI 会扫描所有 SKILL.md 并 symlink / copy 到目标 agent 的标准目录。

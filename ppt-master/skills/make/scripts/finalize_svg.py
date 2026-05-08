@@ -20,9 +20,13 @@ Examples:
 Processing options:
     normalize-layout - Normalize colored-block text alignment
     embed-icons   - Replace <use data-icon="..."/> with actual icon SVG
-    crop-images   - Smart crop images based on preserveAspectRatio="slice"
-    fix-aspect    - Fix image aspect ratio (prevent stretching during PPT shape conversion)
-    embed-images  - Convert external images to Base64 embedded
+    align-images  - Single-pass align (slice/meet) + Base64 embed all <image>
+                    (replaces the legacy crop-images + fix-aspect + embed-images
+                    trio in default-all mode; the legacy names remain accepted
+                    via --only for explicit single-step rollback)
+    crop-images   - [legacy] Smart crop images based on preserveAspectRatio="slice"
+    fix-aspect    - [legacy] Fix image aspect ratio
+    embed-images  - [legacy] Convert external images to Base64 embedded
     flatten-text  - Convert <tspan> to independent <text> (for special renderers)
     fix-rounded   - Convert <rect rx="..."/> to <path> (for PPT shape conversion)
 """
@@ -38,6 +42,7 @@ from pathlib import Path
 
 # Import finalize helpers from the internal package.
 sys.path.insert(0, str(Path(__file__).parent))
+from svg_finalize.align_embed_images import align_and_embed_images_in_svg
 from svg_finalize.crop_images import process_svg_images as crop_images_in_svg
 from svg_finalize.embed_icons import process_svg_file as embed_icons_in_file
 from svg_finalize.embed_images import embed_images_in_svg
@@ -157,10 +162,28 @@ def finalize_project(
     if not quiet:
         print()
 
-    # Step 2: Normalize layout primitives
+    # Count active steps for progress prefix.
+    active_steps = [
+        ('normalize_layout', 'normalize-layout'),
+        ('embed_icons', 'embed-icons'),
+        ('align_images', 'align-images'),
+        ('crop_images', 'crop-images'),
+        ('fix_aspect', 'fix-aspect'),
+        ('embed_images', 'embed-images'),
+        ('flatten_text', 'flatten-text'),
+        ('fix_rounded', 'fix-rounded'),
+    ]
+    enabled_count = sum(1 for k, _ in active_steps if options.get(k))
+    step_idx = [0]
+
+    def step_label(label: str) -> str:
+        step_idx[0] += 1
+        return f"[{step_idx[0]}/{enabled_count}] {label}"
+
+    # Step: Normalize layout primitives (our quality work)
     if options.get('normalize_layout'):
         if not quiet:
-            safe_print("[1/7] Normalizing colored-block text...")
+            safe_print(step_label("Normalizing colored-block text..."))
         normalized_count = 0
         for svg_file in svg_final.glob('*.svg'):
             normalized_count += normalize_colored_block_text_in_file(svg_file, verbose=False)
@@ -170,10 +193,10 @@ def finalize_project(
             else:
                 safe_print("      No colored-block labels")
 
-    # Step 3: Embed icons
+    # Step: Embed icons
     if options.get('embed_icons'):
         if not quiet:
-            safe_print("[2/7] Embedding icons...")
+            safe_print(step_label("Embedding icons..."))
         icons_count = 0
         for svg_file in svg_final.glob('*.svg'):
             count = embed_icons_in_file(svg_file, icons_dir, dry_run=False, verbose=False)
@@ -184,10 +207,39 @@ def finalize_project(
             else:
                 safe_print("      No icons")
 
-    # Step 4: Smart crop images (based on preserveAspectRatio="slice")
+    # Step: Single-pass align + embed images (default; replaces the legacy
+    # crop+fix-aspect+embed trio). Each <image> is read once from disk and
+    # the spatial transform (slice → crop, meet → fit-box) is fused with
+    # Base64 embed. Mutually exclusive with the legacy trio per --only.
+    if options.get('align_images'):
+        if not quiet:
+            safe_print(step_label("Aligning + embedding images..."))
+        img_count = 0
+        img_errors = 0
+        for svg_file in svg_final.glob('*.svg'):
+            count, errs = align_and_embed_images_in_svg(
+                svg_file,
+                dry_run=False,
+                verbose=False,
+                compress=compress,
+                max_dimension=max_dimension,
+            )
+            img_count += count
+            img_errors += errs
+        if not quiet:
+            if img_count > 0:
+                msg = f"      {img_count} image(s) aligned + embedded"
+                if img_errors:
+                    msg += f"  ({img_errors} error(s))"
+                safe_print(msg)
+            else:
+                safe_print("      No images")
+
+    # Step: [legacy] Smart crop images — only fires when explicitly named
+    # in --only, for rollback compatibility with old automation scripts.
     if options.get('crop_images'):
         if not quiet:
-            safe_print("[3/7] Smart cropping images...")
+            safe_print(step_label("[legacy] Smart cropping images..."))
         crop_count = 0
         crop_errors = 0
         for svg_file in svg_final.glob('*.svg'):
@@ -200,10 +252,10 @@ def finalize_project(
             else:
                 safe_print("      No cropping needed (no images with slice attribute)")
 
-    # Step 5: Fix image aspect ratio (prevent stretching during PPT shape conversion)
+    # Step: [legacy] Fix image aspect ratio — only fires when explicit.
     if options.get('fix_aspect'):
         if not quiet:
-            safe_print("[4/7] Fixing image aspect ratios...")
+            safe_print(step_label("[legacy] Fixing image aspect ratios..."))
         aspect_count = 0
         for svg_file in svg_final.glob('*.svg'):
             count = fix_image_aspect_in_svg(str(svg_file), dry_run=False, verbose=False)
@@ -214,10 +266,10 @@ def finalize_project(
             else:
                 safe_print("      No images")
 
-    # Step 6: Embed images
+    # Step: [legacy] Embed images — only fires when explicit.
     if options.get('embed_images'):
         if not quiet:
-            safe_print("[5/7] Embedding images...")
+            safe_print(step_label("[legacy] Embedding images..."))
         images_count = 0
         for svg_file in svg_final.glob('*.svg'):
             count, _ = embed_images_in_svg(str(svg_file), dry_run=False,
@@ -230,10 +282,10 @@ def finalize_project(
             else:
                 safe_print("      No images")
 
-    # Step 7: Flatten text
+    # Step: Flatten text
     if options.get('flatten_text'):
         if not quiet:
-            safe_print("[6/7] Flattening text...")
+            safe_print(step_label("Flattening text..."))
         flatten_count = 0
         for svg_file in svg_final.glob('*.svg'):
             if process_flatten_text(svg_file, verbose=False):
@@ -244,10 +296,10 @@ def finalize_project(
             else:
                 safe_print("      No processing needed")
 
-    # Step 8: Convert rounded rects to Path
+    # Step: Convert rounded rects to Path
     if options.get('fix_rounded'):
         if not quiet:
-            safe_print("[7/7] Converting rounded rects to Path...")
+            safe_print(step_label("Converting rounded rects to Path..."))
         rounded_count = 0
         for svg_file in svg_final.glob('*.svg'):
             count = process_rounded_rect(svg_file, verbose=False)
@@ -264,7 +316,7 @@ def finalize_project(
         safe_print("[OK] Done!")
         print()
         print("Next steps:")
-        print(f"  python scripts/svg_to_pptx.py \"{project_dir}\" -s final")
+        print(f"  python scripts/svg_to_pptx.py \"{project_dir}\"")
 
     return True
 
@@ -283,9 +335,10 @@ Examples:
 Processing options (for --only):
   normalize-layout Normalize colored-block text alignment
   embed-icons   Embed icons
-  crop-images   Smart crop images (based on preserveAspectRatio)
-  fix-aspect    Fix image aspect ratio (prevent stretching during PPT shape conversion)
-  embed-images  Embed images
+  align-images  Single-pass align (slice/meet) + Base64 embed (default path)
+  crop-images   [legacy] Smart crop images (based on preserveAspectRatio)
+  fix-aspect    [legacy] Fix image aspect ratio
+  embed-images  [legacy] Embed images
   flatten-text  Flatten text
   fix-rounded   Convert rounded rects to Path
         '''
@@ -293,7 +346,7 @@ Processing options (for --only):
 
     parser.add_argument('project_dir', type=Path, help='Project directory path')
     parser.add_argument('--only', nargs='+', metavar='OPTION',
-                        choices=['normalize-layout', 'embed-icons', 'crop-images', 'fix-aspect', 'embed-images', 'flatten-text', 'fix-rounded'],
+                        choices=['normalize-layout', 'embed-icons', 'align-images', 'crop-images', 'fix-aspect', 'embed-images', 'flatten-text', 'fix-rounded'],
                         help='Execute only specified processing steps (default: all)')
     parser.add_argument('--dry-run', '-n', action='store_true',
                         help='Preview only, do not execute')
@@ -312,10 +365,13 @@ Processing options (for --only):
 
     # Determine processing options
     if args.only:
-        # Execute only specified steps
+        # Execute only specified steps. Legacy aliases (crop-images / fix-aspect /
+        # embed-images) and the new align-images are mutually exclusive within
+        # a single --only invocation: each runs the step the user named.
         options = {
             'normalize_layout': 'normalize-layout' in args.only,
             'embed_icons': 'embed-icons' in args.only,
+            'align_images': 'align-images' in args.only,
             'crop_images': 'crop-images' in args.only,
             'fix_aspect': 'fix-aspect' in args.only,
             'embed_images': 'embed-images' in args.only,
@@ -323,13 +379,15 @@ Processing options (for --only):
             'fix_rounded': 'fix-rounded' in args.only,
         }
     else:
-        # Execute all by default
+        # Default-all: use the new merged align_images step instead of the
+        # legacy crop+fix-aspect+embed trio (single-pass parse + bitmap read).
         options = {
             'normalize_layout': True,
             'embed_icons': True,
-            'crop_images': True,
-            'fix_aspect': True,
-            'embed_images': True,
+            'align_images': True,
+            'crop_images': False,
+            'fix_aspect': False,
+            'embed_images': False,
             'flatten_text': True,
             'fix_rounded': True,
         }

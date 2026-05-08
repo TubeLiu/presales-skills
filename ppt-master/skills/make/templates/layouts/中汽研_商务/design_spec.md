@@ -136,7 +136,7 @@
 1. **Gradient Support**: Use `<linearGradient>` and `<radialGradient>` defined within `<defs>`.
 2. **Shadow Simulation**: PPT does not support SVG filter shadows. Use **semi-transparent black rectangles (`fill="#000000" fill-opacity="0.1"`)** with offset stacking to simulate card shadows.
 3. **Opacity**: Strictly use `fill-opacity` / `stroke-opacity`.
-4. **Forbidden**: No `clipPath`, `mask`.
+4. **Clipping/Masking**: `mask` is forbidden; `clipPath` is allowed only on `<image>` under `shared-standards.md` §1.2.
 
 ---
 
