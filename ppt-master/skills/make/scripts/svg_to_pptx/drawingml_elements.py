@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 import math
 import re
 import base64
@@ -13,6 +14,7 @@ from .drawingml_utils import (
     SVG_NS, XLINK_NS, ANGLE_UNIT, FONT_PX_TO_HUNDREDTHS_PT, DASH_PRESETS,
     px_to_emu, _f, _get_attr,
     ctx_x, ctx_y, ctx_w, ctx_h,
+    rect_to_dml_xfrm,
     parse_hex_color, resolve_url_id, get_effective_filter_id,
     parse_font_family, is_cjk_char, estimate_text_width,
     _xml_escape,
@@ -58,8 +60,115 @@ def _wrap_shape(
 # rect
 # ---------------------------------------------------------------------------
 
+# Cubic-Bézier control distance for approximating a quarter circle / ellipse.
+# Distance from corner to control point along the tangent, expressed as a
+# fraction of the radius. Standard "magic number" for a 90° arc (max error
+# ~0.027% of the radius).
+_BEZIER_QUARTER_K = 0.5522847498
+
+
+def _build_round_rect_custgeom(w: float, h: float, rx: float, ry: float) -> str:
+    """Build a DrawingML ``custGeom`` for a rectangle with elliptical corners.
+
+    Used when ``<rect>`` has rx ≠ ry, which DrawingML's preset ``roundRect``
+    cannot express (the preset takes a single ``adj`` shared by all four
+    corners and is implicitly symmetric). Each 90° elliptical arc is
+    approximated by one cubic Bézier — within 0.03% of the true ellipse, far
+    below any visible threshold at slide resolution.
+
+    Trade-off vs. the symmetric ``prstGeom roundRect`` path: this geometry
+    is custom, so PowerPoint's yellow corner-radius handle is gone and the
+    shape can no longer be retuned in-place. That matches the underlying
+    reality — rx ≠ ry has no single "radius" to drag — and remains far
+    better than the previous behaviour (silently dropping all corners and
+    rendering a hard rectangle).
+
+    Args:
+        w, h:   Pixel dimensions of the rectangle (post ctx-scale).
+        rx, ry: Pixel corner radii along x and y. Will be clamped to half
+                of w / h respectively per the SVG spec.
+
+    Returns:
+        A complete ``<a:custGeom>...</a:custGeom>`` XML string. Coordinates
+        are emitted in EMU within a path-local coordinate system whose
+        ``w`` / ``h`` equal the rectangle's pixel-converted dimensions.
+    """
+    # Clamp radii (SVG spec): rx > w/2 collapses to a half-circle end.
+    rx = min(max(rx, 0.0), w / 2)
+    ry = min(max(ry, 0.0), h / 2)
+
+    width_emu = px_to_emu(w)
+    height_emu = px_to_emu(h)
+    rx_emu = px_to_emu(rx)
+    ry_emu = px_to_emu(ry)
+
+    cx_off = int(round(rx_emu * _BEZIER_QUARTER_K))
+    cy_off = int(round(ry_emu * _BEZIER_QUARTER_K))
+
+    def pt(x: int, y: int) -> str:
+        return f'<a:pt x="{x}" y="{y}"/>'
+
+    def cubic(c1: tuple[int, int], c2: tuple[int, int], end: tuple[int, int]) -> str:
+        return (
+            f'<a:cubicBezTo>{pt(*c1)}{pt(*c2)}{pt(*end)}</a:cubicBezTo>'
+        )
+
+    # Path traversed clockwise, starting just past the top-left corner.
+    parts = [
+        f'<a:moveTo>{pt(rx_emu, 0)}</a:moveTo>',
+        f'<a:lnTo>{pt(width_emu - rx_emu, 0)}</a:lnTo>',
+        # Top-right corner: (W-Rx, 0) → (W, Ry)
+        cubic(
+            (width_emu - rx_emu + cx_off, 0),
+            (width_emu, ry_emu - cy_off),
+            (width_emu, ry_emu),
+        ),
+        f'<a:lnTo>{pt(width_emu, height_emu - ry_emu)}</a:lnTo>',
+        # Bottom-right corner: (W, H-Ry) → (W-Rx, H)
+        cubic(
+            (width_emu, height_emu - ry_emu + cy_off),
+            (width_emu - rx_emu + cx_off, height_emu),
+            (width_emu - rx_emu, height_emu),
+        ),
+        f'<a:lnTo>{pt(rx_emu, height_emu)}</a:lnTo>',
+        # Bottom-left corner: (Rx, H) → (0, H-Ry)
+        cubic(
+            (rx_emu - cx_off, height_emu),
+            (0, height_emu - ry_emu + cy_off),
+            (0, height_emu - ry_emu),
+        ),
+        f'<a:lnTo>{pt(0, ry_emu)}</a:lnTo>',
+        # Top-left corner: (0, Ry) → (Rx, 0)
+        cubic(
+            (0, ry_emu - cy_off),
+            (rx_emu - cx_off, 0),
+            (rx_emu, 0),
+        ),
+        '<a:close/>',
+    ]
+
+    path_xml = '\n'.join(parts)
+    return (
+        '<a:custGeom>'
+        '<a:avLst/><a:gdLst/><a:ahLst/><a:cxnLst/>'
+        '<a:rect l="l" t="t" r="r" b="b"/>'
+        f'<a:pathLst><a:path w="{width_emu}" h="{height_emu}">'
+        f'\n{path_xml}\n'
+        '</a:path></a:pathLst>'
+        '</a:custGeom>'
+    )
+
+
 def convert_rect(elem: ET.Element, ctx: ConvertContext) -> ShapeResult | None:
-    """Convert SVG <rect> to DrawingML shape."""
+    """Convert SVG <rect> to DrawingML shape.
+
+    Symmetric rounded corners (rx == ry) are emitted as ``prstGeom roundRect``
+    so PowerPoint treats them as a native rounded-rectangle shape: the yellow
+    adjustment handle stays draggable, and "Reset Picture / Shape" works as
+    expected. Elliptical corners (rx != ry) fall back to plain rect geometry
+    for now — current corpora contain none, but the branch keeps callers from
+    silently producing distorted custom geometry if one ever appears.
+    """
     x = ctx_x(_f(elem.get('x')), ctx)
     y = ctx_y(_f(elem.get('y')), ctx)
     w = ctx_w(_f(elem.get('width')), ctx)
@@ -67,6 +176,20 @@ def convert_rect(elem: ET.Element, ctx: ConvertContext) -> ShapeResult | None:
 
     if w <= 0 or h <= 0:
         return None
+
+    # SVG spec: when only one of rx/ry is specified, the other inherits its
+    # value. Real-world svg_output decks always write only `rx`, so ry must
+    # be inferred to keep round corners from collapsing to zero on one axis.
+    rx_attr = elem.get('rx')
+    ry_attr = elem.get('ry')
+    rx_raw = _f(rx_attr) if rx_attr is not None else 0.0
+    ry_raw = _f(ry_attr) if ry_attr is not None else 0.0
+    if rx_attr is not None and ry_attr is None:
+        ry_raw = rx_raw
+    elif ry_attr is not None and rx_attr is None:
+        rx_raw = ry_raw
+    rx = rx_raw * ctx.scale_x
+    ry = ry_raw * ctx.scale_y
 
     fill_op = get_fill_opacity(elem, ctx)
     stroke_op = get_stroke_opacity(elem, ctx)
@@ -85,7 +208,29 @@ def convert_rect(elem: ET.Element, ctx: ConvertContext) -> ShapeResult | None:
         if r_match:
             rot = int(float(r_match.group(1)) * ANGLE_UNIT)
 
-    geom = '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>'
+    if rx > 0 and abs(rx - ry) < 0.5:
+        # Symmetric corners → native PowerPoint rounded rectangle. adj is
+        # the corner radius as a fraction of the shorter side, in 1/1000-
+        # percent units, capped at 50000 (= radius equals half the shorter
+        # side, i.e. capsule end).
+        short_side = min(w, h)
+        radius = min(rx, short_side / 2)
+        adj = max(0, min(50000, int(round(radius / short_side * 100000))))
+        geom = (
+            '<a:prstGeom prst="roundRect">'
+            f'<a:avLst><a:gd name="adj" fmla="val {adj}"/></a:avLst>'
+            '</a:prstGeom>'
+        )
+    elif rx > 0 or ry > 0:
+        # Asymmetric corners (rx != ry) → DrawingML has no preset for
+        # elliptical-corner rectangles, so emit a custGeom with one cubic
+        # Bézier per 90° arc. We lose the prstGeom roundRect adjustment
+        # handle, but symmetric and asymmetric cases now both render with
+        # rounded corners instead of one of them silently flattening to
+        # a hard rectangle.
+        geom = _build_round_rect_custgeom(w, h, rx, ry)
+    else:
+        geom = '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>'
 
     shape_id = ctx.next_id()
     off_x = px_to_emu(x)
@@ -628,11 +773,83 @@ def convert_polyline(elem: ET.Element, ctx: ConvertContext) -> ShapeResult | Non
 # text
 # ---------------------------------------------------------------------------
 
-def _normalize_text(text: str) -> str:
-    """Collapse internal whitespace/newlines into a single space, strip ends."""
+def _normalize_text(text: str, *, preserve_space: bool = False) -> str:
+    """Collapse runs of whitespace into a single space; do NOT strip the ends.
+
+    Stripping at this layer would silently delete the inline boundary
+    spaces in nested-tspan structures like
+    ``<tspan>foo <tspan>bar</tspan> baz</tspan>``: the parent's text
+    ("foo ") and the child's tail (" baz") would each lose the only space
+    that separated them from the inner run, producing "foobarbaz".
+
+    The paragraph's overall leading / trailing whitespace is removed once
+    in ``_build_text_runs`` after all inline runs have been concatenated.
+    """
     if not text:
         return ''
-    return re.sub(r'\s+', ' ', text).strip()
+    if preserve_space:
+        return text
+    return re.sub(r'\s+', ' ', text)
+
+
+def _preserves_space(elem: ET.Element) -> bool:
+    xml_space = elem.get('{http://www.w3.org/XML/1998/namespace}space') or elem.get('xml:space')
+    return xml_space == 'preserve'
+
+
+def _override_run_attrs(
+    parent_attrs: dict[str, Any],
+    tspan: ET.Element,
+) -> dict[str, Any]:
+    """Layer a tspan's styling attributes over the inherited run attrs."""
+    run_attrs = dict(parent_attrs)
+    if tspan.get('font-weight'):
+        run_attrs['font_weight'] = tspan.get('font-weight')
+    if tspan.get('fill'):
+        child_fill = tspan.get('fill')
+        run_attrs['fill_raw'] = child_fill
+        c = parse_hex_color(child_fill)
+        if c:
+            run_attrs['fill'] = c
+    if tspan.get('font-size'):
+        run_attrs['font_size'] = _f(tspan.get('font-size'), run_attrs['font_size'])
+    if tspan.get('font-family'):
+        run_attrs['font_family'] = tspan.get('font-family')
+    if tspan.get('font-style'):
+        run_attrs['font_style'] = tspan.get('font-style')
+    if tspan.get('text-decoration'):
+        run_attrs['text_decoration'] = tspan.get('text-decoration')
+    return run_attrs
+
+
+def _collect_tspan_runs(
+    tspan: ET.Element,
+    inherited_attrs: dict[str, Any],
+    preserve_space: bool = False,
+) -> list[dict[str, Any]]:
+    """Recursively turn a tspan subtree into runs, propagating styling through nested tspans.
+
+    Order: tspan.text → (each nested child tspan's runs → that child's tail under THIS tspan's attrs).
+    """
+    runs: list[dict[str, Any]] = []
+    own_attrs = _override_run_attrs(inherited_attrs, tspan)
+    child_preserve_space = preserve_space or _preserves_space(tspan)
+
+    if tspan.text:
+        t = _normalize_text(tspan.text, preserve_space=child_preserve_space)
+        if t:
+            runs.append({**own_attrs, 'text': t})
+
+    for child in tspan:
+        child_tag = child.tag.replace(f'{{{SVG_NS}}}', '')
+        if child_tag == 'tspan':
+            runs.extend(_collect_tspan_runs(child, own_attrs, child_preserve_space))
+            if child.tail:
+                t = _normalize_text(child.tail, preserve_space=child_preserve_space)
+                if t:
+                    runs.append({**own_attrs, 'text': t})
+
+    return runs
 
 
 def _build_text_runs(
@@ -642,44 +859,32 @@ def _build_text_runs(
     """Build a list of text runs from a <text> element, handling <tspan> children.
 
     Each run is a dict with keys: text, fill, fill_raw, font_weight,
-    font_style, font_family, font_size.
+    font_style, font_family, font_size. Nested tspans are walked recursively so
+    inline format changes inside a tspan still produce distinct runs.
     """
     runs: list[dict[str, Any]] = []
+    preserve_space = _preserves_space(elem)
 
     if elem.text:
-        t = _normalize_text(elem.text)
+        t = _normalize_text(elem.text, preserve_space=preserve_space)
         if t:
             runs.append({**parent_attrs, 'text': t})
 
     for child in elem:
         child_tag = child.tag.replace(f'{{{SVG_NS}}}', '')
         if child_tag == 'tspan':
-            t = _normalize_text(''.join(child.itertext()))
-            if t:
-                run_attrs = dict(parent_attrs)
-                if child.get('font-weight'):
-                    run_attrs['font_weight'] = child.get('font-weight')
-                if child.get('fill'):
-                    child_fill = child.get('fill')
-                    run_attrs['fill_raw'] = child_fill
-                    c = parse_hex_color(child_fill)
-                    if c:
-                        run_attrs['fill'] = c
-                if child.get('font-size'):
-                    run_attrs['font_size'] = _f(child.get('font-size'), run_attrs['font_size'])
-                if child.get('font-family'):
-                    run_attrs['font_family'] = child.get('font-family')
-                if child.get('font-style'):
-                    run_attrs['font_style'] = child.get('font-style')
-                if child.get('text-decoration'):
-                    run_attrs['text_decoration'] = child.get('text-decoration')
-                runs.append({**run_attrs, 'text': t})
-
-            # Tail text after </tspan> belongs to parent
+            runs.extend(_collect_tspan_runs(child, parent_attrs, preserve_space))
             if child.tail:
-                t = _normalize_text(child.tail)
+                t = _normalize_text(child.tail, preserve_space=preserve_space)
                 if t:
                     runs.append({**parent_attrs, 'text': t})
+
+    # Strip the paragraph's overall leading / trailing whitespace once unless
+    # xml:space="preserve" asks us to keep source indentation.
+    if runs and not preserve_space:
+        runs[0]['text'] = runs[0]['text'].lstrip(' ')
+        runs[-1]['text'] = runs[-1]['text'].rstrip(' ')
+        runs = [r for r in runs if r['text']]
 
     return runs
 
@@ -720,6 +925,8 @@ def _build_run_xml(
             alpha_xml = f'<a:alpha val="{int(opacity * 100000)}"/>'
         fill_xml = f'<a:solidFill><a:srgbClr val="{fill}">{alpha_xml}</a:srgbClr></a:solidFill>'
 
+    space_attr = ' xml:space="preserve"' if text != text.strip() or '  ' in text else ''
+
     return f'''<a:r>
 <a:rPr lang="zh-CN" sz="{sz}"{b_attr}{i_attr}{u_attr}{strike_attr} dirty="0">
 {fill_xml}
@@ -728,7 +935,7 @@ def _build_run_xml(
 <a:ea typeface="{_xml_escape(fonts['ea'])}"/>
 <a:cs typeface="{_xml_escape(fonts['latin'])}"/>
 </a:rPr>
-<a:t>{_xml_escape(text)}</a:t>
+<a:t{space_attr}>{_xml_escape(text)}</a:t>
 </a:r>'''
 
 
@@ -745,11 +952,6 @@ def convert_text(elem: ET.Element, ctx: ConvertContext) -> ShapeResult | None:
     opacity = get_fill_opacity(elem, ctx)
     font_style = _get_attr(elem, 'font-style', ctx) or ''
     text_decoration = _get_attr(elem, 'text-decoration', ctx) or ''
-    dominant_baseline = (
-        _get_attr(elem, 'dominant-baseline', ctx)
-        or _get_attr(elem, 'alignment-baseline', ctx)
-        or ''
-    ).strip().lower()
 
     fonts = parse_font_family(font_family_str)
 
@@ -785,13 +987,9 @@ def convert_text(elem: ET.Element, ctx: ConvertContext) -> ShapeResult | None:
     else:
         box_x = x - padding
 
+    box_y = y - font_size * 0.85
     box_w = text_width + padding * 2
     box_h = text_height + padding
-    vertically_centered = dominant_baseline in {'middle', 'central'}
-    if vertically_centered:
-        box_y = y - box_h / 2
-    else:
-        box_y = y - font_size * 0.85
 
     # Letter spacing
     spc_attr = ''
@@ -803,19 +1001,37 @@ def convert_text(elem: ET.Element, ctx: ConvertContext) -> ShapeResult | None:
         except ValueError:
             pass
 
-    # Text rotation
+    # Text rotation. SVG's rotate(angle [cx cy]) rotates around (cx, cy), but
+    # DrawingML's <a:xfrm rot="..."> rotates the shape around its own center.
+    # When a pivot is given (and differs from the box center), translate the
+    # box so its center lands where SVG would place the rotated visual center —
+    # otherwise rotated y-axis labels etc. drift to the wrong location.
     text_rot = 0
     text_transform = elem.get('transform', '')
     if text_transform:
-        rot_match = re.search(r'rotate\(\s*([-\d.]+)', text_transform)
+        rot_match = re.search(
+            r'rotate\(\s*([-\d.]+)(?:[\s,]+([-\d.]+)[\s,]+([-\d.]+))?',
+            text_transform,
+        )
         if rot_match:
-            text_rot = int(float(rot_match.group(1)) * ANGLE_UNIT)
+            angle_deg = float(rot_match.group(1))
+            text_rot = int(angle_deg * ANGLE_UNIT)
+            if rot_match.group(2) is not None:
+                pivot_x = ctx_x(float(rot_match.group(2)), ctx)
+                pivot_y = ctx_y(float(rot_match.group(3)), ctx)
+                cx_box = box_x + box_w / 2
+                cy_box = box_y + box_h / 2
+                rad = math.radians(angle_deg)
+                dx = cx_box - pivot_x
+                dy = cy_box - pivot_y
+                new_cx = pivot_x + dx * math.cos(rad) - dy * math.sin(rad)
+                new_cy = pivot_y + dx * math.sin(rad) + dy * math.cos(rad)
+                box_x = new_cx - box_w / 2
+                box_y = new_cy - box_h / 2
 
     # Alignment
     algn_map = {'start': 'l', 'middle': 'ctr', 'end': 'r'}
     algn = algn_map.get(text_anchor, 'l')
-    body_anchor = 'ctr' if vertically_centered else 't'
-    body_anchor_ctr = '1' if vertically_centered else '0'
 
     # Shadow effect
     shape_effect_xml = ''
@@ -852,7 +1068,7 @@ def convert_text(elem: ET.Element, ctx: ConvertContext) -> ShapeResult | None:
 {shape_effect_xml}
 </p:spPr>
 <p:txBody>
-<a:bodyPr wrap="none" lIns="0" tIns="0" rIns="0" bIns="0" anchor="{body_anchor}" anchorCtr="{body_anchor_ctr}">
+<a:bodyPr wrap="none" lIns="0" tIns="0" rIns="0" bIns="0" anchor="t" anchorCtr="0">
 <a:spAutoFit/>
 </a:bodyPr>
 <a:lstStyle/>
@@ -1035,6 +1251,181 @@ def _resolve_clip_geometry(
 # image
 # ---------------------------------------------------------------------------
 
+def _picture_xfrm_from_rect(
+    ctx: ConvertContext,
+    x: float,
+    y: float,
+    w: float,
+    h: float,
+) -> tuple[str, int, int, int, int, tuple[int, int, int, int]]:
+    """Build DrawingML xfrm data for a picture rectangle."""
+    if ctx.use_transform_matrix:
+        return rect_to_dml_xfrm(x, y, w, h, ctx.transform_matrix)
+
+    x_t = ctx_x(x, ctx)
+    y_t = ctx_y(y, ctx)
+    w_t = ctx_w(w, ctx)
+    h_t = ctx_h(h, ctx)
+    off_x = px_to_emu(x_t)
+    off_y = px_to_emu(y_t)
+    ext_cx = px_to_emu(w_t)
+    ext_cy = px_to_emu(h_t)
+    return '', off_x, off_y, ext_cx, ext_cy, (off_x, off_y, off_x + ext_cx, off_y + ext_cy)
+
+
+def _read_image_size(data: bytes) -> tuple[int | None, int | None]:
+    """Read intrinsic image dimensions (width, height) from raw bytes.
+
+    Used by ``convert_image`` to translate SVG ``preserveAspectRatio`` into
+    DrawingML ``<a:srcRect>`` so the original image is preserved and remains
+    croppable inside PowerPoint.
+
+    Returns ``(None, None)`` on any failure — callers fall back to the
+    legacy stretch behaviour.
+    """
+    try:
+        from PIL import Image, UnidentifiedImageError  # type: ignore
+    except ImportError:
+        return (None, None)
+    try:
+        with Image.open(io.BytesIO(data)) as img:
+            return img.size
+    except (UnidentifiedImageError, OSError, ValueError):
+        return (None, None)
+
+
+def _compute_slice_src_rect(
+    img_w: float, img_h: float,
+    box_w: float, box_h: float,
+    align: str,
+) -> tuple[int, int, int, int] | None:
+    """Compute DrawingML ``<a:srcRect>`` (l, t, r, b) for SVG slice mode.
+
+    SVG ``preserveAspectRatio="<align> slice"`` means: scale the image so it
+    fully covers the box (CSS object-fit: cover) and crop the overflow at the
+    given alignment anchor. DrawingML ``srcRect`` expresses the same intent
+    by specifying which sub-rectangle of the source image to display, in
+    units of 1/1000 of a percent (0–100000).
+
+    Returns ``None`` when no cropping is required (image and box already
+    match) or when inputs are degenerate.
+    """
+    if img_w <= 0 or img_h <= 0 or box_w <= 0 or box_h <= 0:
+        return None
+
+    # Scale factor that makes the image cover the box (cover semantics).
+    scale = max(box_w / img_w, box_h / img_h)
+    visible_w = box_w / scale  # ≤ img_w
+    visible_h = box_h / scale  # ≤ img_h
+
+    if abs(visible_w - img_w) < 0.5 and abs(visible_h - img_h) < 0.5:
+        return None  # No crop needed
+
+    crop_w_total = max(0.0, img_w - visible_w)
+    crop_h_total = max(0.0, img_h - visible_h)
+
+    x_anchor = {'xMin': 0.0, 'xMid': 0.5, 'xMax': 1.0}.get(align[:4], 0.5)
+    y_anchor = {'YMin': 0.0, 'YMid': 0.5, 'YMax': 1.0}.get(align[4:], 0.5)
+
+    crop_l = crop_w_total * x_anchor
+    crop_r = crop_w_total - crop_l
+    crop_t = crop_h_total * y_anchor
+    crop_b = crop_h_total - crop_t
+
+    l = max(0, min(100000, int(round(crop_l / img_w * 100000))))
+    t = max(0, min(100000, int(round(crop_t / img_h * 100000))))
+    r = max(0, min(100000, int(round(crop_r / img_w * 100000))))
+    b = max(0, min(100000, int(round(crop_b / img_h * 100000))))
+
+    return (l, t, r, b)
+
+
+def _resolve_image_src_rect(
+    elem: ET.Element,
+    img_data: bytes,
+    box_w: float, box_h: float,
+) -> str:
+    """Build ``<a:srcRect .../>`` XML for an SVG <image> based on its
+    preserveAspectRatio. Returns an empty string when no srcRect is needed
+    (meet mode, none mode, or already-aligned content).
+
+    Slice mode is resolved into a srcRect so the original image is embedded
+    intact and PowerPoint's crop tool / "Reset Picture" continue to work.
+    Meet mode is handled separately by ``_resolve_image_meet_fit`` (which
+    shrinks the picture frame to match image aspect ratio); none mode keeps
+    the legacy stretch behaviour intentionally.
+    """
+    par = (elem.get('preserveAspectRatio') or 'xMidYMid meet').strip()
+    parts = par.split()
+    align = parts[0] if parts else 'xMidYMid'
+    mode = parts[1] if len(parts) > 1 else 'meet'
+
+    if align == 'none' or mode != 'slice':
+        return ''  # meet handled by frame fit; none → stretch is correct per SVG spec
+
+    img_w, img_h = _read_image_size(img_data)
+    if img_w is None or img_h is None:
+        return ''
+
+    rect = _compute_slice_src_rect(float(img_w), float(img_h), box_w, box_h, align)
+    if rect is None:
+        return ''
+
+    l, t, r, b = rect
+    return f'<a:srcRect l="{l}" t="{t}" r="{r}" b="{b}"/>'
+
+
+def _resolve_image_meet_fit(
+    elem: ET.Element,
+    img_data: bytes,
+    box_w: float, box_h: float,
+) -> tuple[float, float, float, float] | None:
+    """For SVG ``preserveAspectRatio="<align> meet"``, compute the letterboxed
+    sub-rectangle ``(dx, dy, fit_w, fit_h)`` inside the original box that
+    matches the image's intrinsic aspect ratio.
+
+    PowerPoint has no native ``meet`` semantic — ``<a:stretch><a:fillRect/>``
+    fills the entire frame and would distort the image whenever the SVG
+    container ratio differs from the source image ratio. The fix is to shrink
+    the ``<p:pic>`` frame itself (off + ext) so the frame and image share an
+    aspect ratio; the stretch then fills a correctly-shaped frame.
+
+    Returns ``None`` when the adjustment is not applicable:
+      - mode is ``slice`` (handled by srcRect path)
+      - align is ``none`` (SVG spec says: stretch — do not adjust)
+      - intrinsic image dimensions cannot be read
+      - frame already matches image ratio (no-op)
+    """
+    par = (elem.get('preserveAspectRatio') or 'xMidYMid meet').strip()
+    parts = par.split()
+    align = parts[0] if parts else 'xMidYMid'
+    mode = parts[1] if len(parts) > 1 else 'meet'
+
+    if align == 'none' or mode == 'slice':
+        return None
+
+    img_w, img_h = _read_image_size(img_data)
+    if img_w is None or img_h is None or img_w <= 0 or img_h <= 0:
+        return None
+    if box_w <= 0 or box_h <= 0:
+        return None
+
+    scale = min(box_w / img_w, box_h / img_h)
+    fit_w = img_w * scale
+    fit_h = img_h * scale
+
+    if abs(fit_w - box_w) < 0.5 and abs(fit_h - box_h) < 0.5:
+        return None  # already matches — no adjustment
+
+    x_anchor = {'xMin': 0.0, 'xMid': 0.5, 'xMax': 1.0}.get(align[:4], 0.5)
+    y_anchor = {'YMin': 0.0, 'YMid': 0.5, 'YMax': 1.0}.get(align[4:], 0.5)
+
+    dx = (box_w - fit_w) * x_anchor
+    dy = (box_h - fit_h) * y_anchor
+
+    return (dx, dy, fit_w, fit_h)
+
+
 def convert_image(elem: ET.Element, ctx: ConvertContext) -> ShapeResult | None:
     """Convert SVG <image> to DrawingML picture element.
 
@@ -1052,20 +1443,28 @@ def convert_image(elem: ET.Element, ctx: ConvertContext) -> ShapeResult | None:
     raw_w = _f(elem.get('width'))
     raw_h = _f(elem.get('height'))
 
-    x = ctx_x(raw_x, ctx)
-    y = ctx_y(raw_y, ctx)
-    w = ctx_w(raw_w, ctx)
-    h = ctx_h(raw_h, ctx)
+    if ctx.use_transform_matrix:
+        x = raw_x
+        y = raw_y
+        w = raw_w
+        h = raw_h
+    else:
+        x = ctx_x(raw_x, ctx)
+        y = ctx_y(raw_y, ctx)
+        w = ctx_w(raw_w, ctx)
+        h = ctx_h(raw_h, ctx)
 
     if w <= 0 or h <= 0:
         return None
 
     # Extract image data
     if href.startswith('data:'):
-        match = re.match(r'data:image/(\w+);base64,(.+)', href, re.DOTALL)
+        match = re.match(r'data:image/([A-Za-z0-9.+-]+);base64,(.+)', href, re.DOTALL)
         if not match:
             return None
         img_format = match.group(1).lower()
+        if img_format == 'svg+xml':
+            img_format = 'svg'
         if img_format == 'jpeg':
             img_format = 'jpg'
         img_data = base64.b64decode(match.group(2))
@@ -1076,8 +1475,7 @@ def convert_image(elem: ET.Element, ctx: ConvertContext) -> ShapeResult | None:
         if not img_path.exists():
             img_path = ctx.svg_dir.parent / href
         if not img_path.exists():
-            print(f'  Warning: External image not found: {href}')
-            return None
+            raise FileNotFoundError(f'External image not found: {href}')
         img_format = img_path.suffix.lstrip('.').lower()
         if img_format == 'jpeg':
             img_format = 'jpg'
@@ -1096,7 +1494,7 @@ def convert_image(elem: ET.Element, ctx: ConvertContext) -> ShapeResult | None:
 
     rot = 0
     transform = elem.get('transform')
-    if transform:
+    if transform and not ctx.use_transform_matrix:
         r_match = re.search(r'rotate\(\s*([-\d.]+)', transform)
         if r_match:
             rot = int(float(r_match.group(1)) * ANGLE_UNIT)
@@ -1105,11 +1503,31 @@ def convert_image(elem: ET.Element, ctx: ConvertContext) -> ShapeResult | None:
     # Resolve clip-path → DrawingML geometry
     clip_geom = _resolve_clip_geometry(elem, ctx, raw_x, raw_y, raw_w, raw_h)
 
+    # Resolve preserveAspectRatio="<align> slice" → DrawingML <a:srcRect>.
+    # This keeps the original image intact in the .pptx and lets users
+    # re-crop or reset the picture in PowerPoint, instead of permanently
+    # baking the crop into the embedded asset.
+    src_rect_xml = _resolve_image_src_rect(elem, img_data, w, h)
+
+    # Resolve preserveAspectRatio="<align> meet" by shrinking the picture
+    # frame to match the image's aspect ratio. Skipped when a real clip-path
+    # is in effect: clip geometry is computed against the original-box
+    # coordinate space and would no longer line up after a frame shift.
+    has_clip = bool(elem.get('clip-path')) and elem.get('clip-path') != 'none'
+    meet_fit = None if has_clip else _resolve_image_meet_fit(elem, img_data, w, h)
+
     shape_id = ctx.next_id()
-    off_x = px_to_emu(x)
-    off_y = px_to_emu(y)
-    ext_cx = px_to_emu(w)
-    ext_cy = px_to_emu(h)
+    if meet_fit is not None:
+        dx, dy, fit_w, fit_h = meet_fit
+        xfrm_attr, off_x, off_y, ext_cx, ext_cy, bounds_emu = _picture_xfrm_from_rect(
+            ctx, x + dx, y + dy, fit_w, fit_h,
+        )
+    else:
+        xfrm_attr, off_x, off_y, ext_cx, ext_cy, bounds_emu = _picture_xfrm_from_rect(
+            ctx, x, y, w, h,
+        )
+    if rot_attr:
+        xfrm_attr += rot_attr
 
     return ShapeResult(xml=f'''<p:pic>
 <p:nvPicPr>
@@ -1119,14 +1537,14 @@ def convert_image(elem: ET.Element, ctx: ConvertContext) -> ShapeResult | None:
 </p:nvPicPr>
 <p:blipFill>
 <a:blip r:embed="{r_id}"/>
-<a:stretch><a:fillRect/></a:stretch>
+{src_rect_xml}<a:stretch><a:fillRect/></a:stretch>
 </p:blipFill>
 <p:spPr>
-<a:xfrm{rot_attr}><a:off x="{off_x}" y="{off_y}"/>
+<a:xfrm{xfrm_attr}><a:off x="{off_x}" y="{off_y}"/>
 <a:ext cx="{ext_cx}" cy="{ext_cy}"/></a:xfrm>
 {clip_geom}
 </p:spPr>
-</p:pic>''', bounds_emu=(off_x, off_y, off_x + ext_cx, off_y + ext_cy))
+</p:pic>''', bounds_emu=bounds_emu)
 
 
 # ---------------------------------------------------------------------------
@@ -1175,3 +1593,133 @@ def convert_ellipse(elem: ET.Element, ctx: ConvertContext) -> ShapeResult | None
         ),
         bounds_emu=(off_x, off_y, off_x + ext_cx, off_y + ext_cy),
     )
+
+
+# ---------------------------------------------------------------------------
+# nested <svg> sprite (template-import round-trip)
+# ---------------------------------------------------------------------------
+
+# Inverse of pptx_to_svg/pic_to_svg.py:101-113 — that path writes a cropped
+# DrawingML picture as an outer <svg viewBox> wrapping a unit-rectangle <image>.
+# Without this converter, every cropped picture in a template-import SVG is
+# silently dropped on re-export.
+
+def convert_nested_svg(elem: ET.Element, ctx: ConvertContext) -> ShapeResult | None:
+    """Convert a nested <svg> sprite-crop wrapper to a DrawingML picture.
+
+    Pattern produced by pptx_to_svg::
+
+        <svg x="10" y="20" width="200" height="300" viewBox="0.5 0.3 0.5 0.7">
+          <image href="..." x="0" y="0" width="1" height="1" preserveAspectRatio="none"/>
+        </svg>
+
+    The viewBox crops the unit-rectangle inner image; that crop is mapped to a
+    DrawingML <a:srcRect> so PowerPoint can re-crop / "Reset Picture".
+    """
+    image_elem = elem.find(f'{{{SVG_NS}}}image')
+    if image_elem is None:
+        image_elem = elem.find('image')
+    if image_elem is None:
+        return None
+
+    href = image_elem.get('href') or image_elem.get(f'{{{XLINK_NS}}}href')
+    if not href:
+        return None
+
+    svg_x = _f(elem.get('x'))
+    svg_y = _f(elem.get('y'))
+    svg_w = _f(elem.get('width'))
+    svg_h = _f(elem.get('height'))
+    if svg_w <= 0 or svg_h <= 0:
+        return None
+
+    if ctx.use_transform_matrix:
+        x = svg_x
+        y = svg_y
+        w = svg_w
+        h = svg_h
+    else:
+        x = ctx_x(svg_x, ctx)
+        y = ctx_y(svg_y, ctx)
+        w = ctx_w(svg_w, ctx)
+        h = ctx_h(svg_h, ctx)
+
+    src_rect_xml = ''
+    view_box = elem.get('viewBox', '')
+    if view_box:
+        parts = view_box.strip().split()
+        if len(parts) == 4:
+            vb_x, vb_y, vb_w, vb_h = (float(p) for p in parts)
+            l = max(0, min(int(round(vb_x * 100000)), 100000))
+            t = max(0, min(int(round(vb_y * 100000)), 100000))
+            r = max(0, min(int(round((1.0 - vb_x - vb_w) * 100000)), 100000))
+            b = max(0, min(int(round((1.0 - vb_y - vb_h) * 100000)), 100000))
+            if l or t or r or b:
+                src_rect_xml = f'<a:srcRect l="{l}" t="{t}" r="{r}" b="{b}"/>'
+
+    if href.startswith('data:'):
+        match = re.match(r'data:image/([A-Za-z0-9.+-]+);base64,(.+)', href, re.DOTALL)
+        if not match:
+            return None
+        img_format = match.group(1).lower()
+        if img_format == 'svg+xml':
+            img_format = 'svg'
+        if img_format == 'jpeg':
+            img_format = 'jpg'
+        img_data = base64.b64decode(match.group(2))
+    else:
+        if ctx.svg_dir is None:
+            return None
+        img_path = ctx.svg_dir / href
+        if not img_path.exists():
+            img_path = ctx.svg_dir.parent / href
+        if not img_path.exists():
+            raise FileNotFoundError(f'External image not found: {href}')
+        img_format = img_path.suffix.lstrip('.').lower()
+        if img_format == 'jpeg':
+            img_format = 'jpg'
+        img_data = img_path.read_bytes()
+
+    img_idx = len(ctx.media_files) + 1
+    img_filename = f's{ctx.slide_num}_img{img_idx}.{img_format}'
+    ctx.media_files[img_filename] = img_data
+
+    r_id = ctx.next_rel_id()
+    ctx.rel_entries.append({
+        'id': r_id,
+        'type': 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image',
+        'target': f'../media/{img_filename}',
+    })
+
+    rot = 0
+    transform = elem.get('transform')
+    if transform and not ctx.use_transform_matrix:
+        r_match = re.search(r'rotate\(\s*([-\d.]+)', transform)
+        if r_match:
+            rot = int(float(r_match.group(1)) * ANGLE_UNIT)
+    rot_attr = f' rot="{rot}"' if rot else ''
+
+    shape_id = ctx.next_id()
+    xfrm_attr, off_x, off_y, ext_cx, ext_cy, bounds_emu = _picture_xfrm_from_rect(
+        ctx, x, y, w, h,
+    )
+    if rot_attr:
+        xfrm_attr += rot_attr
+    clip_geom = _resolve_clip_geometry(elem, ctx, svg_x, svg_y, svg_w, svg_h)
+
+    return ShapeResult(xml=f'''<p:pic>
+<p:nvPicPr>
+<p:cNvPr id="{shape_id}" name="Image {shape_id}"/>
+<p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr>
+<p:nvPr/>
+</p:nvPicPr>
+<p:blipFill>
+<a:blip r:embed="{r_id}"/>
+{src_rect_xml}<a:stretch><a:fillRect/></a:stretch>
+</p:blipFill>
+<p:spPr>
+<a:xfrm{xfrm_attr}><a:off x="{off_x}" y="{off_y}"/>
+<a:ext cx="{ext_cx}" cy="{ext_cy}"/></a:xfrm>
+{clip_geom}
+</p:spPr>
+</p:pic>''', bounds_emu=bounds_emu)
