@@ -334,7 +334,7 @@ The design adopts "**Secure Base**" as the core visual metaphor:
 
 | Category           | Prohibited Items                        |
 | ------------------ | --------------------------------------- |
-| **Clipping/Masking** | `clipPath`, `mask`                    |
+| **Clipping/Masking** | `mask` is forbidden; `clipPath` is allowed only on `<image>` under `shared-standards.md` §1.2 |
 | **Style System**   | `<style>`, `class` (`id` inside `<defs>` is allowed) |
 | **Structure/Nesting** | `<foreignObject>`                   |
 | **Text/Font**      | `textPath`, `@font-face`               |

@@ -11,7 +11,7 @@ Usage:
     python3 scripts/svg_quality_checker.py --lint <svg_file_or_directory>
 
 Modes:
-    Default (no flag) — full 7-dimension check, called at SKILL.md Step 6 Quality Check Gate.
+    Default (no flag) — full 10-dimension check, called at SKILL.md Step 6 Quality Check Gate.
     --lint            — Pre-flight subset (viewBox / forbidden elements / fonts only),
                          called at SKILL.md Step 7.0 just before total_md_split / finalize_svg /
                          svg_to_pptx; finalize_svg.py rewrites SVG and would mask violations,
@@ -191,6 +191,15 @@ class SVGQualityChecker:
 
                 # 7. Check spec_lock drift (colors / font-family / font-size)
                 self._check_spec_lock_drift(content, svg_path, result)
+
+                # 8. Check viewBox overflow (shapes extending past canvas)
+                self._check_viewbox_overflow(content, result)
+
+                # 9. Check footer zone intrusion (content blocks past y=682)
+                self._check_footer_zone_intrusion(content, result)
+
+                # 10. Check content block fit (excessive empty space in cards)
+                self._check_content_block_fit(content, result)
 
             # Determine pass/fail
             result['passed'] = len(result['errors']) == 0
@@ -1379,6 +1388,141 @@ class SVGQualityChecker:
     def _short_text(text: str, limit: int = 18) -> str:
         text = text.strip()
         return text if len(text) <= limit else text[: limit - 1] + "…"
+
+    def _check_viewbox_overflow(self, content: str, result: Dict):
+        """Detect shapes extending past the viewBox boundary.
+
+        SVG viewBox clips in browsers, but PPTX has no such clipping — shapes
+        that extend past the canvas become visible as protruding elements.
+        """
+        vb_str = result.get('info', {}).get('viewbox', '')
+        vb = self._parse_viewbox(vb_str)
+        if not vb:
+            return
+        vb_x, vb_y, vb_w, vb_h = vb
+        tol = 2.0
+        overflows: List[Dict] = []
+
+        for m in re.finditer(r'<circle\b([^>]*)/?>', content):
+            attrs = m.group(1)
+            cx = self._attr_float(attrs, 'cx') or 0
+            cy = self._attr_float(attrs, 'cy') or 0
+            r = self._attr_float(attrs, 'r') or 0
+            if (cx + r > vb_x + vb_w + tol or cy + r > vb_y + vb_h + tol
+                    or cx - r < vb_x - tol or cy - r < vb_y - tol):
+                overflows.append({'tag': 'circle', 'overflow': max(cx + r - vb_w, cy + r - vb_h, vb_x - (cx - r), vb_y - (cy - r))})
+
+        for m in re.finditer(r'<ellipse\b([^>]*)/?>', content):
+            attrs = m.group(1)
+            cx = self._attr_float(attrs, 'cx') or 0
+            cy = self._attr_float(attrs, 'cy') or 0
+            rx = self._attr_float(attrs, 'rx') or 0
+            ry = self._attr_float(attrs, 'ry') or 0
+            if (cx + rx > vb_x + vb_w + tol or cy + ry > vb_y + vb_h + tol
+                    or cx - rx < vb_x - tol or cy - ry < vb_y - tol):
+                overflows.append({'tag': 'ellipse', 'overflow': max(cx + rx - vb_w, cy + ry - vb_h)})
+
+        for m in re.finditer(r'<rect\b([^>]*)/?>', content):
+            attrs = m.group(1)
+            x = self._attr_float(attrs, 'x') or 0
+            y = self._attr_float(attrs, 'y') or 0
+            w = self._attr_float(attrs, 'width') or 0
+            h = self._attr_float(attrs, 'height') or 0
+            if w < 10 or h < 10:
+                continue
+            if (x + w > vb_x + vb_w + tol or y + h > vb_y + vb_h + tol
+                    or x < vb_x - tol or y < vb_y - tol):
+                role_m = re.search(r'data-role="([^"]*)"', attrs)
+                role = role_m.group(1) if role_m else 'none'
+                overflows.append({'tag': 'rect', 'overflow': max(x + w - vb_w, y + h - vb_h), 'role': role})
+
+        if overflows:
+            result['warnings'].append(
+                f"Detected {len(overflows)} shape(s) extending past viewBox boundary "
+                f"(will protrude in PPTX — SVG viewBox clipping does not survive conversion)"
+            )
+
+    def _check_footer_zone_intrusion(self, content: str, result: Dict):
+        """Detect content components that extend into the footer zone (y >= 682 on 720px canvas)."""
+        vb_str = result.get('info', {}).get('viewbox', '')
+        vb = self._parse_viewbox(vb_str)
+        if not vb:
+            return
+        _vb_x, _vb_y, _vb_w, vb_h = vb
+        footer_y = vb_h - 38
+        intrusions: List[str] = []
+        content_roles = {
+            'content-card', 'callout-content', 'panel-card', 'metric-card',
+            'process-step', 'bridge', 'risk-strip', 'table', 'mapping-row',
+            'architecture-layer', 'layer-stack', 'section', 'chart-frame',
+            'kpi-card', 'risk-quadrant', 'risk-matrix',
+        }
+        for m in re.finditer(r'<rect\b([^>]*)/?>', content):
+            attrs = m.group(1)
+            y = self._attr_float(attrs, 'y') or 0
+            w = self._attr_float(attrs, 'width') or 0
+            h = self._attr_float(attrs, 'height') or 0
+            if h < 20:
+                continue
+            if w >= 1000 and h >= 600:
+                continue
+            bottom = y + h
+            if bottom <= footer_y:
+                continue
+            role_m = re.search(r'data-role="([^"]*)"', attrs)
+            role = role_m.group(1) if role_m else ''
+            bg_roles = {'page-background', 'background', 'accent-background'}
+            if role in bg_roles:
+                continue
+            if role in content_roles or (not role and h > 40):
+                intrusions.append(f'{role or "rect"} y={y:.0f} h={h:.0f} bottom={bottom:.0f}')
+        if intrusions:
+            result['warnings'].append(
+                f"Content component(s) intrude into footer zone (y>={footer_y:.0f}): "
+                + '; '.join(intrusions[:3])
+            )
+
+    def _check_content_block_fit(self, content: str, result: Dict):
+        """Detect content blocks with excessive empty space below their text."""
+        content_roles = {
+            'content-card', 'callout-content', 'panel-card', 'metric-card',
+            'kpi-card',
+        }
+        loose_blocks: List[str] = []
+        for m in re.finditer(r'<rect\b([^>]*)/?>', content):
+            attrs = m.group(1)
+            role_m = re.search(r'data-role="([^"]*)"', attrs)
+            if not role_m or role_m.group(1) not in content_roles:
+                continue
+            role = role_m.group(1)
+            x = self._attr_float(attrs, 'x') or 0
+            y = self._attr_float(attrs, 'y') or 0
+            w = self._attr_float(attrs, 'width') or 0
+            h = self._attr_float(attrs, 'height') or 0
+            if h < 60 or w < 60:
+                continue
+            bottom = y + h
+            last_text_y = 0.0
+            for tm in re.finditer(r'<text\b([^>]*)>', content):
+                tattrs = tm.group(1)
+                tx = self._attr_float(tattrs, 'x') or 0
+                ty = self._attr_float(tattrs, 'y') or 0
+                fs = self._attr_float(tattrs, 'font-size') or 14
+                if not (x - 2 <= tx <= x + w + 2 and y - 2 <= ty <= bottom + 2):
+                    continue
+                slot_m = re.search(r'data-slot="([^"]*)"', tattrs)
+                if slot_m and slot_m.group(1) == 'footer':
+                    continue
+                last_text_y = max(last_text_y, ty + fs)
+            if last_text_y > 0:
+                empty = bottom - last_text_y
+                if empty > 60 and empty / h > 0.3:
+                    loose_blocks.append(f'{role} y={y:.0f} h={h:.0f} empty={empty:.0f}px ({empty/h:.0%})')
+        if loose_blocks:
+            result['warnings'].append(
+                'Content block(s) with excessive empty space below text (card height should fit content): '
+                + '; '.join(loose_blocks[:3])
+            )
 
     def _check_image_references(self, content: str, svg_path: Path, result: Dict):
         """Check image file existence and resolution vs display size."""

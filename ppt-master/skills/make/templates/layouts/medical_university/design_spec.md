@@ -211,7 +211,7 @@ To adapt to other medical institution branding, replace the corresponding values
 
 | Prohibited Item      | Alternative                    |
 | -------------------- | ------------------------------ |
-| `clipPath`           | Do not use clipping            |
+| `clipPath` | Allowed only on `<image>` under `shared-standards.md` §1.2 |
 | `mask`               | Do not use masking             |
 | `<style>`            | Use inline styles              |
 | `class`              | Use inline attributes (`id` inside `<defs>` is allowed) |

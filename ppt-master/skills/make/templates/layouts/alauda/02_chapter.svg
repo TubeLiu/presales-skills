@@ -33,6 +33,6 @@
     </text>
 
     <!-- Footer -->
-    <line x1="472" y1="682" x2="1280" y2="682" stroke="#E2E8F0" stroke-width="1"/>
-    <text x="655" y="706" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8" letter-spacing="1">Alauda</text>
+    <line x1="472" y1="682" x2="1280" y2="682" stroke="#E2E8F0" stroke-width="1" data-role="footer-rule"/>
+    <text x="655" y="706" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8" letter-spacing="1" data-slot="footer">Alauda</text>
 </svg>

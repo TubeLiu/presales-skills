@@ -130,7 +130,13 @@ fi
 | `$SKILL_DIR/scripts/ppt_master_eval.py` | Repeatable visual + design quality eval fixtures and target project summary |
 | `$SKILL_DIR/scripts/total_md_split.py` | Speaker notes splitting |
 | `$SKILL_DIR/scripts/finalize_svg.py` | SVG post-processing (unified entry) |
-| `$SKILL_DIR/scripts/svg_to_pptx.py` | Export to PPTX |
+| `$SKILL_DIR/scripts/svg_to_pptx.py` | Export to PPTX (default: dual-source — native ← `svg_output/`, legacy ← `svg_final/`; per-element entrance animation enabled by `-a mixed`; recorded narration via `--recorded-narration`) |
+| `$SKILL_DIR/scripts/pptx_to_svg.py` | Reverse PPTX → SVG (15-module shape-level emit, output: `svg/` layered + `svg-flat/` preview + `assets/`) |
+| `$SKILL_DIR/scripts/notes_to_audio.py` | Per-slide narration audio (default `edge-tts`, optional `elevenlabs` / `minimax` / `qwen` / `cosyvoice` backends — see `workflows/generate-audio.md`) |
+| `$SKILL_DIR/scripts/check_annotations.py` | Visual edit annotation checker (used by `workflows/visual-edit.md`) |
+| `$SKILL_DIR/scripts/source_to_md/excel_to_md.py` | Excel → Markdown ingestion |
+| `$SKILL_DIR/scripts/svg_editor/server.py` | Localhost Flask SVG annotation editor (port 5000) — see `workflows/visual-edit.md` |
+| `$SKILL_DIR/scripts/register_template.py` | Sync a layout's `design_spec.md` → `layouts_index.json` + `README.md` |
 | `$SKILL_DIR/scripts/update_spec.py` | Propagate a `spec_lock.md` color / font_family change across all generated SVGs |
 
 For complete tool documentation, see `$SKILL_DIR/scripts/README.md`.
@@ -148,6 +154,11 @@ For complete tool documentation, see `$SKILL_DIR/scripts/README.md`.
 | Workflow | Path | Purpose |
 |----------|------|---------|
 | `create-template` | `workflows/create-template.md` | Standalone template creation workflow |
+| `topic-research` | `workflows/topic-research.md` | Pre-pipeline source-acquisition when user supplies only a topic (no source files) |
+| `generate-audio` | `workflows/generate-audio.md` | Per-slide narration audio + recorded timing (post-pipeline; pairs with `svg_to_pptx.py --recorded-narration`) |
+| `resume-execute` | `workflows/resume-execute.md` | Resume a partially-run pipeline from any phase |
+| `verify-charts` | `workflows/verify-charts.md` | Visual chart verification gate |
+| `visual-edit` | `workflows/visual-edit.md` | Browser-based SVG annotation editor (`svg_editor/`) + post-hoc applier (`check_annotations.py`) |
 
 ---
 
@@ -204,22 +215,23 @@ Import source content (choose based on the situation):
 
 🚧 **GATE**: Step 2 complete; project directory structure is ready.
 
-**Default path — free design.** AI tailors structure and style to the specific content; no template files copied.
+**Default path — Alauda 模板（自 v1.4.0 起开箱即用）。** AI 直接套用 Alauda 品牌视觉规范（页面 footer + 左边竖条 accent + 装饰圆形 + 颜色/字体/卡片样式）。no per-page free-design discretion on chrome/footer/header — content area lays out freely within the alauda design contract.
 
-If the user has set `ppt_master.default_layout` in `~/.config/presales-skills/config.yaml`, the Default path auto-loads that template instead of free design — read the override first:
+> ⚠️ **覆盖优先级**：`~/.config/presales-skills/config.yaml` 中 `ppt_master.default_layout` 字段（如有）> 默认 `alauda`。设为空串 `""` 显式回退到 free design（无 chrome 模板）。
 
 ```bash
-# 读 user 配置覆盖（如有），否则继续 free design（空串 = 不 cp 任何模板文件）
+# 读 user 配置覆盖（如有），未配置 → 默认 alauda；显式空串 → free design（不拷模板）
 DEFAULT_LAYOUT=$(python3 -c "
 import os
 try:
     import yaml
     p = os.path.expanduser('~/.config/presales-skills/config.yaml')
     d = yaml.safe_load(open(p)) or {}
-    print(d.get('ppt_master', {}).get('default_layout', ''))
+    val = d.get('ppt_master', {}).get('default_layout', None)
+    print('alauda' if val is None else val)
 except Exception:
-    print('')
-" 2>/dev/null || echo '')
+    print('alauda')
+" 2>/dev/null || echo 'alauda')
 
 if [ -n "$DEFAULT_LAYOUT" ]; then
     cp ${SKILL_DIR}/templates/layouts/${DEFAULT_LAYOUT}/*.svg <project_path>/templates/
@@ -233,29 +245,29 @@ if [ -n "$DEFAULT_LAYOUT" ]; then
 fi
 ```
 
-Proceed to Step 4. With `default_layout` set in config = use that template; without = AI free design.
+Proceed to Step 4. 默认 = alauda；config 显式 override = 用 override；config 显式空串 = AI free design（极少数场景，例如做 internal 草图或纯 brand-neutral 输出）。
 
-**其它模板 flow is opt-in.** 仅当 prior messages 命中以下 trigger 时才走具体模板：
+**切换到其它模板 — 三种 trigger：**
 
 1. **用户明说具体模板**（如 "用 mckinsey 模板" / "use the academic_defense template"）—— 把命令中的 `$DEFAULT_LAYOUT` 替换为指定模板名
 2. **用户明说风格 / brand 引用映射到某模板**（如 "McKinsey 那种" / "Google style" / "学术答辩样式"）—— 读 `$SKILL_DIR/templates/layouts/layouts_index.json` 解析匹配，把命令中的 `$DEFAULT_LAYOUT` 替换为匹配到的模板名
 3. **用户问 "有哪些模板可以用"**（列表）—— 读 `$SKILL_DIR/templates/layouts/layouts_index.json`，列出所有可用模板，等用户选
 
-**Soft hint (non-blocking, optional).** Before Step 4, if the user's content is a strong match for a specific template (e.g., clearly an academic defense matching `academic_defense`, a government report matching `government_report`) AND the user has given no template signal, the AI MAY emit a single-sentence notice and continue with free design without waiting:
+**Soft hint (non-blocking, optional).** Before Step 4, if the user's content is a strong match for a NON-Alauda template (e.g., clearly an academic defense matching `academic_defense`, or a government-style report matching `government_blue`/`government_red`) AND the user has given no template signal, the AI MAY emit a single-sentence notice and continue with the default alauda without waiting:
 
-> Note: 内容看起来更适合 `<name>` 模板。说一声如果想换；否则我继续 free design。
+> Note: 内容看起来更适合 `<name>` 模板（学术答辩 / 政府报告等非通用 B2B 场景）。说一声如果想换；否则我继续用默认的 Alauda。
 
-This is a hint, not a question — do NOT block, do NOT require an answer. Skip the hint entirely when the match is weak or ambiguous.
+This is a hint, not a question — do NOT block, do NOT require an answer. Skip the hint entirely when the content fits the default Alauda B2B-tech tone.
 
 > To create a new global template, read `workflows/create-template.md`
 
-**✅ Checkpoint — Default path proceeds to Step 4 without user interaction. If a template trigger fired, template files are copied before advancing.**
+**✅ Checkpoint — Default path copies Alauda template files to project (templates/, images/), then proceeds to Step 4 without user interaction. If a non-default template trigger fired, that template's files are copied instead.**
 
 ---
 
 ### Step 4: Strategist Phase (MANDATORY — cannot be skipped)
 
-🚧 **GATE**: Step 3 complete; default free-design path taken, or (if triggered) template files copied into the project.
+🚧 **GATE**: Step 3 complete; default Alauda template files copied to project (templates/ + images/), OR (if triggered) the user-selected template's files copied, OR (if config set `default_layout: ""`) no template files copied (free design).
 
 First, read the role definition:
 ```
@@ -388,6 +400,7 @@ Read references/executor-consultant-top.md # Top consulting style (MBB level)
 ```bash
 python3 $SKILL_DIR/scripts/svg_quality_checker.py <project_path>
 ```
+- **Auto-repair pipeline**: `finalize_svg.py` Step 1 (normalize-layout) automatically resolves component overlaps, text boundary violations, and sibling spacing issues. However, severe structural problems (e.g., 5 cards stacked where only 3 fit) cannot be auto-repaired — the Executor must prevent these upstream by following the component placement grid discipline in `executor-base.md`.
 - Any `error` (banned SVG features, viewBox mismatch, spec_lock drift, etc.) MUST be fixed on the offending page before proceeding — go back to Visual Construction, re-generate that page, re-run the check.
 - `warning` entries (e.g., low-resolution image, non-PPT-safe font tail, possible text overlap, off-contract icon drift) should be reviewed and fixed when straightforward; for branded templates, text overlap / clipping / icon drift warnings are release blockers unless proven false positive.
 - Running the checker against `svg_output/` is required — running it only after `finalize_svg.py` is too late (finalize rewrites SVG and some violations get masked).
@@ -445,17 +458,46 @@ python3 $SKILL_DIR/scripts/total_md_split.py <project_path>
 python3 $SKILL_DIR/scripts/finalize_svg.py <project_path>
 ```
 
-**Step 7.3** — Export PPTX (embeds speaker notes by default):
+**Step 7.3** — Export PPTX (embeds speaker notes + page transition + per-element entrance animation by default):
 ```bash
+# Default: dual-source mode
+#   native (editable shapes) ← svg_output/   → exports/<name>_<timestamp>.pptx
+#   legacy (PNG+SVG fallback) ← svg_final/   → backup/<timestamp>/<name>_svg.pptx
+# Per-element entrance animation: -a mixed (auto-fires on top-level `<g id="...">` semantic groups; -a none disables)
+python3 $SKILL_DIR/scripts/svg_to_pptx.py <project_path>
+
+# Force a single source for both versions:
 python3 $SKILL_DIR/scripts/svg_to_pptx.py <project_path> -s final
-# Output: exports/<project_name>_<timestamp>.pptx + exports/<project_name>_<timestamp>_svg.pptx
-# Use --only native  to skip SVG reference version
-# Use --only legacy  to only generate SVG image version
+
+# Skip per-element entrance animation:
+python3 $SKILL_DIR/scripts/svg_to_pptx.py <project_path> -a none
+
+# Embed pre-recorded slide narration (audio dir from notes_to_audio.py):
+python3 $SKILL_DIR/scripts/svg_to_pptx.py <project_path> --recorded-narration <project_path>/audio/
+
+# See: references/animations.md (effect catalog) + workflows/generate-audio.md (narration pipeline)
 ```
 
+> 📁 **PPTX path layout**: `exports/<name>_<timestamp>.pptx` is the user-facing native PPTX. The legacy compatibility version (`<name>_svg.pptx`) now lives under `backup/<timestamp>/` — keeping `exports/` clean.
 > ❌ **NEVER** use `cp` as a substitute for `finalize_svg.py` — it performs multiple critical processing steps
-> ❌ **NEVER** export directly from `svg_output/` — MUST use `-s final` to export from `svg_final/`
-> ❌ **NEVER** add extra flags like `--only`
+> ❌ **NEVER** add extra flags like `--only` unless you understand the legacy/rollback scope (see `--help`)
+
+---
+
+### Reverse Pipeline (PPTX → SVG)
+
+When the user provides an existing `.pptx` and wants editable SVG (instead of starting from a Markdown source), use the reverse converter:
+
+```bash
+python3 $SKILL_DIR/scripts/pptx_to_svg.py <pptx_file> -o <output_dir>
+```
+
+Output structure (default `--inheritance-mode both`):
+- `<output_dir>/svg/` — layered (master / layout / slide separate, machine-readable)
+- `<output_dir>/svg-flat/` — preview (one self-contained SVG per slide)
+- `<output_dir>/assets/` — extracted media (images, etc.)
+
+Use cases: importing a customer's existing PPTX as a template, building an editable design surface from a deck, or round-trip fidelity testing of `svg_to_pptx.py`.
 
 ---
 
@@ -481,6 +523,7 @@ Before switching roles, you **MUST first read** the corresponding reference file
 | SVG image embedding | `references/svg-image-embedding.md` |
 | Step 4.5 design review gate | `references/design-review-gate.md` |
 | Step 6.5 overflow fallback | `references/overflow-fallback.md` |
+| Page transitions + per-element entrance animations | `references/animations.md` |
 
 ---
 

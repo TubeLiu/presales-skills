@@ -7,7 +7,7 @@
   },
   "metadata": {
     "description": "Presales skills monorepo — 10 个独立 plugin，按垂直用途分为 Base Tools（ai-image 生图 / web-access 联网 / drawio 画图 / anythingllm-mcp 知识库）、Presales Workflows（solution-master 写方案 / ppt-master 做 PPT / tender-workflow 招投标 / customer-research 客户调研）和 Writing & Meta（market 文案编辑 / skill-optimizer 审查 skill）。同时支持 Claude Code（marketplace 安装）和 Cursor / Codex / OpenCode（vercel-labs/skills CLI 安装）。",
-    "version": "1.7.5"
+    "version": "1.9.0"
   },
   "plugins": [
     {
@@ -91,8 +91,8 @@
     {
       "name": "ppt-master",
       "source": "./ppt-master",
-      "description": "PPT 生成器（PDF/DOCX/URL/Markdown → SVG 中间层 → 原生可编辑 PPTX，含真实 PowerPoint shape / 文本框 / 图表）。默认 free-design，22 个内置模板按需切换（用户在 ~/.config/presales-skills/config.yaml 设 ppt_master.default_layout 可持久化指定）。内置 SVG 技术检查、页面级 design quality eval 与 deck 多样性评估，用 component→slot→text 语义提升生成质量。slash 调用 /ppt-master:make 或自然语言触发（'做 PPT' / 'generate slides'）。依赖 ai-image plugin（结构化配图自动走 ai-image templates/）。",
-      "version": "1.2.4",
+      "description": "PPT 生成器（PDF/DOCX/URL/Markdown → SVG 中间层 → 原生可编辑 PPTX，含真实 PowerPoint shape / 文本框 / 图表）。默认套用 Alauda 品牌模板（footer + accent bar + 装饰圆形 + 颜色字体卡片），其余 21 个内置模板（mckinsey / google_style / academic_defense / 招商银行 / 中汽研 / 中国电建 / 重庆大学 等）通过 ~/.config/presales-skills/config.yaml 设 ppt_master.default_layout 切换，或自然语言里点名指定；如需 brand-neutral 输出可设为空串显式 free design。内置 SVG 技术检查（10 维）、页面级 design quality eval 与 deck 多样性评估，用 component→slot→text 语义提升生成质量；含每元素入场动画 + 翻页动画、PPTX↔SVG 反向解析、edge-tts 旁白音频、浏览器端 SVG 标注编辑器。slash 调用 /ppt-master:make 或自然语言触发（'做 PPT' / 'generate slides'）。依赖 ai-image plugin（结构化配图自动走 ai-image templates/）。",
+      "version": "1.4.0",
       "author": {
         "name": "LiuZiJiao"
       },

@@ -33,13 +33,13 @@
     </text>
 
     <!-- Footer line -->
-    <line x1="0" y1="682" x2="1280" y2="682" stroke="#FFFFFF" stroke-width="1" stroke-opacity="0.1"/>
+    <line x1="0" y1="682" x2="1280" y2="682" stroke="#FFFFFF" stroke-width="1" stroke-opacity="0.1" data-role="footer-rule"/>
 
     <!-- Footer -->
-    <text x="60" y="706" font-family="Aptos, sans-serif" font-size="12" fill="#FFFFFF" fill-opacity="0.4" letter-spacing="1">
+    <text x="60" y="706" font-family="Aptos, sans-serif" font-size="12" fill="#FFFFFF" fill-opacity="0.4" letter-spacing="1" data-slot="footer">
         Alauda
     </text>
-    <text x="1220" y="706" text-anchor="end" font-family="Aptos, sans-serif" font-size="12" fill="#FFFFFF" fill-opacity="0.4">
+    <text x="1220" y="706" text-anchor="end" font-family="Aptos, sans-serif" font-size="12" fill="#FFFFFF" fill-opacity="0.4" data-slot="footer">
         {{PAGE_NUM}}
     </text>
 
