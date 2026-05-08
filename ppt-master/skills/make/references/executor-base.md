@@ -248,6 +248,20 @@ specific than generic layout instincts. Examples:
 - Do not render eval/internal metadata such as `mapping_table`, `dense_technical`, or `样张 P05` on a customer-facing slide canvas.
 - After rendering dense technical pages, inspect for text overlap, clipping, icon/text collisions, arrows covering labels, connector arrows sharing a text lane, connector arrows intruding into card/container borders, semantic parent overflow, and shape-label text not centered in its primitive before proceeding to export.
 
+**Component placement grid discipline**:
+
+- Before placing any semantic component (content-card, process-step, metric-card, bridge, mapping-row, etc.), calculate its bounding box: `{x, y, width, height}`.
+- Maintain a running **placement ledger** of all component bounding boxes placed on the current page. Before placing each new component, verify it does not intersect any existing entry in the ledger:
+  - Horizontal clearance: components sharing vertical overlap must have ≥12px horizontal gap between their right edge and the next component's left edge.
+  - Vertical clearance: components sharing horizontal overlap must have ≥12px vertical gap between the upper component's bottom edge and the lower component's top edge.
+  - If the new component would violate clearance, adjust its position before writing SVG. Do NOT overlap and expect post-processing to fix it.
+- Text must be inset ≥8px from each edge of its containing component rect. If text would exceed the available width after inset, shorten the text and put the remainder in speaker notes — do NOT shrink font below the typography ramp or let text touch/exceed the rect boundary.
+- For table-like layouts: ensure each row rect has a unique y-range that does not overlap with adjacent rows. Row height must accommodate all text at the declared font size plus ≥6px top and bottom padding.
+- For card grids: calculate total height of all cards + inter-card gaps (≥12px each) before placing the first card. If total exceeds the available content area height (viewBox height minus header/footer), reduce card count or card height — do NOT compress gaps below 12px.
+- **Component rect must fit its content**: A colored block's height is the content height + padding, not an arbitrary value. After placing all text inside a card, set the card rect's bottom to `last_text_baseline + font_size + padding` (typically 8–12px). Excess empty space below text in a card is a layout defect — the card looks broken in PPTX because it visually "leaks" past its content. Never place a card rect and then fill it top-down hoping the height is "close enough."
+- **Footer zone is reserved (y ≥ 682 on 720px canvas)**: The area below the footer rule (y=682 on PPT 16:9) is exclusively for the brand mark and page number — both annotated `data-slot="footer"`. No content component (card, strip, banner, table, chart frame) may extend into or past this zone. When calculating available content height, subtract the footer zone: effective content bottom = 670 (12px clearance above the footer rule). If content would encroach on the footer zone, reduce component count, card height, or font size — do NOT push into the footer.
+- **viewBox is a hard boundary, not a clip region**: SVG viewBox clips overflow in browsers, but PPTX has no equivalent — any shape extending past the viewBox becomes a visible element protruding beyond the slide boundary. ALL shapes (including decorative background circles/ellipses, tinted overlays, and subtle gradient elements) must fit entirely within `0 0 <width> <height>`. Do not place circles at `cx=1350` with `r=280` hoping the viewBox will hide the overflow — it will not survive PPTX conversion. Decorative edge effects must be achieved with shapes that terminate at or before the canvas boundary.
+
 **Human-quality sample discipline — `quality_samples` section**:
 
 If `spec_lock.md` includes `quality_samples`, treat those pages as the first

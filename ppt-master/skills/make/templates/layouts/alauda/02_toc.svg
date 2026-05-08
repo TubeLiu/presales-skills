@@ -47,6 +47,6 @@
     <text x="660" y="558" font-family="Aptos, &quot;PingFang SC&quot;, sans-serif" font-size="14" fill="#94A3B8">{{TOC_ITEM_4_DESC}}</text>
 
     <!-- Footer -->
-    <line x1="0" y1="682" x2="1280" y2="682" stroke="#E2E8F0" stroke-width="1"/>
-    <text x="60" y="706" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8" letter-spacing="1">Alauda</text>
+    <line x1="0" y1="682" x2="1280" y2="682" stroke="#E2E8F0" stroke-width="1" data-role="footer-rule"/>
+    <text x="60" y="706" font-family="Aptos, sans-serif" font-size="12" fill="#94A3B8" letter-spacing="1" data-slot="footer">Alauda</text>
 </svg>

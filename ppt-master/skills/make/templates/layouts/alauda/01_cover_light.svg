@@ -32,7 +32,7 @@
     </text>
 
     <!-- Footer -->
-    <text x="62" y="706" font-family="Aptos, sans-serif" font-size="12" fill="#FFFFFF" fill-opacity="0.5" letter-spacing="1">
+    <text x="62" y="706" font-family="Aptos, sans-serif" font-size="12" fill="#FFFFFF" fill-opacity="0.5" letter-spacing="1" data-slot="footer">
         Alauda
     </text>
 </svg>

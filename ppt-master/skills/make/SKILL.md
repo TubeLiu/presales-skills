@@ -388,6 +388,7 @@ Read references/executor-consultant-top.md # Top consulting style (MBB level)
 ```bash
 python3 $SKILL_DIR/scripts/svg_quality_checker.py <project_path>
 ```
+- **Auto-repair pipeline**: `finalize_svg.py` Step 1 (normalize-layout) automatically resolves component overlaps, text boundary violations, and sibling spacing issues. However, severe structural problems (e.g., 5 cards stacked where only 3 fit) cannot be auto-repaired — the Executor must prevent these upstream by following the component placement grid discipline in `executor-base.md`.
 - Any `error` (banned SVG features, viewBox mismatch, spec_lock drift, etc.) MUST be fixed on the offending page before proceeding — go back to Visual Construction, re-generate that page, re-run the check.
 - `warning` entries (e.g., low-resolution image, non-PPT-safe font tail, possible text overlap, off-contract icon drift) should be reviewed and fixed when straightforward; for branded templates, text overlap / clipping / icon drift warnings are release blockers unless proven false positive.
 - Running the checker against `svg_output/` is required — running it only after `finalize_svg.py` is too late (finalize rewrites SVG and some violations get masked).

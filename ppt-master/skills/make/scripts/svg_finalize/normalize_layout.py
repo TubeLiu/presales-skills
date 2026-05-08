@@ -32,8 +32,11 @@ MIN_SLOT_FONT_SIZE = 8.5
 SLOT_FIT_BUFFER = 0.75
 COMPONENT_CONTENT_PADDING = 8.0
 COMPONENT_SPILL_TOLERANCE = 48.0
+FOOTER_ZONE_MARGIN = 40.0
 SEMANTIC_SIBLING_MIN_GAP = 12.0
 SEMANTIC_SIBLING_MIN_AXIS_OVERLAP = 0.22
+COLLISION_MIN_OVERLAP_AREA = 32.0
+COLLISION_RESOLVE_MAX_ITERATIONS = 3
 COMPONENT_EMPHASIS_MIN_FONT_SIZE = 24.0
 COMPONENT_EMPHASIS_TOP_BAND_RATIO = 0.42
 COMPONENT_EMPHASIS_MIN_WIDTH_RATIO = 0.32
@@ -41,7 +44,12 @@ COMPONENT_EMPHASIS_MIN_WIDTH_RATIO = 0.32
 
 def normalize_colored_block_text_in_file(svg_file: Path, verbose: bool = False) -> int:
     content = svg_file.read_text(encoding="utf-8")
+    # Strip decorative overflow BEFORE normalize — otherwise normalize
+    # grows content cards to contain background circles/ellipses that
+    # extend past the viewBox.
+    content, clip_count = clip_viewbox_overflow(content)
     processed, count = normalize_colored_block_text(content)
+    count += clip_count
     if count:
         svg_file.write_text(processed, encoding="utf-8")
         if verbose:
@@ -73,6 +81,15 @@ def normalize_colored_block_text(content: str) -> tuple[str, int]:
     if spacing_replacements:
         content = _apply_replacements_and_insertions(content, spacing_replacements, {})
         change_count += len(spacing_replacements)
+
+    # Resolve any remaining component-on-component overlaps created by
+    # earlier passes (e.g. _normalize_component_content_bounds growing a
+    # component into a neighbour).
+    collision_replacements: Dict[int, str] = {}
+    _resolve_component_collisions(build_layout_semantics(content), collision_replacements)
+    if collision_replacements:
+        content = _apply_replacements_and_insertions(content, collision_replacements, {})
+        change_count += len(collision_replacements)
 
     return content, change_count
 
@@ -262,7 +279,7 @@ def _is_semantic_layout_box(shape: ShapeNode) -> bool:
 
 
 def _is_page_or_decorative(shape: ShapeNode) -> bool:
-    return shape.role in {
+    if shape.role in {
         "page-background",
         "background",
         "geometric-accent",
@@ -270,10 +287,25 @@ def _is_page_or_decorative(shape: ShapeNode) -> bool:
         "decoration",
         "accent-background",
         "accent-bar",
-    }
+    }:
+        return True
+    if shape.fill_opacity < 0.1:
+        return True
+    if shape.kind == "rect" and shape.box.width >= 1000 and shape.box.height >= 600:
+        return True
+    return False
+
+
+def _canvas_height(shapes: List[ShapeNode]) -> float:
+    for shape in shapes:
+        if shape.kind == "rect" and shape.box.width >= 1000 and shape.box.height >= 600:
+            return shape.box.y2
+    return 0.0
 
 
 def _normalize_component_content_bounds(semantics, replacements: Dict[int, str]) -> None:
+    canvas_h = _canvas_height(semantics.shapes)
+    footer_y = canvas_h - FOOTER_ZONE_MARGIN if canvas_h > 0 else 0.0
     for shape in semantics.shapes:
         if shape.kind != "rect" or not _is_component_parent(shape):
             continue
@@ -289,6 +321,8 @@ def _normalize_component_content_bounds(semantics, replacements: Dict[int, str])
             if _box_belongs_to_component(child.box, shape.box):
                 needed_y2 = max(needed_y2, child.box.y2 + COMPONENT_CONTENT_PADDING)
         for text in semantics.texts:
+            if footer_y > 0 and text.y >= footer_y:
+                continue
             text_parent = _nearest_spill_text_component_parent(text, semantics.shapes)
             if text_parent is not shape:
                 continue
@@ -411,6 +445,120 @@ def _normalize_semantic_sibling_spacing(semantics, replacements: Dict[int, str])
             )
 
 
+def _collision_overlap_area(a: Box, b: Box) -> float:
+    """Return the intersection area of two boxes (0.0 if no overlap)."""
+    inter_w = min(a.x2, b.x2) - max(a.x1, b.x1)
+    inter_h = min(a.y2, b.y2) - max(a.y1, b.y1)
+    if inter_w <= 0 or inter_h <= 0:
+        return 0.0
+    return inter_w * inter_h
+
+
+def _resolve_component_collisions(semantics, replacements: Dict[int, str]) -> None:
+    """Push overlapping sibling rect components apart.
+
+    ``_normalize_component_content_bounds`` may grow a component to contain
+    its children.  ``_normalize_semantic_sibling_spacing`` handles minor gap
+    deficiency but not true rect-on-rect overlaps.  This pass detects actual
+    area intersections between semantic layout siblings and resolves them by
+    shifting the lower component (and its entire child tree) downward.
+    """
+    shapes = [
+        shape
+        for shape in semantics.shapes
+        if shape.kind == "rect"
+        and _is_semantic_layout_box(shape)
+        and not _is_page_or_decorative(shape)
+    ]
+    if len(shapes) < 2:
+        return
+
+    # Group siblings by nearest containing semantic parent, same strategy as
+    # _normalize_semantic_sibling_spacing.
+    groups: dict[str, list[dict]] = {}
+    for shape in shapes:
+        parent = _nearest_containing_semantic_parent(shape, shapes)
+        parent_id = parent.shape_id if parent else "__root__"
+        groups.setdefault(parent_id, []).append({"shape": shape, "box": shape.box})
+
+    for parent_id, siblings in groups.items():
+        if len(siblings) < 2:
+            continue
+        parent = None
+        if parent_id != "__root__":
+            parent = next((s for s in shapes if s.shape_id == parent_id), None)
+
+        # Sort by top edge so we always shift the lower sibling.
+        siblings.sort(key=lambda item: (item["box"].y1, item["box"].x1, item["box"].area))
+
+        for _iteration in range(COLLISION_RESOLVE_MAX_ITERATIONS):
+            any_shifted = False
+            for index in range(1, len(siblings)):
+                item = siblings[index]
+                shift = 0.0
+                for previous in siblings[:index]:
+                    overlap = _collision_overlap_area(previous["box"], item["box"])
+                    if overlap < COLLISION_MIN_OVERLAP_AREA:
+                        continue
+                    # Only resolve if they share meaningful horizontal space
+                    if _horizontal_overlap_ratio(previous["box"], item["box"]) < SEMANTIC_SIBLING_MIN_AXIS_OVERLAP:
+                        continue
+                    # The amount the lower box must move down: clear the upper
+                    # box's bottom edge plus the minimum gap.
+                    needed = previous["box"].y2 + SEMANTIC_SIBLING_MIN_GAP - item["box"].y1
+                    if needed > shift:
+                        shift = needed
+
+                if shift <= 0:
+                    continue
+
+                shape = item["shape"]
+
+                # Respect parent bounds: if the shift would push the
+                # component below the parent's bottom, try compressing the
+                # overlapping upper sibling's height first.
+                if parent and item["box"].y2 + shift > parent.box.y2 - SLOT_PARENT_INSET:
+                    overflow = (item["box"].y2 + shift) - (parent.box.y2 - SLOT_PARENT_INSET)
+                    # Try to recover space by shrinking the upper sibling
+                    # that caused the collision.
+                    for previous in siblings[:index]:
+                        if _collision_overlap_area(previous["box"], item["box"]) < COLLISION_MIN_OVERLAP_AREA:
+                            continue
+                        shrink = min(overflow, previous["box"].height * 0.3)
+                        if shrink > 0.5:
+                            prev_shape = previous["shape"]
+                            new_prev_box = Box(
+                                previous["box"].x1,
+                                previous["box"].y1,
+                                previous["box"].x2,
+                                previous["box"].y2 - shrink,
+                            )
+                            replacements[prev_shape.start] = _shape_tag_with_box(prev_shape, new_prev_box)
+                            previous["box"] = new_prev_box
+                            shift = max(0.0, shift - shrink)
+                            overflow -= shrink
+                        if overflow <= 0:
+                            break
+                    if shift <= 0:
+                        continue
+                    # After shrinking, if shift still overflows, skip to
+                    # avoid pushing content outside the parent.
+                    if parent and item["box"].y2 + shift > parent.box.y2 - SLOT_PARENT_INSET:
+                        continue
+
+                _shift_semantic_shape_tree(shape, shift, semantics, replacements)
+                item["box"] = Box(
+                    item["box"].x1,
+                    item["box"].y1 + shift,
+                    item["box"].x2,
+                    item["box"].y2 + shift,
+                )
+                any_shifted = True
+
+            if not any_shifted:
+                break
+
+
 def _shift_semantic_shape_tree(
     shape: ShapeNode,
     dy: float,
@@ -454,6 +602,29 @@ def _nearest_text_component_parent(text: TextNode, shapes: List[ShapeNode]) -> S
     return min(candidates, key=lambda shape: shape.box.area)
 
 
+def _text_is_sheltered(text: TextNode, exclude: ShapeNode, shapes: List[ShapeNode]) -> bool:
+    """True when *text* sits inside a non-component, non-decorative shape.
+
+    This prevents a remote component from adopting a text that visually
+    belongs to a closer sibling shape (e.g. a risk-strip, a banner, or any
+    other filled rect that is not itself a component-parent).  Shapes that
+    ARE component-parents are excluded — the normal smallest-area candidate
+    selection already handles nested components correctly.
+    """
+    for shape in shapes:
+        if shape is exclude:
+            continue
+        if _is_page_or_decorative(shape):
+            continue
+        if _is_component_parent(shape):
+            continue
+        if shape.box.area < 200:
+            continue
+        if shape.box.contains_point(text.x, text.y, pad=1):
+            return True
+    return False
+
+
 def _nearest_spill_text_component_parent(text: TextNode, shapes: List[ShapeNode]) -> ShapeNode | None:
     text_box = _text_box(text)
     candidates = [
@@ -465,13 +636,16 @@ def _nearest_spill_text_component_parent(text: TextNode, shapes: List[ShapeNode]
     ]
     if not candidates:
         return None
-    return min(
+    best = min(
         candidates,
         key=lambda shape: (
             shape.box.area,
             0 if shape.box.contains_point(text.x, text.y, pad=1) else 1,
         ),
     )
+    if not best.box.contains_point(text.x, text.y, pad=1) and _text_is_sheltered(text, best, shapes):
+        return None
+    return best
 
 
 def _nearest_spill_shape_component_parent(child: ShapeNode, shapes: List[ShapeNode]) -> ShapeNode | None:
@@ -774,3 +948,133 @@ def _set_attr(attrs: str, name: str, value: str) -> str:
 
 def _format_number(value: float) -> str:
     return f"{value:.2f}".rstrip("0").rstrip(".")
+
+
+# ---------------------------------------------------------------------------
+# viewBox overflow clipping
+# ---------------------------------------------------------------------------
+# SVG viewBox clips shapes in browsers, but PPTX has no such clipping.
+# Shapes that extend past the viewBox become visible in PowerPoint as shapes
+# protruding beyond the slide boundary.  This pass removes or trims them.
+
+_VIEWBOX_RE = re.compile(r'viewBox\s*=\s*"([^"]+)"')
+_CIRCLE_RE = re.compile(r'<circle\b([^>]*)/?>')
+_ELLIPSE_RE = re.compile(r'<ellipse\b([^>]*)/?>')
+_RECT_TAG_RE = re.compile(r'<rect\b([^>]*)/?>')
+
+VIEWBOX_OVERFLOW_TOLERANCE = 2.0
+
+
+def _parse_viewbox(content: str) -> tuple[float, float, float, float] | None:
+    m = _VIEWBOX_RE.search(content)
+    if not m:
+        return None
+    parts = m.group(1).split()
+    if len(parts) != 4:
+        return None
+    try:
+        return tuple(float(p) for p in parts)  # type: ignore[return-value]
+    except ValueError:
+        return None
+
+
+def _attr_float(attrs: str, name: str) -> float | None:
+    m = re.search(rf'\b{name}\s*=\s*"([^"]*)"', attrs)
+    if not m:
+        return None
+    try:
+        return float(m.group(1))
+    except ValueError:
+        return None
+
+
+def _shape_is_decorative_bg(attrs: str) -> bool:
+    """True if the shape is a low-opacity background decoration."""
+    opacity = _attr_float(attrs, "fill-opacity")
+    if opacity is not None and opacity < 0.1:
+        return True
+    role_m = re.search(r'data-role\s*=\s*"([^"]*)"', attrs)
+    if role_m and role_m.group(1) in ("bg-decoration", "background"):
+        return True
+    return False
+
+
+def clip_viewbox_overflow(content: str) -> tuple[str, int]:
+    """Remove shapes that extend significantly past the SVG viewBox.
+
+    Only removes shapes that are both (a) clearly outside the canvas AND
+    (b) decorative / low-opacity.  Content shapes that overflow are left
+    for the quality checker to flag — auto-removing content would be lossy.
+    """
+    vb = _parse_viewbox(content)
+    if not vb:
+        return content, 0
+
+    vb_x, vb_y, vb_w, vb_h = vb
+    removed = 0
+
+    def _exceeds_viewbox(cx: float, cy: float, rx: float, ry: float) -> bool:
+        return (
+            cx - rx < vb_x - VIEWBOX_OVERFLOW_TOLERANCE
+            or cy - ry < vb_y - VIEWBOX_OVERFLOW_TOLERANCE
+            or cx + rx > vb_x + vb_w + VIEWBOX_OVERFLOW_TOLERANCE
+            or cy + ry > vb_y + vb_h + VIEWBOX_OVERFLOW_TOLERANCE
+        )
+
+    # Remove circles that overflow and are decorative
+    def _filter_circle(m: re.Match) -> str:
+        nonlocal removed
+        attrs = m.group(1)
+        if not _shape_is_decorative_bg(attrs):
+            return m.group(0)
+        cx = _attr_float(attrs, "cx") or 0
+        cy = _attr_float(attrs, "cy") or 0
+        r = _attr_float(attrs, "r") or 0
+        if _exceeds_viewbox(cx, cy, r, r):
+            removed += 1
+            return ""
+        return m.group(0)
+
+    content = _CIRCLE_RE.sub(_filter_circle, content)
+
+    # Remove ellipses that overflow and are decorative
+    def _filter_ellipse(m: re.Match) -> str:
+        nonlocal removed
+        attrs = m.group(1)
+        if not _shape_is_decorative_bg(attrs):
+            return m.group(0)
+        cx = _attr_float(attrs, "cx") or 0
+        cy = _attr_float(attrs, "cy") or 0
+        rx = _attr_float(attrs, "rx") or 0
+        ry = _attr_float(attrs, "ry") or 0
+        if _exceeds_viewbox(cx, cy, rx, ry):
+            removed += 1
+            return ""
+        return m.group(0)
+
+    content = _ELLIPSE_RE.sub(_filter_ellipse, content)
+
+    # Remove rects that overflow and are decorative
+    def _filter_rect(m: re.Match) -> str:
+        nonlocal removed
+        attrs = m.group(1)
+        if not _shape_is_decorative_bg(attrs):
+            return m.group(0)
+        x = _attr_float(attrs, "x") or 0
+        y = _attr_float(attrs, "y") or 0
+        w = _attr_float(attrs, "width") or 0
+        h = _attr_float(attrs, "height") or 0
+        if (x + w > vb_x + vb_w + VIEWBOX_OVERFLOW_TOLERANCE
+                or y + h > vb_y + vb_h + VIEWBOX_OVERFLOW_TOLERANCE
+                or x < vb_x - VIEWBOX_OVERFLOW_TOLERANCE
+                or y < vb_y - VIEWBOX_OVERFLOW_TOLERANCE):
+            removed += 1
+            return ""
+        return m.group(0)
+
+    content = _RECT_TAG_RE.sub(_filter_rect, content)
+
+    if removed:
+        content = re.sub(r'\n\s*\n', '\n', content)
+
+    return content, removed

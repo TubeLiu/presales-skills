@@ -26,12 +26,12 @@
   <rect x="0" y="680" width="4" height="40" fill="#C00000" />
 
   <!-- Section Name -->
-  <text x="60" y="706" font-family="'Microsoft YaHei', Arial, sans-serif" font-size="14" fill="#666666">{{SECTION_NAME}}</text>
+  <text x="60" y="706" font-family="'Microsoft YaHei', Arial, sans-serif" font-size="14" fill="#666666" data-slot="footer">{{SECTION_NAME}}</text>
 
   <!-- Source -->
-  <text x="640" y="706" font-family="'Microsoft YaHei', Arial, sans-serif" font-size="12" fill="#999999" text-anchor="middle">{{SOURCE}}</text>
+  <text x="640" y="706" font-family="'Microsoft YaHei', Arial, sans-serif" font-size="12" fill="#999999" text-anchor="middle" data-slot="footer">{{SOURCE}}</text>
 
   <!-- Page Number -->
   <rect x="1210" y="688" width="30" height="24" fill="#C00000" />
-  <text x="1225" y="706" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF">{{PAGE_NUM}}</text>
+  <text x="1225" y="706" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#FFFFFF" data-slot="footer">{{PAGE_NUM}}</text>
 </svg>
