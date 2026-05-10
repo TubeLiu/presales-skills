@@ -6,6 +6,32 @@
 >
 > After SVG generation begins, this file is the canonical source for color / font / icon / image values. Modifications should go through `scripts/update_spec.py` so both this file and the generated SVGs stay in sync.
 
+## template_lock
+- template: alauda
+- source_dir: templates
+- routes_required: true
+- variant_files_present: 31
+
+> **Mandatory section.** Declares the layout-template commitment for this deck so downstream Executor cannot silently degrade a branded template into the generic `03_content.svg` fallback. `scripts/spec_lock_validator.py` reads this section before Step 5 / Step 6 / Step 7 enter and blocks the pipeline if the contract is violated.
+>
+> **Field semantics**:
+> - `template` — Directory name copied by Step 3 (e.g. `alauda`, `mckinsey`, `academic_defense`). **Empty string `""`** is the only legal value for free design (no template package copied).
+> - `source_dir` — Path inside the project where the template package was copied (default `templates`). Validator looks here for `semantic_routes.json` and `*.svg` variants.
+> - `routes_required` — `true` when the template package ships `semantic_routes.json`; the validator will require `## semantic_routes` to be filled and reference real variant files. `false` only for legacy minimal templates without a route catalog, or for free design.
+> - `variant_files_present` — Strategist writes the count of `*.svg` files under `source_dir` at lock time. Sanity field; the validator does not parse it but it surfaces "the template was actually copied" at a glance during human review.
+>
+> **Free design escape hatch (must be explicit)**:
+>
+> ```
+> ## template_lock
+> - template: ""
+> - source_dir: templates
+> - routes_required: false
+> - variant_files_present: 0
+> ```
+>
+> Any other combination (e.g. `template: alauda` + `routes_required: false`) is treated as a contradiction and rejected. This wires the CLAUDE.md §6 anti-hardcoding rule "例外要显式建模" into spec_lock.
+
 ## canvas
 - viewBox: 0 0 1280 720
 - format: PPT 16:9
@@ -117,9 +143,12 @@
 - P03: architecture_stack | 03_content_architecture.svg | four_layer_stack_with_downward_dependency | layer_title<=12; layer_desc<=38; notes_overflow=yes
 - P04: migration_bridge | 03_content_migration.svg | before_bridge_after | panel_title<=12; panel_desc<=3 lines; notes_overflow=yes
 
-> One entry per non-structural content page **when the project uses a template
-> package with a semantic route catalog** (for example
-> `templates/semantic_routes.json` from the Alauda layout). Key format:
+> One entry per non-structural content page (cover/toc/chapter/ending excluded).
+> **Mandatory whenever `template_lock.routes_required=true`** — i.e. the project
+> has copied a template package that ships `templates/semantic_routes.json` (e.g.
+> the Alauda layout). `scripts/spec_lock_validator.py` cross-checks every entry
+> against the catalog and against `*.svg` files in `source_dir`; missing entries
+> or unknown variants block Step 5 / Step 6 / Step 7. Key format:
 > `P<NN>` matching `§IX Content Outline`. Value format is intentionally a
 > compact pipe-delimited string:
 >
@@ -151,7 +180,9 @@
 - P04: balanced_technical | before_after_block,directional_arrow,step_circle_label,connector_line | route,arrows-repeat,cloud-arrow-up,circle-checkmark,shield-check
 
 > One entry per template package with a visual execution contract
-> (`templates/visual_system.json`). Global lines declare the component library,
+> (`templates/visual_system.json`). **Mandatory whenever the package ships
+> `visual_system.json`** — i.e. paired with `template_lock.routes_required=true`.
+> Global lines declare the component library,
 > icon library/inventory, density profile constants, and connector policy.
 > Per-page lines mirror the page's **Semantic Route** block in
 > `design_spec.md §IX` using the compact format:

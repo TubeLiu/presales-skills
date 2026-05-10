@@ -159,9 +159,16 @@ Apply it as follows:
 | `payload_budget` | Treat it as the visible-text budget. Summarize to fit the slot; put extra explanation in notes rather than shrinking font size or overflowing containers. |
 
 If the project has `templates/semantic_routes.json` but `spec_lock.md` lacks a
-`semantic_routes` section, emit the literal line
-`warning: spec_lock.md missing semantic_routes — using generic content template routing`
-once before the first content page, then proceed with the pre-route behavior.
+`semantic_routes` section (or `template_lock.routes_required=true` is not met
+by the spec_lock state), **STOP**. Do NOT silently fall back to the generic
+`03_content.svg` — that is the exact failure mode that makes branded templates
+degrade to "color palette only" output. The Step 6 GATE has already run
+`scripts/spec_lock_validator.py` and would have blocked entry; if you reach
+this point without those entries, treat it as a contract corruption: surface
+the missing routes to the user, ask Strategist to redo `spec_lock.md ##
+semantic_routes` for every non-structural page (using `custom_content |
+03_content.svg | alauda_frame_custom_content | notes_overflow=yes` only when
+no specific route fits), then re-enter Step 6.
 
 **Per-page visual system — `visual_system` section**:
 
@@ -179,9 +186,10 @@ Apply it as follows:
 | `icons` | Use only icons listed here and in `icons.inventory`; render with `<use data-icon="chunk/name">` placeholders so `finalize_svg.py` embeds them. |
 
 If the project has `templates/visual_system.json` but `spec_lock.md` lacks a
-`visual_system` section, emit the literal line
-`warning: spec_lock.md missing visual_system — using template routes without density/icon contract`
-once before the first content page, then proceed with semantic routing only.
+`visual_system` section, **STOP** for the same reason given above for missing
+`semantic_routes`: the density / component / icon contract has been silently
+dropped. Surface to the user, have Strategist re-mirror `visual_system.json`
+into `spec_lock.md ## visual_system` per page, then re-enter Step 6.
 
 For any route using `connector_line` or `directional_arrow`, also apply
 `templates/visual_system.json.connectorPolicy`: horizontal arrows must travel

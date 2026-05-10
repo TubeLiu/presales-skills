@@ -8,7 +8,7 @@ As a top-tier AI presentation strategist, receive source documents, perform cont
 
 | Previous Step | Current | Next Step |
 |--------------|---------|-----------|
-| Project creation + Template option confirmed | **Strategist**: Eight Confirmations + Design Spec | Image_Generator or Executor |
+| Project creation + Template option confirmed | **Strategist**: Nine Confirmations + Design Spec | Image_Generator or Executor |
 
 ---
 
@@ -40,7 +40,7 @@ As a top-tier AI presentation strategist, receive source documents, perform cont
 
 ---
 
-## 1. Eight Confirmations Process
+## 1. Nine Confirmations Process
 
 🚧 **GATE — Mandatory read before proceeding**: Before starting analysis or writing any part of the Design Specification, you **MUST** `read_file` the reference template:
 ```
@@ -48,9 +48,9 @@ read_file templates/design_spec_reference.md
 ```
 The design_spec.md output **MUST** follow this template's structure exactly (Sections I through XI). After writing, perform a section-by-section self-check: I Project Information ✓ → II Canvas Spec ✓ → III Visual Theme ✓ → IV Typography ✓ → V Layout Principles ✓ → VI Icon Usage ✓ → VII Visualization Reference List ✓ → VIII Image Resource List ✓ → IX Content Outline ✓ → X Speaker Notes Requirements ✓ → XI Technical Constraints Reminder ✓. Any missing section must be completed before outputting the file.
 
-⛔ **BLOCKING**: After completing the read above, provide professional recommendations for the following eight items, then **present them as a bundled package to the user and wait for explicit confirmation or modifications**.
+⛔ **BLOCKING**: After completing the read above, provide professional recommendations for the following nine items (the 4th — **Template + Layout Grammar** — was added in v1.5.0 to stop branded templates from silently degrading to color-only output), then **present them as a bundled package to the user and wait for explicit confirmation or modifications**.
 
-> **Execution discipline**: This is the last BLOCKING checkpoint in the pipeline (besides template selection). Once the user confirms, the AI must automatically complete the Design Specification & Content Outline and seamlessly proceed to subsequent image generation (if applicable), SVG generation, and post-processing — no additional questions or pauses in between.
+> **Execution discipline**: This is the last BLOCKING checkpoint pair in the pipeline (Step 4 nine confirmations + Step 4.5 design review). Once the user confirms each, Strategist MUST persist the result to `<project_path>/.gates/<gate>.json`. Downstream Steps 5/6/7 run `gate_check.py` which reads those files; AI memory of "user confirmed" does not satisfy the gate. After both gates are passed, the AI completes Design Spec → image generation (if applicable) → SVG generation → post-processing without further questions.
 
 ### a. Canvas Format Confirmation
 
@@ -64,7 +64,36 @@ Provide specific page count recommendation based on source document content volu
 
 Confirm target audience, usage occasion, and core message; provide initial assessment based on document nature.
 
-### d. Style Objective Confirmation
+### d. Template + Layout Grammar Confirmation (NEW in v1.5.0)
+
+> ⚠️ This is the confirmation that prevents Alauda (and any other branded template) from silently degrading into "color palette only" output. Without it, even decks that nominally use Alauda end up with generic `03_content.svg` cards everywhere.
+
+State which template package is in use (the one Step 3 actually copied into `<project>/templates/`). For branded templates, **also state the routing commitment**: non-structural pages will be routed via `templates/semantic_routes.json` to specific variants (e.g. `03_content_panorama.svg` for product family pages, `03_content_architecture.svg` for layered tech stacks, `03_content_migration.svg` for current→target transitions, `03_content_table.svg` for object mappings, etc.) instead of the generic `03_content.svg` fallback.
+
+Recommended phrasing template:
+
+```markdown
+**Template + Layout Grammar**: alauda（来自 Step 3 默认 / config override / 用户明说）
+
+本 deck 的非结构页将通过 `templates/semantic_routes.json` 映射到 Alauda 专用版式：
+- platform_panorama → 03_content_panorama.svg（产品族 / 能力地图）
+- architecture_stack → 03_content_architecture.svg（分层架构 / 技术栈）
+- migration_bridge → 03_content_migration.svg（现状→目标迁移）
+- mapping_table → 03_content_table.svg（对象映射 / 字段对照）
+- 其它语义不匹配的页面退回 custom_content + 03_content.svg
+
+这样能保留 Alauda 的版面语法（domain-row / four-layer-stack / before-bridge-after）, 而不仅是套个色板。
+```
+
+For free design (no template package copied — `template_lock.template == ""`), state that explicitly:
+
+```markdown
+**Template + Layout Grammar**: free design（无 chrome 模板，AI 自由布局）— 仅在 brand-neutral 输出 / 内部草图时使用。
+```
+
+> **Anti-degradation rule**: This item must be presented even when the user said nothing about templates. The default Alauda is still a default; the user must see it in the bundle to confirm it. Silence ≠ consent. The downstream `spec_lock.md ## template_lock` and `scripts/spec_lock_validator.py` enforce this from the machine side.
+
+### e. Style Objective Confirmation
 
 | Style | Core Focus | Target Audience | One-line Description |
 |-------|-----------|----------------|---------------------|
@@ -86,7 +115,7 @@ Audience?
   └── Executives / board / investors → C) Top Consulting
 ```
 
-### e. Color Scheme Recommendation
+### f. Color Scheme Recommendation
 
 Proactively provide a color scheme (HEX values) based on content characteristics and industry.
 
@@ -101,7 +130,7 @@ Proactively provide a color scheme (HEX values) based on content characteristics
 
 **Color rules**: 60-30-10 rule (primary 60%, secondary 30%, accent 10%); text contrast ratio >= 4.5:1; no more than 4 colors per page.
 
-### f. Icon Usage Confirmation
+### g. Icon Usage Confirmation
 
 | Option | Approach | Suitable Scenarios |
 |--------|----------|-------------------|
@@ -132,7 +161,7 @@ Built-in library contains 6700+ icons across three libraries:
 >
 > **Do NOT preload any index file** — use `ls | grep` to search on demand with zero token cost.
 
-### g. Typography Plan Confirmation (Font + Size)
+### h. Typography Plan Confirmation (Font + Size)
 
 #### Font Combinations
 
@@ -206,7 +235,7 @@ Selection principle: Baseline choice is driven by **content density**, not desig
 >
 > Executor may pick any px value within a role's band (e.g., 40px hero number, 13px chart annotation, 72px cover headline) without having to pre-declare every intermediate value in `spec_lock.md`. Values outside **every** band remain forbidden — those need the lock extended first.
 
-### h. Image Usage Confirmation
+### i. Image Usage Confirmation
 
 | Option | Approach | Suitable Scenarios |
 |--------|----------|-------------------|
@@ -299,13 +328,20 @@ When content outline pages involve **data visualization or infographic-style str
 > - Prefer specificity: if `vertical_list` fits better than generic `numbered_steps`, choose the more specific template
 > - When no built-in template fits, note "custom layout" instead of forcing a poor match
 
-### Branded Template Semantic Routes (Non-blocking — mandatory when available)
+### Branded Template Semantic Routes (MANDATORY when template package is copied)
 
 When the project uses a copied layout template package and that package
 contains `templates/semantic_routes.json`, Strategist MUST read it before
 writing §IX Content Outline. This is especially important for Alauda decks,
 where the difference between a human-feeling technical sales deck and an
 AI-looking template fill is often decided before SVG generation.
+
+> **Hard contract**: `spec_lock.md ## template_lock.routes_required=true` will
+> be set, and `scripts/spec_lock_validator.py` (run by Step 5 / Step 6 / Step 7
+> GATE checks) will block downstream phases if any non-structural page lacks a
+> `## semantic_routes` entry. There is no soft-fallback path — the previous
+> "warning + proceed" behavior was the root cause of branded templates
+> degrading to color-only output.
 
 **Selection workflow**:
 1. Read `templates/semantic_routes.json` after the template is copied into the project.
@@ -327,10 +363,13 @@ AI-looking template fill is often decided before SVG generation.
 - Structural pages (`cover`, `toc`, `chapter`, `ending`) do not need semantic
   route entries unless the template package explicitly defines them.
 
-### Branded Template Visual System (Non-blocking — mandatory when available)
+### Branded Template Visual System (MANDATORY when template package is copied)
 
 When the same copied layout package contains `templates/visual_system.json`,
 Strategist MUST read it immediately after `templates/semantic_routes.json`.
+Same hard-contract rule as Semantic Routes above — `spec_lock_validator.py`
+treats a missing `## visual_system` section as a contract violation when the
+template package ships `visual_system.json`.
 This file is the template-level execution contract for component primitives,
 icon inventory, density profiles, and spacing. For Alauda decks, it is what
 turns a routed page into a brand-native technical diagram instead of a
@@ -569,12 +608,13 @@ The Strategist should make professional judgments on the template basis generate
 2. Generate complete spec from scratch based on analysis
 3. Save to: `projects/<project_name>.../design_spec.md`
 4. **Generate execution lock**: read `templates/spec_lock_reference.md` and produce `projects/<project_name>.../spec_lock.md` — a distilled, machine-readable short form of the color / typography / icon / image / **page_rhythm** / semantic route / visual system decisions above. This file is what the Executor re-reads before every page (see [executor-base.md](executor-base.md) §2.1). The values in `spec_lock.md` MUST exactly match the decisions recorded in `design_spec.md`; if they ever diverge, `spec_lock.md` wins and `design_spec.md` should be treated as historical narrative.
+   - **template_lock is mandatory (FIRST section)**: Always emit `## template_lock` with `template`, `source_dir`, `routes_required`, and `variant_files_present` fields. For branded templates copied by Step 3 (e.g. Alauda) set `template: <name>` + `routes_required: true`. For free design (no template package) set `template: ""` + `routes_required: false`. `scripts/spec_lock_validator.py` reads this section first; if it's missing, the entire pipeline blocks at the next GATE.
    - **page_rhythm is mandatory**: Based on the page list in §IX Content Outline, assign each page one of `anchor` / `dense` / `breathing` (see `spec_lock_reference.md` for the full vocabulary). This is what breaks the uniform "every page is a card grid" feel — without it the Executor defaults all pages to `dense`.
    - **Rhythm follows narrative, not quota**: `breathing` pages should appear at natural narrative pauses — chapter transitions, a single argument worth standalone emphasis (hero quote / big number / feature image), an SCQA "Question" bridge, or a deliberate stop after a chain of dense argumentation. If the content is genuinely a high-density data briefing or rigorous consulting analysis, the deck may legitimately be nearly all `dense` — **do NOT invent filler pages** ("Thank you", "Chapter divider with no content") to pad the rhythm, because filler is itself a hallmark AI-generated pattern. Validation test: every `breathing` page must answer "what independent thing is this page saying?" — if it can't, it shouldn't exist.
    - **design_diversity is mandatory**: Add `## design_diversity` with per-page visual archetypes. For mixed technical/business source material, use content semantics to vary archetypes across architecture stacks, process flows, matrices, code annotations, KPI dashboards, comparison bridges, and argument pages. Do not assign the same card-grid archetype to most pages just because it is visually safe.
    - **density_contract is mandatory for content-rich decks**: Add `## density_contract` with per-page minimums for visible claims, source objects, labels, evidence items, relationships, notes-only ratio, and target content fill. This prevents detailed source material from collapsing into sparse summary cards.
-   - **semantic_routes is mandatory when available**: If `templates/semantic_routes.json` exists, add `## semantic_routes` entries for all non-structural content pages. These entries must match each page's Semantic Route block in `design_spec.md §IX` and must name a concrete template variant or the catalog default route.
-   - **visual_system is mandatory when available**: If `templates/visual_system.json` exists, add `## visual_system` with the source, component library, icon library/inventory, default density settings, connector policy, and per-page route density/component/icon decisions. These entries must match each page's Semantic Route block in `design_spec.md §IX`.
+   - **semantic_routes is mandatory when `template_lock.routes_required=true`**: When the template package ships `templates/semantic_routes.json` (the default for Alauda and any branded layout), `## semantic_routes` entries are required for every non-structural content page. The validator blocks downstream phases if any non-structural page is missing a route. Use `custom_content | 03_content.svg | <grammar> | notes_overflow=yes` only when no specific catalog route fits.
+   - **visual_system is mandatory when the template ships `visual_system.json`**: Add `## visual_system` with the source, component library, icon library/inventory, default density settings, connector policy, and per-page route density/component/icon decisions. These entries must match each page's Semantic Route block in `design_spec.md §IX`.
    - **design_semantics is mandatory**: Add `## design_semantics` with global component→slot→text rules plus per-page component roles. This is how the Executor and `design_quality_checker.py` evaluate design quality without route-specific hardcoding.
    - **quality_samples is mandatory when available**: If `templates/human_quality_rubric.json` exists, add `## quality_samples` with rotating sample pages selected from different non-structural page intents. These are the first pages to inspect for human-made quality after generation.
 

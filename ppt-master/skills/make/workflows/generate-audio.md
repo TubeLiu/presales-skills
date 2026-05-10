@@ -4,11 +4,26 @@ description: Generate per-slide narration audio with AI-recommended voice select
 
 # Generate Audio Workflow
 
-> Standalone post-export step. Run when the user asks for "生成音频" / "录制旁白" / "narrated PPT" / "video export with voice", or proactively offer it after a deck is exported. Produces one audio file per slide via `edge-tts` by default, or a cloud TTS provider (`elevenlabs` / `minimax` / `qwen` / `cosyvoice`) when the user chooses high-quality narration or a cloned voice, then optionally re-exports the PPTX with the audio embedded and per-slide auto-advance timings.
+> Per-slide narration audio pipeline. **Default invocation path is now Step 7.3 of the main pipeline** — Step 4.5 ⑤ captures the user's audio_mode in `<project_path>/.gates/audio_choice.json`, and Step 7.3 reads that file to decide whether (and how) to invoke this workflow. The standalone path below is preserved for resume / post-hoc use.
+
+Produces one audio file per slide via `edge-tts` by default, or a cloud TTS provider (`elevenlabs` / `minimax` / `qwen` / `cosyvoice`) when the user chose high-quality narration or a cloned voice at Step 4.5 ⑤, then optionally re-exports the PPTX with the audio embedded and per-slide auto-advance timings.
 
 This workflow is **independent**: it reads `notes/*.md` and queries the selected TTS voice catalog — no upstream conversation context required. Safe to invoke in a fresh session.
 
 ## When to Run
+
+**Main pipeline (default)** — Step 7.3 reads `<project_path>/.gates/audio_choice.json`:
+
+| `audio_mode` value | Behavior |
+|---|---|
+| `none` | Skip this workflow entirely. |
+| `edge_default` | Run `notes_to_audio.py <project_path>` (no extra flags). |
+| `cloud_quality` | Run `notes_to_audio.py <project_path> --provider <provider>` using `provider` from the gate file. |
+| `recorded_existing` | Skip generation; user already placed audio under `<project_path>/audio/`. |
+
+After audio is ready, Step 7.3 re-exports PPTX with `--recorded-narration <project_path>/audio/`.
+
+**Standalone (resume / post-hoc)** — invoke directly when:
 
 - `notes/total.md` exists and has been split into per-page files at `notes/*.md` (post-processing Step 7.1 done).
 - Default mode: `edge-tts` is installed (`python3 -m pip install edge-tts`).

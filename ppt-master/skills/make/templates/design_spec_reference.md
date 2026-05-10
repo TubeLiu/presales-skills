@@ -11,10 +11,13 @@
 | **Project Name** | {project_name} |
 | **Canvas Format** | {canvas_info['name']} ({canvas_info['dimensions']}) |
 | **Page Count** | [Filled by Strategist] |
+| **Template + Layout Grammar** | [Filled by Strategist — e.g. "alauda; non-structural pages routed via `templates/semantic_routes.json` to `03_content_panorama / architecture / migration / table` variants. Free design only when `template_lock.template == ""`."] |
 | **Design Style** | {design_style} |
 | **Target Audience** | [Filled by Strategist] |
 | **Use Case** | [Filled by Strategist] |
 | **Created Date** | {date_str} |
+
+> **Why "Template + Layout Grammar" is its own row**: It's the 4th of the Nine Confirmations (SKILL.md Step 4). Every branded template ships a `semantic_routes.json` that routes content pages to specific variant SVGs. Without an explicit commitment here, the deck silently degrades into "Alauda colors over generic 03_content.svg cards" — defeating the whole point of a branded template. `spec_lock_validator.py` enforces this from `spec_lock.md ## template_lock` onward.
 
 ---
 

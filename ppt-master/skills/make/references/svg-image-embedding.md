@@ -8,7 +8,7 @@ Technical specifications and recommended workflow for adding images to SVG files
 
 ## Image Resource List Format
 
-Defined in the Design Specification & Content Outline; each image has a status annotation. If the image approach includes "B) User-provided", you must run `analyze_images.py` immediately after the Strategist completes the Eight Confirmations, and complete the list before outputting the design spec.
+Defined in the Design Specification & Content Outline; each image has a status annotation. If the image approach includes "B) User-provided", you must run `analyze_images.py` immediately after the Strategist completes the Nine Confirmations, and complete the list before outputting the design spec.
 
 ```markdown
 | Filename | Dimensions | Purpose | Status | Generation Description |

@@ -6,7 +6,9 @@ This file serves as the project entry point for general AI agents. Before execut
 
 PPT Master is an AI-driven presentation generation system. Through multi-role collaboration (Strategist → Image_Generator → Executor), it converts source documents (PDF/DOCX/URL/Markdown) into natively editable PPTX with real PowerPoint shapes (DrawingML).
 
-**Core Pipeline**: `Source Document → Create Project → Template Option → Strategist Eight Confirmations → [Step 4.5 User Review Gate] → [Image_Generator] → Executor → Post-processing → Export PPTX`
+**Core Pipeline**: `Source Document → Create Project → Template Option → Strategist Nine Confirmations → [Step 4.5 User Review Gate (含 ⑤ 配音决策)] → [Image_Generator] → Executor → Post-processing → Export PPTX`
+
+**Gate 状态文件契约（v1.5.0+）**：Step 4 / Step 4.5 三处 BLOCKING 都由 `<project_path>/.gates/{nine_confirmations,design_review,audio_choice}.json` 机器校验。Step 5 / Step 6 / Step 7 入口跑 `scripts/gate_check.py --require <gates>` 与 `scripts/spec_lock_validator.py`，文件缺失或 `passed: false` 直接阻塞。AI"记得用户已确认"不算数；以文件为准。
 
 **Execution Requirements**:
 

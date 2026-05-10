@@ -141,8 +141,28 @@ class ProjectManager:
             "templates",
             SOURCE_DIRNAME,
             "exports",
+            ".gates",
         ):
             (project_path / rel_path).mkdir(parents=True, exist_ok=True)
+
+        gates_readme = project_path / ".gates" / "README.md"
+        gates_readme.write_text(
+            (
+                "# .gates/\n\n"
+                "Workflow gate state files. Each `<gate>.json` is written by Strategist\n"
+                "after the user gives an explicit confirmation at the matching BLOCKING\n"
+                "step. `scripts/gate_check.py` reads these before Step 5 / 6 / 7 to\n"
+                "prove the gate was actually passed (resists weak models 'remembering'\n"
+                "confirmations the user never gave).\n\n"
+                "Files:\n"
+                "- `nine_confirmations.json` — Step 4 result\n"
+                "- `design_review.json` — Step 4.5 result\n"
+                "- `audio_choice.json` — Step 4.5 ⑤ audio decision\n\n"
+                "Do NOT edit these by hand mid-flow. To re-trigger a confirmation,\n"
+                "either delete the file or set `passed: false` and re-run the step.\n"
+            ),
+            encoding="utf-8",
+        )
 
         canvas_info = self.CANVAS_FORMATS[normalized_format]
         readme_path = project_path / "README.md"

@@ -1,12 +1,13 @@
 # Design Review Gate (Step 4.5)
 
-> SKILL.md `### Step 4.5` 的详细规范文档。Strategist 完成八项确认后必须输出 `design_review.md` 并暂停等待用户确认才能进入 Step 5。
+> SKILL.md `### Step 4.5` 的详细规范文档。Strategist 完成九项确认后必须输出 `design_review.md` 并暂停等待用户确认才能进入 Step 5。本步骤还顺带捕获 Step 4.5 ⑤ 配音决策——避免到 Step 7 export 时才 ad-hoc 询问用户。
 
 ## Table of Contents
 
 - [何时触发](#何时触发)
-- [design_review.md 4 项产物详解](#design_reviewmd-4-项产物详解)
+- [design_review.md 5 项产物详解](#design_reviewmd-5-项产物详解)
 - [用户回复判定](#用户回复判定)
+- [Gate 状态文件写入](#gate-状态文件写入)
 - [边界 case](#边界-case)
 - [与 spec_lock.md / design_spec.md 的引用关系](#与-spec_lockmd--design_specmd-的引用关系)
 
@@ -14,13 +15,13 @@
 
 ## 何时触发
 
-- **进入条件**：Step 4 Strategist Phase 完成；八项确认通过；`design_spec.md` + `spec_lock.md` 已生成
-- **退出条件（GATE 通过）**：用户回复明确确认词（"确认" / "OK" / "continue" / "👍" 等，参见 SKILL.md §Step 4 末尾 "User reply contract — explicit gate" 表格）
-- **不触发**：Strategist 还在做八项确认中 / 用户尚未回复 / 用户已开始改方案
+- **进入条件**：Step 4 Strategist Phase 完成；九项确认通过且 `<project_path>/.gates/nine_confirmations.json` 中 `passed: true`；`design_spec.md` + `spec_lock.md` 已生成
+- **退出条件（GATE 通过）**：用户回复明确确认词（"确认" / "OK" / "continue" / "👍" 等，参见 SKILL.md §Step 4 末尾 "User reply contract — explicit gate" 表格），且 Strategist 已写入 `.gates/design_review.json` 与 `.gates/audio_choice.json` 两份 gate 文件
+- **不触发**：Strategist 还在做九项确认中 / 用户尚未回复 / 用户已开始改方案
 
 ---
 
-## design_review.md 4 项产物详解
+## design_review.md 5 项产物详解
 
 ### ① 选定模板 + 简短理由
 
@@ -102,6 +103,36 @@
 - ❌ 把样张机制理解成"只生成这几页"
 - ❌ 在技能优化时一直改同一张 SVG，而不是回到 route / visual system / checker 改能力
 
+### ⑤ 配音 / 音频策略
+
+**字段**：`audio_mode` 必填，取值 `none | edge_default | cloud_quality | recorded_existing`；`cloud_quality` 时额外要求 `provider`（`elevenlabs` / `minimax` / `qwen` / `cosyvoice`）和 `voice_preference`（自然语言描述，如「沉稳男声 / 商务女声 / 轻快 narrator」）。
+
+**目的**：把"生成 PPT 之后是否要配音 / 用什么 provider"这个决策从 Step 7 之后的散场询问提前到 Step 4.5——这样 Step 7.3 可以直接读 `.gates/audio_choice.json` 决定是否串入 `notes_to_audio.py`，弱模型也无法因为"没人主动问 audio"就漏掉。
+
+**示例**：
+
+```markdown
+## 配音 / 音频策略
+
+- **audio_mode**: `edge_default`（推荐：免 API key、本地 edge-tts 引擎，适合内部 demo / 临时录课）
+- 备选项：
+  - `none` — 不需要配音，纯 PPTX
+  - `cloud_quality` — 高保真，需要 provider key（elevenlabs/minimax/qwen/cosyvoice）+ 音色偏好
+  - `recorded_existing` — 已有人工录音文件放在 `<project_path>/audio/`，直接 embed
+- 我会按 `edge_default` 准备，如果你想换说一声。
+```
+
+**反模式**：
+- ❌ 在 design_review.md 把 5 个 provider 全列一遍要用户选——`edge_default` 是合理默认，单句兜底即可
+- ❌ 跳过本节直接默认 `none`——会让用户在 Step 7 突然被问"要不要配音"，破坏 Step 4.5 单点确认契约
+- ❌ 写 `audio_mode: maybe` / 留空——必须落到 4 个枚举之一，否则 `audio_choice.json` 无法持久化
+
+**默认建议规则**：
+- 内部 demo / 给同事预演 → `edge_default`
+- 客户高管演示 / 朋友圈分发 / 视频号成片 → `cloud_quality`
+- 已有播客 / 课程录音 → `recorded_existing`
+- 现场口讲、不需要预录 → `none`
+
 ---
 
 ## 用户回复判定
@@ -109,10 +140,49 @@
 > **复用 SKILL.md §Step 4 末尾 "User reply contract — explicit gate" 表格，不重复列**。
 
 简化要点：
-- ✅ 明确确认词（确认 / OK / 通过 / continue / 👍 / 同意 / 没问题）→ 进 Step 5
-- ❌ 模糊正面词（嗯 / 差不多 / 看起来还行 / 应该可以）→ **不算确认**，必须 re-ping
-- ❌ 修改意见（改一下 X / 多一页 / 换模板 / 重做大纲）→ 回 Step 4 调整 8 项确认 → 重新输出 `design_review.md`
-- ❌ 用户长时间未回复 → **AI 永不主动推进**，下次 AI 输出时优先追问
+- ✅ 明确确认词（确认 / OK / 通过 / continue / 👍 / 同意 / 没问题）→ 写 `.gates/design_review.json` 与 `.gates/audio_choice.json`，进 Step 5
+- ❌ 模糊正面词（嗯 / 差不多 / 看起来还行 / 应该可以）→ **不算确认**，必须 re-ping，**不写**任何 gate 文件
+- ❌ 修改意见（改一下 X / 多一页 / 换模板 / 重做大纲 / 改 audio_mode）→ 回 Step 4 调整 9 项确认 → 重新输出 `design_review.md`，覆盖原 gate 文件为 `passed: false`
+- ❌ 用户长时间未回复 → **AI 永不主动推进**，下次 AI 输出时优先追问；gate 文件保持缺失状态
+
+---
+
+## Gate 状态文件写入
+
+Strategist 在用户明确确认后**必须**写两份 JSON，schema 同 `.gates/nine_confirmations.json`（参见 SKILL.md Step 4 user reply contract 表第一行）：
+
+**`<project_path>/.gates/design_review.json`**：
+```json
+{
+  "passed": true,
+  "verdict": "explicit_confirmation",
+  "user_reply_snippet": "确认，按方案走",
+  "items_locked": [
+    "template:alauda",
+    "pages:12",
+    "image_triggers:[P1, P3]",
+    "quality_samples:[P03, P05, P07]"
+  ],
+  "timestamp": "2026-05-10T12:34:56Z"
+}
+```
+
+**`<project_path>/.gates/audio_choice.json`**：
+```json
+{
+  "passed": true,
+  "verdict": "explicit_confirmation",
+  "audio_mode": "edge_default",
+  "provider": null,
+  "voice_preference": null,
+  "user_reply_snippet": "确认 + 用 edge 默认配音",
+  "timestamp": "2026-05-10T12:34:56Z"
+}
+```
+
+`audio_mode == "cloud_quality"` 时填 `provider` 与 `voice_preference`；`none` 时这两字段为 `null`，但 `passed: true` 仍要写——它表示"用户决定 = 不要音频"，而不是"用户没说"。
+
+下游 Step 5 / Step 6 / Step 7 的 GATE block 都会跑 `gate_check.py --require <gates>`，缺文件或 `passed: false` 直接阻断。
 
 ---
 
@@ -122,7 +192,7 @@
 
 如果用户已经回复确认、AI 已进入 Step 5 / Step 6，但用户随后又想改方案：
 - 立即停止当前阶段（如 Image_Generator 中途、Executor 写到一半）
-- 回到 Step 4 重做八项确认（不是改 design_review.md，是从源头重做）
+- 回到 Step 4 重做九项确认（不是改 design_review.md，是从源头重做）；同时把 `.gates/nine_confirmations.json` 与 `.gates/design_review.json` 都覆盖为 `passed: false`，让下游 GATE 重新阻塞
 - 把已生成的 SVG / 图片归档到 `<project_path>/archive/` 而不是删除（保留沉没成本可视化）
 - 重新输出 design_review.md → 再次 Gate
 
@@ -146,7 +216,7 @@ AI 没有真实计时能力，不能"5 分钟后超时自动推进"。任何"超
 ## 与 spec_lock.md / design_spec.md 的引用关系
 
 ```
-design_spec.md       ←── Strategist 八项确认的"完整方案"（每页详细 bullet）
+design_spec.md       ←── Strategist 九项确认的"完整方案"（每页详细 bullet）
        ↓
   spec_lock.md      ←── Strategist 锁定的"执行决策"（颜色 / 字体 / 图标 / page_rhythm / quality_samples）
        ↓
