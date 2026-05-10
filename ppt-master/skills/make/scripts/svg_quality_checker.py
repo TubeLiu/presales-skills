@@ -53,6 +53,12 @@ try:
 except ImportError:
     _parse_spec_lock = None  # spec_lock drift check will be skipped
 
+try:
+    from chrome_extractor import extract_chrome_signatures, compare_signatures
+except ImportError:
+    extract_chrome_signatures = None  # type: ignore[assignment]
+    compare_signatures = None  # type: ignore[assignment]
+
 
 HEX_VALUE_RE = re.compile(r"#[0-9A-Fa-f]{3,8}")
 
@@ -200,6 +206,9 @@ class SVGQualityChecker:
 
                 # 10. Check content block fit (excessive empty space in cards)
                 self._check_content_block_fit(content, result)
+
+                # 11. Check template chrome fidelity (v1.6.0 — Pillar H)
+                self._check_template_chrome_fidelity(content, svg_path, result)
 
             # Determine pass/fail
             result['passed'] = len(result['errors']) == 0
@@ -1611,6 +1620,130 @@ class SVGQualityChecker:
                 if data is not None:
                     self._lock_seen = True
                 return data
+        return None
+
+    def _check_template_chrome_fidelity(self, content: str, svg_path: Path, result: Dict):
+        """Dimension 11 (v1.6.0 — Pillar H): verify generated SVG inherits the
+        template variant's chrome (left accent bar / footer rule / decorative
+        circles / logo / data-role chrome markers).
+
+        This is the machine-level proof that closes the v1.5.0 gap where
+        spec_lock.md ## semantic_routes was filled correctly but Step 6 Executor
+        still hand-wrote pages from scratch, dropping all template chrome.
+
+        Workflow:
+          1. Locate spec_lock.md (reuses _get_spec_lock cache).
+          2. Read ## template_lock; if template == "" (free design) → skip.
+          3. Parse ## semantic_routes + ## page_rhythm to map this SVG's page
+             number to the expected template variant filename.
+          4. Read templates/<variant>.svg; extract chrome signatures.
+          5. Extract chrome signatures from current generated SVG.
+          6. Compare; emit errors for missing/wrong-color chrome (release
+             blocker for branded templates), warnings for slight displacement.
+        """
+        if extract_chrome_signatures is None or compare_signatures is None:
+            return  # chrome_extractor unavailable; silently skip
+
+        lock = self._get_spec_lock(svg_path)
+        if lock is None:
+            return  # no spec_lock; checker dimension 7 already warns
+
+        template_lock = lock.get('template_lock', {})
+        template_name = (template_lock.get('template') or '').strip().strip('"')
+        if not template_name:
+            return  # free design — chrome fidelity not applicable
+
+        # Locate the project root: spec_lock.md is at project root, so the
+        # cached path's parent is the project dir.
+        project_path: Path | None = None
+        for cached_path in self._lock_cache:
+            if self._lock_cache[cached_path] is lock:
+                project_path = cached_path.parent
+                break
+        if project_path is None:
+            return
+
+        source_dir = template_lock.get('source_dir', 'templates').strip().strip('/').strip('"')
+        template_dir = project_path / source_dir
+        if not template_dir.exists():
+            result['warnings'].append(
+                f"template_chrome_fidelity: template_lock.template={template_name!r} but "
+                f"{template_dir} missing — cannot verify chrome inheritance"
+            )
+            return
+
+        # Determine page number from filename: slide_02_overview.svg → P02
+        page_match = re.search(r'slide[_-](\d{1,3})', svg_path.stem.lower())
+        if not page_match:
+            return  # not a slide file; skip
+        page_num = int(page_match.group(1))
+        page_key = f"P{page_num:02d}"
+
+        # Resolve expected variant from spec_lock semantic_routes / page_rhythm
+        routes = lock.get('semantic_routes', {})
+        rhythm = lock.get('page_rhythm', {})
+        variant = self._resolve_variant_from_lock(page_key, routes, rhythm)
+        if not variant:
+            return  # page has no declared variant (e.g. mid-deck anchor without explicit intent)
+
+        variant_path = template_dir / variant
+        if not variant_path.exists():
+            result['errors'].append(
+                f"template_chrome_fidelity: declared variant {variant!r} not found "
+                f"at {variant_path} (template_chrome_missing)"
+            )
+            return
+
+        try:
+            expected_chrome = extract_chrome_signatures(variant_path)
+            actual_chrome = extract_chrome_signatures(content)
+        except Exception as exc:  # noqa: BLE001
+            result['warnings'].append(
+                f"template_chrome_fidelity: extraction failed ({exc!r}); skipped"
+            )
+            return
+
+        mismatches = compare_signatures(
+            expected_chrome, actual_chrome,
+            coord_tolerance=4.0, footer_tolerance=2.0,
+        )
+
+        for m in mismatches:
+            severity = m['severity']
+            kind = m['kind']
+            code = (
+                'template_chrome_missing' if kind == 'missing'
+                else 'template_chrome_drift'
+            )
+            msg = f"template_chrome_fidelity ({code}): {m['message']}"
+            if severity == 'error':
+                result['errors'].append(msg)
+            else:
+                result['warnings'].append(msg)
+
+    @staticmethod
+    def _resolve_variant_from_lock(
+        page_key: str,
+        routes: dict,
+        rhythm: dict,
+    ) -> str | None:
+        """Resolve the template variant filename for a page key like 'P02'.
+
+        Order:
+          1. semantic_routes['P02'] → parse pipe-delimited 'intent | variant | ...'
+          2. page_rhythm['P02'] == 'anchor' AND P01 → '01_cover.svg'
+          3. None (caller skips chrome check for this page)
+        """
+        # parse_lock yields raw string values; semantic_routes value is
+        # 'kpi_metrics | 03_content_kpi.svg | four_metric_cards | budget'
+        route_value = routes.get(page_key, '')
+        if isinstance(route_value, str) and '|' in route_value:
+            parts = [p.strip() for p in route_value.split('|')]
+            if len(parts) >= 2 and parts[1].endswith('.svg'):
+                return parts[1]
+        rhythm_value = (rhythm.get(page_key) or '').strip().lower()
+        if rhythm_value == 'anchor' and page_key == 'P01':
+            return '01_cover.svg'
         return None
 
     def _check_spec_lock_drift(self, content: str, svg_path: Path, result: Dict):

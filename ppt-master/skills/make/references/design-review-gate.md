@@ -105,9 +105,13 @@
 
 ### ⑤ 配音 / 音频策略
 
+⛔ **MUST — 不可省略本节，即使用户原始命令未提及配音**。默认值（`audio_mode: edge_default`）由 ⑤ 项明确呈现给用户后决定，不是由 AI 自行假设；「沉默 ≠ 不要音频」，沉默是「AI 漏问 ⑤ 项」的失效模式。`scripts/audio_decision_validator.py` 在 design_review.md 输出后立即跑校验，⑤ 项缺失或 `.gates/audio_choice.json` 缺失会直接 exit 1 阻断 Step 4.5 通过。
+
 **字段**：`audio_mode` 必填，取值 `none | edge_default | cloud_quality | recorded_existing`；`cloud_quality` 时额外要求 `provider`（`elevenlabs` / `minimax` / `qwen` / `cosyvoice`）和 `voice_preference`（自然语言描述，如「沉稳男声 / 商务女声 / 轻快 narrator」）。
 
 **目的**：把"生成 PPT 之后是否要配音 / 用什么 provider"这个决策从 Step 7 之后的散场询问提前到 Step 4.5——这样 Step 7.3 可以直接读 `.gates/audio_choice.json` 决定是否串入 `notes_to_audio.py`，弱模型也无法因为"没人主动问 audio"就漏掉。
+
+**真实失效观察（v1.6.0 plan context）**：用户在初次命令中明说"生成有配音的版本"，但流程中 AI 仍未停下来让用户选音频选项 → 直接进 Step 7 export 时才意识到。根因：⑤ 项是 design_review.md 的一个 section，在长上下文 + 多 section 同时输出时容易漏写。`audio_decision_validator.py` 把"漏写 ⑤ 项"从"AI 自觉"变成"机器拦截"。
 
 **示例**：
 

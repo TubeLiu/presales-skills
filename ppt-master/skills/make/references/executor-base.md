@@ -6,16 +6,38 @@
 
 ## 1. Template Adherence Rules
 
-If template files exist in the project's `templates/` directory, the template structure must be followed:
+If template files exist in the project's `templates/` directory, **Executor edits the pre-seeded skeleton SVGs in place** (Step 6 GATE has already run `page_skeleton_seeder.py` which physically copies the template variant for each page into `<project>/svg_output/slide_<NN>_<intent>.skeleton.svg`):
 
-| Page Type | Corresponding Template | Adherence Rules |
+| Page Type | Corresponding Template | Adherence Rules (v1.6.0 — skeleton-based) |
 |-----------|----------------------|-----------------|
-| Cover | `01_cover.svg` | Inherit background, decorative elements, layout structure; replace placeholder content |
-| Chapter | `02_chapter.svg` | Inherit numbering style, title position, decorative elements |
-| Content with semantic route | `03_content_*.svg` declared in `spec_lock.md ## semantic_routes` | Use the declared variant as the primary visual grammar; adapt content within the declared payload budget |
-| Content without semantic route | `03_content.svg` | Inherit header/footer styles; content area may be freely laid out |
-| Ending | `04_ending.svg` | Inherit background, thank-you message position, contact info layout |
-| TOC | `02_toc.svg` | **Optional**: Inherit TOC title, list styles |
+| Cover | `01_cover.svg` | **MUST** `read_file` the seeded `slide_01_cover.skeleton.svg`; preserve background / decorative elements / logo at template coordinates verbatim; only replace `{{TITLE}}` / `{{KEY_MESSAGE}}` placeholders with content |
+| Chapter | `02_chapter.svg` | **MUST** `read_file` the seeded `slide_NN_chapter.skeleton.svg`; preserve numbering style / decorative elements verbatim |
+| Content with semantic route | `03_content_*.svg` declared in `spec_lock.md ## semantic_routes` | **MUST** `read_file` the seeded `slide_NN_<intent>.skeleton.svg`; preserve chrome (accent bar at x=0,y=29,w=22 / footer rule at y=682 / decorative circles / logo) verbatim; adapt content slots within payload budget |
+| Content without semantic route | `03_content.svg` | **MUST** `read_file` the seeded skeleton; preserve header/footer chrome; content area may be re-laid within frame |
+| Ending | `04_ending.svg` | **MUST** `read_file` the seeded `slide_NN_ending.skeleton.svg`; preserve thank-you / contact-info chrome verbatim |
+| TOC | `02_toc.svg` | **MUST** `read_file` the seeded `slide_NN_toc.skeleton.svg`; preserve TOC title / list styles |
+
+> **Hard rule**: After editing the skeleton, **rename** `slide_NN_<intent>.skeleton.svg` → `slide_NN_<intent>.svg` (drop the `.skeleton` infix). The post-processing pipeline + Step 6 quality checker only inspect `*.svg`, not `*.skeleton.svg`.
+
+> **Forbidden**: Creating a new SVG file from scratch when a `.skeleton.svg` exists for that page; deleting any chrome element (accent bar / footer rule / decorative circles / logo / footer text) from the skeleton; moving chrome elements more than ±4px from their template coordinates (footer rule tolerance is ±2px); changing chrome fill colors. Quality Check Dimension 11 (template_chrome_fidelity) will catch all of these as release-blocker errors.
+
+### 1.1 Mandatory Template SVG Read (Hard GATE)
+
+🚧 **GATE — Mandatory read before each page generation** (v1.6.0): When `spec_lock.md ## template_lock.template != ""`, Executor **MUST** `read_file <project_path>/svg_output/<page>.skeleton.svg` (the pre-seeded skeleton from Step 6 GATE) **before drafting any content for that page**. If the skeleton file is missing — which means `page_skeleton_seeder.py` was skipped or failed — STOP and re-run Step 6 GATE; do NOT proceed by hand-writing the page from scratch.
+
+For free design (`template == ""`): no skeletons exist; this GATE doesn't apply.
+
+After reading the skeleton, **output the chrome inheritance marker** as the FIRST line of your page-generation response:
+
+```
+📐 Template chrome inherited: <variant> | <chrome-signature-summary>
+```
+
+Example: `📐 Template chrome inherited: 03_content_panorama.svg | accent_bar=x:0,y:29,w:22,fill:#3BAEE3 | footer_rule=y:682,stroke:#E2E8F0 | decor_circles=3 | logo=none`
+
+This marker is the prose-level proof that the skeleton was actually consulted. The machine-level proof is `svg_quality_checker.py` Dimension 11 (template_chrome_fidelity), which compares generated chrome against the template variant's chrome signatures (extracted by `chrome_extractor.py`). Missing chrome / displaced chrome (>±4px) / wrong-color chrome → release blocker error.
+
+This GATE mirrors the `## 5. Visualization Reference` GATE pattern (which has been battle-tested) and exists because field testing showed that even when `spec_lock.md ## semantic_routes` is filled correctly, Executor in long-context generation can drift into "free-form drawing with template colors only" — defeating the entire branded-template purpose.
 
 ### Page-Template Mapping Declaration (Required Output)
 

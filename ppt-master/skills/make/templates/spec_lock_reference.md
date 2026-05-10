@@ -31,6 +31,10 @@
 > ```
 >
 > Any other combination (e.g. `template: alauda` + `routes_required: false`) is treated as a contradiction and rejected. This wires the CLAUDE.md §6 anti-hardcoding rule "例外要显式建模" into spec_lock.
+>
+> **v1.6.0 chrome fidelity contract**: when `template != ""`, two more enforcement layers run downstream:
+> 1. `scripts/page_skeleton_seeder.py` (Step 6 GATE) physically copies each declared `template_variant` into `<project>/svg_output/slide_<NN>_<intent>.skeleton.svg` so Executor edits the chrome in place rather than re-creating from scratch.
+> 2. `scripts/svg_quality_checker.py` Dimension 11 (`template_chrome_fidelity`) re-extracts chrome signatures (left accent bar / footer rule / decorative circles / logo / `data-role` chrome markers) from each generated `*.svg` and compares against the variant's signatures via `scripts/chrome_extractor.py`. Missing chrome / coordinate drift > ±4px (footer ±2px) / fill mismatch = release blocker error. Branded templates cannot silently degrade into "color palette over generic 03_content.svg" anymore.
 
 ## canvas
 - viewBox: 0 0 1280 720

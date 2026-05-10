@@ -10,6 +10,8 @@ PPT Master is an AI-driven presentation generation system. Through multi-role co
 
 **Gate 状态文件契约（v1.5.0+）**：Step 4 / Step 4.5 三处 BLOCKING 都由 `<project_path>/.gates/{nine_confirmations,design_review,audio_choice}.json` 机器校验。Step 5 / Step 6 / Step 7 入口跑 `scripts/gate_check.py --require <gates>` 与 `scripts/spec_lock_validator.py`，文件缺失或 `passed: false` 直接阻塞。AI"记得用户已确认"不算数；以文件为准。
 
+**Chrome 继承契约（v1.6.0+）**：Step 4.5 GATE 加 `scripts/audio_decision_validator.py` 校验 design_review.md ⑤ 项 + audio_choice.json 双在；Step 6 GATE 加 `scripts/page_skeleton_seeder.py` 把模板 SVG 物理复制为 `svg_output/*.skeleton.svg` 让 Executor 必须基于骨架增量改；`svg_quality_checker.py` Dimension 11 (template_chrome_fidelity) 复用 `chrome_extractor.py` 比对生成 SVG 与模板的 accent bar / footer rule / decorative circles / logo / data-role chrome markers，缺失/位移>±4px/颜色不一致都是 release blocker error。`spec_lock 填对 ≠ 实际继承`——必须 read_file + 物理保留 chrome。
+
 ## Harness Engineering Guardrails
 
 PPT quality work must improve the generator, not just the current sample. Treat recurring visual defects as missing semantics, missing contracts, or missing eval coverage.
