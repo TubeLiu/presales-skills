@@ -3,7 +3,7 @@
   "owner": {
     "name": "LiuZiJiao",
     "email": "tubeliu1@gmail.com",
-    "homepage": "https://github.com/Alauda-io/skills"
+    "homepage": "https://github.com/TubeLiu/presales-skills"
   },
   "metadata": {
     "description": "Presales skills monorepo — 10 个独立 plugin，按垂直用途分为 Base Tools（ai-image 生图 / web-access 联网 / drawio 画图 / anythingllm-mcp 知识库）、Presales Workflows（solution-master 写方案 / ppt-master 做 PPT / tender-workflow 招投标 / customer-research 客户调研）和 Writing & Meta（market 文案编辑 / skill-optimizer 审查 skill）。同时支持 Claude Code（marketplace 安装）和 Cursor / Codex / OpenCode（vercel-labs/skills CLI 安装）。",

@@ -56,7 +56,7 @@ This keeps plugin boundaries clean while making the marketplace easier to scan f
 ### Path A: Claude Code (primary)
 
 ```
-/plugin marketplace add Alauda-io/skills
+/plugin marketplace add TubeLiu/presales-skills
 ```
 
 After adding the marketplace, the rest is done in the `/plugins` UI (no need to type install commands one by one):
@@ -96,9 +96,9 @@ You can install just one or two plugins — each runs independently. Use Step 3'
 ### Path B: Cursor / Codex / OpenCode
 
 ```bash
-npx --yes skills add Alauda-io/skills -a cursor   # Cursor
-npx --yes skills add Alauda-io/skills -a codex    # Codex
-npx --yes skills add Alauda-io/skills -a opencode # OpenCode
+npx --yes skills add TubeLiu/presales-skills -a cursor   # Cursor
+npx --yes skills add TubeLiu/presales-skills -a codex    # Codex
+npx --yes skills add TubeLiu/presales-skills -a opencode # OpenCode
 ```
 
 After the command runs, vercel-labs/skills CLI lists all 13 skills; press space to multi-select + Enter to confirm install:
