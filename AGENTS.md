@@ -71,20 +71,22 @@ grep '"version"' .claude-plugin/marketplace.json */.claude-plugin/plugin.json
 
 ### 双 marketplace 远端发布规则
 
-本仓库同时发布到两个不同 marketplace：
+本仓库同时发布到两个不同 marketplace，对应两个 Git remote：
 
-- `origin` → `TubeLiu/presales-skills`
-- `tubeliu` → `TubeLiu/presales-skills`
+| Remote | URL | 面向 |
+|---|---|---|
+| `origin` | `https://github.com/TubeLiu/presales-skills` | 公网用户（TubeLiu 个人 marketplace） |
+| `alauda` | `https://github.com/Alauda-io/skills` | Alauda 内部用户 |
 
 两边面向不同用户群，`README.md`、`.claude-plugin/marketplace.json`、`*/.claude-plugin/plugin.json` 中的安装命令、`homepage`、`repository` 等 repo-specific 内容必须分别指向各自仓库：
 
-- Alauda 侧示例：`/plugin marketplace add TubeLiu/presales-skills`
 - TubeLiu 侧示例：`/plugin marketplace add TubeLiu/presales-skills`
+- Alauda 侧示例：`/plugin marketplace add Alauda-io/skills`
 
 推送远端时不要把一边的 marketplace / README / plugin metadata 直接覆盖到另一边。正确流程是：
 
 1. 在当前侧完成代码、版本号和文档检查。
-2. 推送当前侧远端。
+2. 推送当前侧远端（`git push origin <branch>` 或 `git push alauda <branch>`）。
 3. 切换 / 准备另一侧 repo-specific 文件，只改应该不同的 marketplace / README / plugin metadata。
 4. 再推送另一侧远端。
 5. 分别核验两边远端的 `README.md` 安装命令、marketplace `homepage`、plugin `homepage/repository`。
